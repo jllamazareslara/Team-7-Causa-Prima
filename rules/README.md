@@ -44,12 +44,18 @@ ramas:  main ── rules/ana
 git clone https://github.com/jllamazareslara/Team-7-Causa-Prima.git && cd Team-7-Causa-Prima
 python3 -m bench.new_member ana              # crea la rama rules/ana con rules/ana/{dealer,broker,duel}.py
 # ... edita rules/ana/dealer.py ...
-python3 -m bench.run --author ana            # tu score frente al baseline (results/benchmark.md)
-git commit -am "rules/ana dealer: R2 no repetir precio"
-git push -u origin rules/ana                 # GitHub ejecuta guard + benchmark y lo muestra en el resumen
+python3 -m bench.contribute --dry-run       # puntuación antes -> después, sin commitear
+python3 -m bench.contribute "R2 no repetir precio" --push
+# commit solo de rules/ana/ con las puntuaciones en el mensaje, guard y push de rules/ana.
+# GitHub Actions vuelve a comprobarlo y muestra el benchmark en el resumen.
 ```
 
-Para traer mejoras de `main` (nuevo baseline, simuladores...) a tu rama: `git pull origin main`.
+Con Claude Code basta con pedirlo ("añade a mi dealer la regla de no repetir precio, soy ana") o usar
+`/aportar-reglas ana`. El repositorio trae `CLAUDE.md`, la skill `.claude/skills/aportar-reglas` y
+`.claude/settings.json`, de modo que el agente sigue este flujo solo. No puede editar fuera de tu carpeta en tu rama,
+ni ejecutar agentes contra el servidor, ni hacer push a `main`.
+
+Para traer mejoras de `main` (nuevo baseline, simuladores...) a tu rama: `git merge origin/main`.
 
 ## Diagnóstico completo
 
