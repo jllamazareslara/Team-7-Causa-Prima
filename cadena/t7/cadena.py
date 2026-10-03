@@ -377,7 +377,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         mom, esc = lectura.get("momento") or {}, lectura.get("escasez") or {}
         pasado = {r: list(v) for r, v in mem.historial.items()}       # se compara con lo visto ANTES de este tick
         ojeador.observar(mem.historial, tablon, t)
-        for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
+        for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"], p=p)[:3]:
             prop = o["propuesta"]
             compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
             if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje

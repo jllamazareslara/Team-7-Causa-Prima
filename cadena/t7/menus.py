@@ -78,7 +78,7 @@ def del_juego(vendedores, cuenta=None):
 
     menus solo trae vendedores de los que se entendió algo. dudas = textos para una persona: lo que no se entendió."""
     cuenta = cuenta or {}
-    lista = vendedores.get("dealers", vendedores.get("in_play", [])) if isinstance(vendedores, dict) else vendedores
+    lista = (vendedores.get("dealers") or vendedores.get("in_play") or vendedores.get("personas") or []) if isinstance(vendedores, dict) else vendedores
     menus, dudas = {}, []
     for d in lista if isinstance(lista, list) else []:
         if not isinstance(d, dict) or d.get("id") is None:
