@@ -1195,6 +1195,97 @@ class Jugar(unittest.TestCase):
         self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 2})
         self.assertEqual(len(b.abiertas_), 2)                                 # ya tienen conversación: no se repite
 
+    class ErrorJuego(Exception):
+        def __init__(self, code):
+            super().__init__(code)
+            self.code = code
+
+    def test_thread_exists_deja_al_vendedor_en_paz_unos_ticks(self):
+        """Otro programa tiene ya una conversación con abuela: no se insiste cada tick (vivo-3: 5 thread_exists seguidos)."""
+        b = self.Juego(cartas=self.cartas())
+        intentos = []
+
+        def ocupada(with_, topic=None, venue=None):
+            intentos.append(with_)
+            raise self.ErrorJuego("thread_exists")
+        b.open_thread = ocupada
+        menus = {"abuela": {"vende": {"RET-01": 12}, "compra": {}}}
+        plan = {"p": dict(P), "forzar": {}, "ordenes": {}}
+        est = {"hilos": {}}
+        for t in range(1, 1 + self.r.OCUPADO_TICKS):
+            self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": t})
+        self.assertEqual(intentos, ["abuela"])                                # una vez, no diez
+        self.assertNotIn("7", est["hilos"])
+        self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 1 + self.r.OCUPADO_TICKS})
+        self.assertEqual(intentos, ["abuela", "abuela"])                      # pasado el plazo se vuelve a probar
+
+    def test_choque_de_aceptacion_no_tira_el_tick(self):
+        """wait_for_tick al aceptar (otro programa gastó la aceptación) o self_trade: se apunta y se sigue."""
+        for codigo in ("wait_for_tick", "self_trade"):
+            b = self.Juego(cartas=self.cartas())
+
+            def falla(oid, assets=None, codigo=codigo):
+                raise self.ErrorJuego(codigo)
+            b.accept = falla
+            firma_v = {"destino": "vendedor", "id": 7, "oferta_id": 55, "precio": 11, "motivo": "prueba"}
+            self.r.aplicar(b, {"mensajes": [], "cerrar": [], "firma": firma_v}, {"hilos": {}}, {}, b.me(), vivo=True)
+            self.r.aceptar(b, {"destino": "rastro", "oferta_id": 2}, self.TABLON, {"assets": self.cartas()}, {}, vivo=True)
+            with open(os.path.join(self.r.RUNS, "errores.jsonl"), encoding="utf-8") as f:
+                codigos = [json.loads(l).get("codigo") for l in f]
+            self.assertGreaterEqual(codigos.count(codigo), 2)                 # los dos sitios lo apuntan con su código
+
+    def test_suelo_de_venta_cubre_la_comision(self):
+        """vivo-3: LAT-01 a 5 P valiendo 4 perdía la comisión (5 % + 1 P). El suelo nuevo deja al menos 1 P o el 10 %."""
+        for v in (0.5, 2.75, 4.0, 16.0, 83.9):
+            precio = V.suelo_venta_rastro(v, 0.10)
+            self.assertGreaterEqual(precio - V.comision_rastro(precio, 1) - v, max(1.0, 0.10 * v))
+            self.assertLess(precio - 1 - V.comision_rastro(precio - 1, 1) - v, max(1.0, 0.10 * v))   # y es el más bajo
+        self.assertEqual(V.suelo_venta_rastro(4.0), 7)
+        self.assertGreaterEqual(cambista.precio_anuncio(5, 4.0, 9, P), 7)    # ni con muchas caducidades baja de ahí
+
+    def _cartas_lav03(self, copias):
+        return [{"id": 200 + i, "kind": "card", "ref": "LAV-03"} for i in range(copias)]
+
+    def test_anuncio_que_ya_no_renta_se_cancela(self):
+        """Anunciamos una LAV-03 repetida a 13 P; la otra copia se fue: ahora vende la de la página. Se cancela."""
+        b = self.Juego(cartas=self._cartas_lav03(1))
+        est = {"anuncios": {"200": {"ref": "LAV-03", "precio": 13, "tick": 10, "caducidades": 0, "id": 555}}}
+        fuera = self.r.revisar_publicadas(b, b.me(), est, dict(P), 12, vivo=True)
+        self.assertEqual((fuera, b.canceladas, est["anuncios"]), ([("anuncio", "LAV-03")], [555], {}))
+
+    def test_anuncio_que_renta_sigue(self):
+        b = self.Juego(cartas=self._cartas_lav03(2))
+        perdida = V.valor_entregar(Counter({"LAV-03": 2}), ["LAV-03"])
+        precio = V.suelo_venta_rastro(perdida, P["guardia.margen_venta"])
+        est = {"anuncios": {"201": {"ref": "LAV-03", "precio": precio, "tick": 10, "caducidades": 0, "id": 556}}}
+        self.assertEqual(self.r.revisar_publicadas(b, b.me(), est, dict(P), 12, vivo=True), [])
+        self.assertEqual(b.canceladas, [])
+        self.assertEqual(self.r.revisar_publicadas(b, b.me(), est, dict(P), 12, vivo=False), [])
+
+    def test_anuncio_sin_id_se_busca_en_mis_ofertas(self):
+        b = self.Juego(cartas=self._cartas_lav03(1))
+        b.my_offers = lambda: {"offers": [{"id": 777, "status": "open", "give": {"assets": [{"id": 200, "ref": "LAV-03"}]}}]}
+        est = {"anuncios": {"200": {"ref": "LAV-03", "precio": 13, "tick": 10, "caducidades": 0}}}
+        self.r.revisar_publicadas(b, b.me(), est, dict(P), 12, vivo=True)
+        self.assertEqual(b.canceladas, [777])
+
+    def test_peticion_que_ya_no_renta_se_cancela(self):
+        b = self.Juego(cartas=[])
+        nos_vale = V.valor_recibir(Counter(), ["RET-09"])
+        est = {"peticiones": {"RET-09": {"precio": int(nos_vale), "tick": 10, "caducidades": 0, "id": 41}}}
+        self.r.revisar_publicadas(b, b.me(), est, dict(P), 12, vivo=True)
+        self.assertEqual((b.canceladas, est["peticiones"]), ([41], {}))
+
+    def test_stop_cancela_todo_lo_publicado(self):
+        b = self.Juego(cartas=self._cartas_lav03(2))
+        est = {"hilos": {}, "anuncios": {"201": {"ref": "LAV-03", "precio": 40, "tick": 3, "caducidades": 0, "id": 9}},
+               "peticiones": {"RET-09": {"precio": 30, "tick": 3, "caducidades": 0, "id": 10}},
+               "trueques": {"RET-08": {"doy": ["LAV-03"], "ids": ["200"], "tick": 3, "id": 11}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=True)
+        self.assertEqual(sorted(b.canceladas), [9, 10, 11])
+        self.r.un_tick(b, est, cadena.Memoria(), 5, 30, vivo=True, stop=True)
+        self.assertEqual(len(b.canceladas), 3)                              # una vez, no cada tick
+
     def test_solo_vender(self):
         """Con solo_vender: no se abre una compra a un vendedor ni se compra en El Rastro; vender sigue."""
         situacion.leer_hoy = lambda: {"solo_vender": True}

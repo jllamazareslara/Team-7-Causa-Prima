@@ -205,6 +205,17 @@ def comision_rastro(precio, cartas, pct=0.05, por_carta=1):
     return math.ceil(precio * pct) + por_carta * cartas if precio or cartas else 0
 
 
+def suelo_venta_rastro(perdida, margen=0.10):
+    """El precio más bajo al que se vende una carta en El Rastro: lo que nos vale + la comisión (5 % + 1 P por carta,
+    contando que la pagamos nosotros: no se sabe quién la paga) + el margen de buen negocio (mínimo 1 P).
+    Con "lo que nos vale + 1" cada venta al suelo perdía 1-2 P (vivo-3: LAT-01 a 5 P valiendo 4)."""
+    perdida = max(0.0, perdida or 0.0)
+    precio = math.ceil(perdida + 1)
+    while precio - comision_rastro(precio, 1) - perdida < max(1.0, margen * perdida):
+        precio += 1
+    return precio
+
+
 def protegida(cuenta, ref, mult=NUESTROS_MULT):
     """No se vende nunca: primera copia de los tres barrios que más nos valen, o una carta que rompe una página completa."""
     if cuenta.get(ref, 0) <= 0:

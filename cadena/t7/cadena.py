@@ -171,14 +171,15 @@ def operaciones(cuenta, efectivo, menus, mem, lectura, ordenes=None, abiertas=()
 
 def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), listas=None, caducidades=None, maximo=12):
     """El Cambista vende con sus consejeros: anuncios_rastro() sin las cartas que esperan una fiebre (Guion) y con el
-    precio ajustado al mercado y al momento (Ojeador), nunca por debajo de lo que nos vale + 1."""
+    precio ajustado al mercado y al momento (Ojeador), nunca por debajo de V.suelo_venta_rastro (valor + comisión + margen)."""
     excluidas = set(excluidas) | set(_reservadas(cuenta, mem, lectura))
     out = anuncios_rastro(cuenta, p, activos, ocupadas, excluidas, listas, caducidades, maximo)
     t = lectura.get("tick") if isinstance(lectura.get("tick"), (int, float)) else 0
     mom = lectura.get("momento") or {"fase": "normal", "vender": 1.0}
     for n in out:
         antes = n["precio"]
-        n["precio"] = ojeador.precio_venta(antes, math.ceil(n["pierde"] + 1), ojeador.tendencia(mem.historial, n["carta"], t),
+        suelo = V.suelo_venta_rastro(n["pierde"], p.get("guardia.margen_venta", 0.10))
+        n["precio"] = ojeador.precio_venta(antes, suelo, ojeador.tendencia(mem.historial, n["carta"], t),
                                            mom, mem.escasez.get(n["carta"]))
         if n["precio"] != antes:
             n["ojeador"] = f"{antes} → {n['precio']} ({mom.get('fase', 'normal')})"
@@ -493,7 +494,7 @@ def anuncios_rastro(cuenta, p, activos=None, ocupadas=(), excluidas=(), listas=N
     excluidas   = refs que se guardan para los vendedores (les quedan tratos de escalera hoy)
     listas      = {ref: precio de lista}; sin dato, la base de su rareza
     caducidades = {ref: veces que su anuncio caducó sin venderse}: cada una baja el precio
-    Devuelve [{"carta", "precio", "pierde"}], como mucho `maximo`. El precio nunca baja de lo que nos vale + 1."""
+    Devuelve [{"carta", "precio", "pierde"}], como mucho `maximo`. El precio nunca baja de V.suelo_venta_rastro."""
     actual = dict(cuenta)
     for ref, n in (activos or {}).items():
         actual[ref] = actual.get(ref, 0) - n
