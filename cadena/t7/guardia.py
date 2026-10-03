@@ -4,7 +4,9 @@ No recibe texto: solo la oferta estructurada tal como la da el juego y nuestro e
 Cinco comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pasa las cinco, firma solo.
 
     1. STOP                      alguien ha parado el sistema
-    2. una firma por tick        el juego solo deja aceptar una oferta por tick a todo el equipo
+    2. una firma por tick        por categoría: el juego deja una aceptación de tienda/El Rastro por tick Y, aparte,
+                                 una de duelo por tick — tienen cupos independientes (confirmado por Causa Prima:
+                                 "duel messages and accepts have their own limits: they never block your trading")
     3. estructura entendida      un campo desconocido en la oferta = no
     4. la oferta no ha cambiado  el precio del juego es el que el agente miró
     5. buen negocio              mirando el valor de las cartas, sin romper nada: reserva de efectivo intacta,

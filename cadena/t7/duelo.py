@@ -93,10 +93,14 @@ def decidir(st, p):
 
 # ---------- duelos con día de entrega ----------
 
-def mejor_dia(pesos, por_defecto=5):
+def mejor_dia(pesos, por_defecto=5, hacia=None):
     """El día de entrega que más nos vale según `your_days_weight`. Su forma real aún no se ha visto en un duelo:
     se entiende una lista (posición = día) o un diccionario {día: peso}. Con cualquier otra cosa, el día por defecto.
-    Devuelve (día, motivo). Un mensaje con precio y sin día lo rechaza el juego, así que siempre sale un día."""
+    Devuelve (día, motivo). Un mensaje con precio y sin día lo rechaza el juego, así que siempre sale un día.
+
+    hacia: "pronto" o "tarde" si hay una pista de lo que prefiere el rival (ver dia_preferido_rival). Entre los
+    días que nos cuestan casi lo mismo que el mejor (dentro del 5 % de nuestro propio rango de valores por día),
+    se elige el más cercano a esa preferencia: cedemos lo que apenas nos cuesta, nunca lo que sí nos importa."""
     try:
         if isinstance(pesos, dict):
             pares = [(int(k), float(v)) for k, v in pesos.items()]
@@ -109,6 +113,12 @@ def mejor_dia(pesos, por_defecto=5):
     pares = [(d, v) for d, v in pares if 0 <= d <= 10]
     if len(pares) < 2 or len({v for _, v in pares}) < 2:
         return por_defecto, f"día {por_defecto}: no hay pesos por día que entendamos"
+    if hacia in ("pronto", "tarde"):
+        mejor, rango = max(v for _, v in pares), max(v for _, v in pares) - min(v for _, v in pares)
+        cercanos = [(d, v) for d, v in pares if mejor - v <= 0.05 * rango]
+        if len(cercanos) > 1:
+            d = (min if hacia == "pronto" else max)(cercanos, key=lambda x: x[0])[0]
+            return d, f"día {d}: casi tan bueno como nuestro mejor, y el rival parece preferir {hacia}"
     d = max(pares, key=lambda x: (x[1], -abs(x[0] - por_defecto)))[0]
     return d, f"día {d}: el que más nos vale según nuestros pesos"
 

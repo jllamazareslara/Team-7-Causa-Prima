@@ -556,7 +556,10 @@ class Cadena(unittest.TestCase):
         firmas, precios, _, _ = self.jugar_vendedor("abuela", "venta", "LAT-08", c, 80, 1)
         self.assertEqual((firmas, precios), ([], []))          # protegida: ni un mensaje
 
-    def test_una_sola_firma_y_el_duelo_primero(self):
+    def test_el_duelo_tiene_su_propia_firma_independiente_de_la_tienda(self):
+        """Confirmado por el PDF oficial de Causa Prima: los duelos tienen su propio cupo de aceptación por
+        tick, aparte del de la tienda/El Rastro ("duel messages and accepts have their own limits: they never
+        block your trading") — así que un duelo y un trato de tienda pueden firmar los dos en el mismo tick."""
         c, _ = coleccion()
         lectura = {"tick": 5, "efectivo": 300, "cuenta": c,
                    "vendedores": [{"id": 1, "vendedor": "abuela", "lado": "compra", "carta": "RET-01",
@@ -565,11 +568,16 @@ class Cadena(unittest.TestCase):
                                "ronda": 7, "rondas": 8, "ticks_restantes": 1}],
                    "tablon": [{"id": 3, "maker": "t03", "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 60}}]}
         ac = cadena.tick(lectura, cadena.Memoria(), P)
-        self.assertEqual((ac["firma"]["destino"], ac["firma"]["id"]), ("duelo", 2))
-        self.assertEqual(sum("· FIRMA ·" in linea for linea in ac["diario"]), 1)
+        self.assertEqual((ac["firma_duelo"]["destino"], ac["firma_duelo"]["id"]), ("duelo", 2))
+        self.assertEqual(ac["firma"]["id"], 1)              # la final de vendedor firma el mismo tick que el duelo
+        self.assertEqual(sum("· FIRMA ·" in linea for linea in ac["diario"]), 2)
         sin_duelo = dict(lectura, duelos=[])
-        self.assertEqual(cadena.tick(sin_duelo, cadena.Memoria(), P)["firma"]["id"], 1)      # la final antes que El Rastro
-        self.assertIsNone(cadena.tick(lectura, cadena.Memoria(), P, stop=True)["firma"])
+        sd = cadena.tick(sin_duelo, cadena.Memoria(), P)
+        self.assertIsNone(sd["firma_duelo"])
+        self.assertEqual(sd["firma"]["id"], 1)
+        apagado = cadena.tick(lectura, cadena.Memoria(), P, stop=True)
+        self.assertIsNone(apagado["firma"])
+        self.assertIsNone(apagado["firma_duelo"])
 
     def test_las_trampas_no_cambian_las_acciones(self):
         """Mismo duelo con texto tramposo y sin texto: mismas decisiones. El Escudo solo apunta."""
@@ -646,6 +654,30 @@ class Cadena(unittest.TestCase):
         base = {"id": 3, "rol": "seller", "limite": 100, "rival": [], "nuestras": [], "ronda": 0, "rondas": 8, "dias": True}
         ac = cadena.tick({"tick": 1, "duelos": [dict(base, pesos_dias=[0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0])]}, cadena.Memoria(), P)
         self.assertEqual(ac["mensajes"][0]["dias"], 8)
+
+    def test_dia_de_entrega_cede_lo_barato_segun_el_rival(self):
+        """Entre días que nos dan casi lo mismo, el día que se pide se acerca al que el rival parece preferir.
+        Si un día nos conviene claramente más que los demás, eso no cambia aunque el rival prefiera otro: solo
+        se cede lo que apenas nos cuesta, nunca lo que sí nos importa."""
+        empate = {2: 8, 8: 8, 5: 0}
+        self.assertEqual(duelo.mejor_dia(empate, hacia="pronto")[0], 2)
+        self.assertEqual(duelo.mejor_dia(empate, hacia="tarde")[0], 8)
+        claro = [0, 1, 2, 9, 2, 1, 0, 0, 0, 0, 0]                          # día 3 muy por encima de los demás
+        self.assertEqual(duelo.mejor_dia(claro, hacia="pronto")[0], 3)
+        self.assertEqual(duelo.mejor_dia(claro, hacia="tarde")[0], 3)
+
+    def test_cadena_desplaza_el_dia_con_la_pista_del_rival(self):
+        """Con un empate entre dos días para nosotros, el día que se manda se acerca al que el rival parece
+        preferir — pero hace falta más de una oferta suya con día para fiarse de la pista."""
+        base = {"id": 4, "rol": "buyer", "limite": 150, "rival": [], "nuestras": [50], "ronda": 1, "rondas": 8,
+                "dias": True, "pesos_dias": {2: 8, 8: 8, 5: 0}}
+        pronto = cadena.tick({"tick": 1, "duelos": [dict(base, rival_paquetes=[(140, 1), (135, 1)])]}, cadena.Memoria(), P)
+        tarde = cadena.tick({"tick": 1, "duelos": [dict(base, rival_paquetes=[(140, 9), (135, 9)])]}, cadena.Memoria(), P)
+        self.assertEqual(pronto["mensajes"][0]["dias"], 2)
+        self.assertEqual(tarde["mensajes"][0]["dias"], 8)
+        self.assertTrue(any("rival parece preferir pronto" in l for l in pronto["diario"]))
+        una_oferta = cadena.tick({"tick": 1, "duelos": [dict(base, rival_paquetes=[(140, 1)])]}, cadena.Memoria(), P)
+        self.assertFalse(any("rival parece preferir" in l for l in una_oferta["diario"]))
 
     def test_anuncios_de_el_rastro(self):
         c = Counter({"MAL-01": 3, "LAT-03": 2, "LAT-08": 1})

@@ -365,8 +365,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                     tactica, txt = "pregunta", pregunta
             m = {"destino": "duelo", "id": d["id"], "precio": precio, "texto": txt, "tactica": tactica}
             if d.get("dias"):
-                m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO)
-                if not nuestras:
+                paquetes_rival = d.get("rival_paquetes") or []
+                hacia = duelo.dia_preferido_rival(paquetes_rival) if len(paquetes_rival) >= 2 else None
+                m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
+                if not nuestras or hacia:
                     apunta("DUELISTA", f"{quien} · {por_dia}")
             mensajes.append(m)
 
@@ -400,36 +402,44 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     if tablon and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
         aislado(paso_rastro, tablon, "El Rastro")
 
-    # ---------- una sola firma: la Contable hace la ficha, el Guardia confirma ----------
+    # ---------- la firma: la Contable hace la ficha, el Guardia confirma ----------
+    # El PDF oficial de Causa Prima lo confirma: "Duel messages and accepts have their own limits: they never
+    # block your trading". Los duelos tienen su propio cupo de aceptación por tick, aparte del de la tienda y
+    # El Rastro: los dos pueden firmar en el mismo tick, cada uno dentro de su propia categoría.
+    firmado = {"duelo": None, "tienda": None}
+
     def paso_firma(o):
-        """Devuelve la firma si el Guardia la da. Si ya hay una en este tick, el Guardia dice que no."""
+        """Devuelve la firma si el Guardia la da. Si ya hay una firma de esta misma categoría en este tick
+        (duelo, o tienda/equipo), el Guardia dice que no; una firma de la otra categoría no cuenta."""
+        categoria = "duelo" if o["tipo"] == "duelo" else "tienda"
+        ya_firmado = firmado[categoria] is not None
         if o["tipo"] == "duelo":
             gan = contable.ganancia_duelo(o["rol"], o["limite"], o["precio"])
             apunta("CONTABLE", f"duelo {o['id']} · {o['rol']} · límite {o['limite']} · precio {o['precio']} · gana {gan:+.0f}")
-            ok, motivo = guardia.revisar_duelo(gan, firma is not None, stop, forzar)
+            ok, motivo = guardia.revisar_duelo(gan, ya_firmado, stop, forzar)
             ev = None
         else:
             ev = contable.ficha(o["propuesta"], cuenta, efectivo, p)
             apunta("CONTABLE", f"{o['destino']} {o['id']} · recibo {ev['recibo']:.1f} · entrego {ev['entrego']:.1f} · "
                                f"comisión {ev['comision']} · neto {ev['neto']:+.1f}")
             ok, motivo, ev, _ = guardia.revisar(o["propuesta"], o.get("oferta_juego"), cuenta, efectivo, p,
-                                                ya_firmado_este_tick=firma is not None, stop=stop, forzar=forzar,
+                                                ya_firmado_este_tick=ya_firmado, stop=stop, forzar=forzar,
                                                 tope_por_trato=ordenes.get("tope_por_trato"), ev=ev)
         apunta("GUARDIA", f"{o['destino']} {o['id']} · {'FIRMA' if ok else 'no firma'} · {motivo}")
         if not ok:
-            return None
+            return
         if o["tipo"] in ("vendedor", "final_vendedor") and o["apertura"] != o["precio"]:
             mem.capturas.setdefault(o["vendedor"], []).append({"apertura": o["apertura"], "precio": o["precio"],
                                                                "dia": lectura.get("dia")})
-        return {"destino": o["destino"], "id": o["id"], "oferta_id": o.get("oferta_id"), "precio": o.get("precio"),
-                "motivo": motivo, "ficha": ev}
+        firmado[categoria] = {"destino": o["destino"], "id": o["id"], "oferta_id": o.get("oferta_id"),
+                              "precio": o.get("precio"), "motivo": motivo, "ficha": ev}
 
-    firma = None
-    for o in sorted(cola, key=prioridad.clave):        # el orden de firma vive en prioridad.py
-        firma = aislado(paso_firma, o, "firma") or firma      # un error al revisar una propuesta nunca firma nada
+    for o in sorted(cola, key=prioridad.clave):        # el orden dentro de cada categoría vive en prioridad.py
+        aislado(paso_firma, o, "firma")                 # un error al revisar una propuesta nunca firma nada
 
     mem.mala_fe.extend(mala_fe)
-    return {"mensajes": mensajes, "firma": firma, "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe}
+    return {"mensajes": mensajes, "firma": firmado["tienda"], "firma_duelo": firmado["duelo"],
+            "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe}
 
 
 def lista_compra(cuenta, efectivo, p, mercado=None, listas=None, pagado=None, final=False):
