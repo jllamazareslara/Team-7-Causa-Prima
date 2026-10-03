@@ -1363,11 +1363,17 @@ class Jugar(unittest.TestCase):
         self.assertEqual(b.ofertas, [])
         est = {}
         self.r.anunciar(b, me, est, encendido, 3, True)
-        self.assertEqual([(g["assets"][0], w["cash"], v) for g, w, v in b.ofertas], [(1, 13, "rastro")])   # la protegida no
+        self.assertEqual([(g["assets"][0], w["cash"], v) for g, w, v in b.ofertas], [(1, 13, self.r.mercado_para(13))])   # la protegida no
         self.r.anunciar(b, me, est, encendido, 6, True)
         self.assertEqual(len(b.ofertas), 1)                                                   # ya anunciada: no se repite
         self.r.anunciar(b, me, est, encendido, 3 + self.r.ANUNCIO_DURA, True)
         self.assertEqual(b.ofertas[-1][1]["cash"], 12)                                        # caducó: 1 P más barata
+
+    def test_lo_barato_va_al_mercado_sin_comision(self):
+        hoy = {"mercado_barato": {"venue": "v02", "hasta": 25}}
+        self.assertEqual([self.r.mercado_para(x, hoy) for x in (9, 25, 26)], ["v02", "v02", "rastro"])
+        self.assertEqual(self.r.mercado_para(9, {"mercado_barato": {"venue": "", "hasta": 25}}), "rastro")
+        self.assertEqual(self.r.mercado_para(9, {"tick_segundos": 30}), "rastro")              # sin el ajuste: como antes
 
     def test_pide_cambia_cancela_y_aprende(self):
         from datetime import datetime, timezone
@@ -1388,9 +1394,14 @@ class Jugar(unittest.TestCase):
         self.assertTrue(b.canceladas)                                                          # su petición viva se cancela
         self.assertEqual(est["pagado"]["rare"], [precio])                                      # y se aprende el precio
         seco = self.Juego()
-        apagado = dict(P, **{"cambista.pedir": 0})
+        apagado = dict(P, **{"cambista.pedir": 0, "cambista.cambiar": 0})
         self.r.pedir(seco, me, {}, {"p": apagado, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
-        self.assertEqual(seco.ofertas, [])                                                     # con cambista.pedir = 0, nada
+        self.assertEqual(seco.ofertas, [])                                                     # pedir = 0 y cambiar = 0: nada
+        solo = self.Juego()                                                                    # pedir = 0, cambiar = 1: solo cambios
+        self.r.pedir(solo, me, {}, {"p": dict(P, **{"cambista.pedir": 0, "cambista.cambiar": 1}), "forzar": {}, "ordenes": {}},
+                     103, True, mem, ahora=ahora)
+        self.assertTrue(solo.ofertas)
+        self.assertTrue(all("assets" in g and "cash" not in g for g, w, v in solo.ofertas))  # nada de efectivo
 
     def test_minutos_al_final(self):
         from datetime import datetime, timezone

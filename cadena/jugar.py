@@ -14,7 +14,9 @@ del Guion (cartas guardadas para una fiebre) y del Ojeador (vendedores que desca
 se agotan). Los precios solo se mueven en un sentido y nunca se repiten; la oferta final se acepta si está dentro del
 límite. Toda firma pasa por el Guardia.
 El Rastro (el Cambista): acepta lo que firme el Guardia, y lo que ningún vendedor puede comprarnos hoy se anuncia
-(rastro.publicar = 1); peticiones y cambios carta por carta con cambista.pedir = 1. No abre mercado propio.
+(rastro.publicar = 1); peticiones y cambios carta por carta con cambista.pedir = 1 (solo los cambios, que no gastan
+efectivo, con cambista.cambiar = 1). Lo barato se publica en el mercado sin comisión de "mercado_barato" (t7/hoy.json)
+y también se leen sus tablones. No abre mercado propio.
 Duelos: este programa NO los juega.
 
 AVISO: nadie ha lanzado este archivo contra el juego. La forma de vendedores y del tablón está vista en la prueba en
@@ -50,7 +52,8 @@ CALENDARIO_CADA = 20     # vendedores, calendario y catálogo (El Guion y El Oje
 MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
 MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
 OCUPADO_TICKS = 10       # thread_exists: otra ejecución tiene ya una conversación con ese vendedor; no se reintenta en N ticks
-ANUNCIO_DURA = 40        # ticks que vive un anuncio nuestro en El Rastro
+ANUNCIO_DURA = 40        # ticks que pedimos al juego para un anuncio nuestro en El Rastro
+ANUNCIO_VIVE = 20        # lo que el juego da de verdad (visto el 03/10: pedimos 40 y caduca a los 20)
 MAX_ANUNCIOS_TICK, MAX_OFERTAS = 12, 30   # límites del juego: anuncios nuevos por tick y ofertas abiertas a la vez
 
 
@@ -64,6 +67,12 @@ def _json(ruta, por_defecto):
 def _guardar(ruta, d):
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False, indent=1)
+
+
+def _dura(est):
+    """Ticks que vive de verdad un anuncio nuestro: lo visto en el tablón (est["anuncio_dura"]) o, sin dato, ANUNCIO_VIVE."""
+    d = (est or {}).get("anuncio_dura")
+    return d if isinstance(d, int) and d > 0 else ANUNCIO_VIVE
 
 
 def _linea(nombre, d):
@@ -308,12 +317,34 @@ def mercado_de_venta(hoy=None):
             "solo_repetidas": bool(v.get("solo_repetidas", True))}
 
 
+def mercado_para(precio, hoy=None):
+    """El mercado donde se publica un anuncio o una petición de ese precio. El Rastro cobra 5 % + 1 P por carta (en una
+    carta de 9 P, un 16 %); casi todos los mercados de equipo cobran 0. "mercado_barato" en t7/hoy.json:
+    {"venue": "v02", "hasta": 25} = lo que vale 25 P o menos va a ese mercado, lo demás a El Rastro. Sin venue, todo
+    a El Rastro. En el nuestro no se puede (self_venue). El suelo de precio se sigue calculando con la comisión de
+    El Rastro: de más, nunca de menos. Si hay "vender_en" (mercado_de_venta), los anuncios van allí."""
+    hoy = situacion.leer_hoy() if hoy is None else hoy
+    m = (hoy or {}).get("mercado_barato") or {}
+    venue, hasta = m.get("venue"), m.get("hasta")
+    if isinstance(venue, str) and venue and isinstance(hasta, (int, float)) and precio <= hasta:
+        return venue
+    return "rastro"
+
+
+def otros_mercados(hoy=None):
+    """Los mercados de otros equipos cuyo tablón también se lee ("leer" en mercado_barato de t7/hoy.json), además de
+    El Rastro. Sus ofertas se valoran como las de El Rastro (contando comisión, aunque allí no la haya: de más, nunca de menos)."""
+    hoy = situacion.leer_hoy() if hoy is None else hoy
+    leer = ((hoy or {}).get("mercado_barato") or {}).get("leer") or []
+    return [v for v in leer if isinstance(v, str) and v and v != "rastro"][:4]
+
+
 def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
     """El Cambista vende: anuncia en El Rastro lo que podemos dar sin perder valor (qué y a cuánto lo dice la cadena).
 
     Solo publica en vivo y con rastro.publicar = 1. Con 0 (como viene), enseña una vez lo que anunciaría y no manda nada.
     Lo que un vendedor todavía puede comprarnos hoy para su escalera no se anuncia: va primero al vendedor.
-    est["anuncios"] = {id de la carta: {"ref", "precio", "tick", "caducidades"}}: a los ANUNCIO_DURA ticks se da por
+    est["anuncios"] = {id de la carta: {"ref", "precio", "tick", "caducidades"}}: a los _dura(est) ticks se da por
     caducado y se vuelve a anunciar más barato. Devuelve lo que ha anunciado (o anunciaría)."""
     p, forzar = plan["p"], plan["forzar"]
     publicar = bool(p.get("rastro.publicar"))
@@ -324,7 +355,7 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
     ads = est.setdefault("anuncios", {})
     for aid in [x for x in ads if x not in ids]:                 # vendida, o ya no es nuestra
         ads.pop(aid)
-    vivos = {aid: x for aid, x in ads.items() if tick - x["tick"] < ANUNCIO_DURA}
+    vivos = {aid: x for aid, x in ads.items() if tick - x["tick"] < _dura(est)}
     caducidades = {}
     for aid, x in ads.items():
         if aid not in vivos:
@@ -350,32 +381,34 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
     else:
         nuevos = cadena.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
     mercado = mercado_de_venta()
-    donde = "El Rastro" if mercado["venue"] == "rastro" else f"el mercado {mercado['venue']}"
     margen = p.get("guardia.margen_venta", 0.10)
     puestas = Counter()
     for n in nuevos:
         if mercado["solo_repetidas"] and cuenta[n["carta"]] - activos[n["carta"]] - puestas[n["carta"]] < 2:
             continue                                             # solo repetidas: la última copia no se vende
         n["precio"] = max(n["precio"], V.suelo_venta_rastro(n["pierde"], margen, mercado["pct"], mercado["por_carta"]))
-        libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos)
+        libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos
+                        and aid not in (est.get("ocupadas_juego") or []))
         if not libres:
             continue
         aid = libres[0]
         puestas[n["carta"]] += 1
         mandar = vivo and publicar
+        venue = mercado["venue"] if mercado["venue"] != "rastro" else mercado_para(n["precio"])   # vender_en manda
+        donde = "El Rastro" if venue == "rastro" else f"el mercado {venue}"
         print(f"ANUNCIO      {n['carta']} a {n['precio']} P en {donde} (nos vale {n['pierde']})"
               + (f" · Ojeador {n['ojeador']}" if n.get("ojeador") else "")
               + ("" if mandar else " · no se publica: " + ("en seco" if publicar else "rastro.publicar = 0")))
         if not mandar:
             continue
         try:
-            r = b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue=mercado["venue"],
+            r = b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue=venue,
                              expires_in_ticks=ANUNCIO_DURA)
             r = r if isinstance(r, dict) else {}
             ads[aid] = vivos[aid] = {"ref": n["carta"], "precio": n["precio"], "tick": tick,
                                      "caducidades": caducidades.get(n["carta"], 0),
                                      "id": r.get("id", (r.get("offer") or {}).get("id")),   # para poder cancelarlo
-                                     "venue": mercado["venue"], "pct": mercado["pct"], "por_carta": mercado["por_carta"]}
+                                     "venue": venue, "pct": mercado["pct"], "por_carta": mercado["por_carta"]}
         except Exception as e:                                   # un anuncio que falla no para nada: se apunta
             _linea("errores.jsonl", {"anuncio": n, "error": str(e)})
     return nuevos
@@ -434,7 +467,7 @@ def revisar_publicadas(b, me, est, p, tick, vivo):
 
     ads = est.setdefault("anuncios", {})
     for aid, x in list(ads.items()):
-        if aid not in cartas or tick - x["tick"] >= ANUNCIO_DURA:
+        if aid not in cartas or tick - x["tick"] >= _dura(est):
             continue
         ref = x["ref"]
         perdida = max(V.valor_entregar(cuenta, [ref]) or 0.0, V._your_value(cartas[aid]) or 0.0)
@@ -502,6 +535,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     ("te doy estas repetidas por esta carta"), siguiendo la lista de la compra.
 
     Solo publica en vivo y con cambista.pedir = 1. Con 0 (como viene), enseña una vez la lista y lo que pediría.
+    Los cambios carta por carta (no gastan efectivo) también se publican con cambista.cambiar = 1, aunque pedir = 0.
     est["peticiones"] = {carta: {"precio", "tick", "caducidades", "id"}} y est["trueques"] = {carta: {"doy", "tick", "id"}}:
     a los cambista.peticion_dura_ticks se dan por caducados; una petición vuelve un poco más cara, sin pasar del tope.
     Cuando la carta ya es nuestra se cancela lo que siga vivo por ella (una segunda copia vale el 25 %), y si una
@@ -510,7 +544,8 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     Devuelve las peticiones y los cambios que ha publicado (o publicaría)."""
     p, forzar, ordenes = plan["p"], plan["forzar"], plan.get("ordenes") or {}
     publicar = bool(p.get("cambista.pedir"))
-    if not isinstance(tick, int) or "apagado" in (forzar.get("rastro"), forzar.get("equipo")) or not (publicar or primero):
+    cambiar = publicar or bool(p.get("cambista.cambiar"))      # los cambios no gastan efectivo: tienen su interruptor
+    if not isinstance(tick, int) or "apagado" in (forzar.get("rastro"), forzar.get("equipo")) or not (cambiar or primero):
         return []
     cartas = {str(a["id"]): a for a in me.get("assets") or []
               if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref") and a.get("id") is not None}
@@ -521,7 +556,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     pagado = est.setdefault("pagado", {})
 
     def cancelar(x, que):
-        if vivo and publicar and x.get("id") is not None and tick - x["tick"] < dura:
+        if vivo and cambiar and x.get("id") is not None and tick - x["tick"] < dura:
             try:
                 b.cancel(x["id"])
             except Exception as e:
@@ -552,16 +587,18 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     nota = "" if mandar else " · no se publica: " + ("en seco" if publicar else "cambista.pedir = 0")
 
     # 1. cambios carta por carta: no gastan efectivo, así que van aunque la caja esté seca
-    anunciadas = [x["ref"] for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < ANUNCIO_DURA]
+    anunciadas = [x["ref"] for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < _dura(est)]
     en_venta = [h["carta"] for h in (est.get("hilos") or {}).values() if h.get("lado") == "venta"]
     comprometidas = [r for x in trus_vivos.values() for r in x["doy"]]
     cambios = cadena.trueques_rastro(lista, cuenta, p, anunciadas + en_venta + comprometidas, set(trus), len(trus_vivos))
-    usados = {aid for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < ANUNCIO_DURA}
+    usados = {aid for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < _dura(est)}
     usados |= {aid for x in trus_vivos.values() for aid in x.get("ids", [])}
+    usados |= set(est.get("ocupadas_juego") or [])
+    nota_cambio = "" if vivo and cambiar else " · no se publica: " + ("en seco" if cambiar else "cambista.cambiar = 0")
     for c in cambios:
         print(f"CAMBIO       damos {' + '.join(c['doy'])} (nos valen {c['pierdo']}) por {c['quiero']} (nos vale {c['nos_vale']}) "
-              f"· gana {c['gana']:+.1f} · {c['motivo']}{nota}")
-        if not mandar:
+              f"· gana {c['gana']:+.1f} · {c['motivo']}{nota_cambio}")
+        if not (vivo and cambiar):
             continue
         ids = []
         for ref in c["doy"]:
@@ -580,19 +617,20 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
         except Exception as e:
             _linea("errores.jsonl", {"trueque": c, "error": str(e)})
 
-    # 2. peticiones con efectivo, solo de lo que eligió la mochila
-    if ordenes.get("compras") == "ninguna":                     # caja seca: no se compromete efectivo
+    # 2. peticiones con efectivo, solo de lo que eligió la mochila (solo con cambista.pedir = 1)
+    if ordenes.get("compras") == "ninguna" or not (publicar or primero):   # caja seca: no se compromete efectivo
         return cambios
     nuevas = cadena.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades,
                                       getattr(mem, "demanda", None), final)
     for n in nuevas:
         if n["carta"] in trus_vivos or any(c["quiero"] == n["carta"] for c in cambios):
             continue                                            # ya se pide con un cambio: no pagar además
-        print(f"PETICIÓN     {n['carta']} a {n['precio']} P en El Rastro (nos vale {n['nos_vale']}, tope {n['tope']}) · {n['motivo']}{nota}")
+        mercado = mercado_para(n["precio"])
+        print(f"PETICIÓN     {n['carta']} a {n['precio']} P en {mercado} (nos vale {n['nos_vale']}, tope {n['tope']}) · {n['motivo']}{nota}")
         if not mandar:
             continue
         try:
-            r = b.list_offer(give={"cash": n["precio"]}, want={"cards": [n["carta"]]}, venue="rastro",
+            r = b.list_offer(give={"cash": n["precio"]}, want={"cards": [n["carta"]]}, venue=mercado,
                              expires_in_ticks=dura)
             r = r if isinstance(r, dict) else {}
             oid = r.get("id", (r.get("offer") or {}).get("id"))
@@ -609,6 +647,7 @@ def cartas_para(oferta, me, est):
     refs = [r for r in want.get("cards") or [] if isinstance(r, str)]
     refs += [t.split(":", 1)[1] for t in want.get("types") or [] if isinstance(t, str) and t.startswith("card:")]
     ocupadas = set(est.get("anuncios") or {}) | {aid for x in (est.get("trueques") or {}).values() for aid in x.get("ids", [])}
+    ocupadas |= set(est.get("ocupadas_juego") or [])            # comprometidas por cualquier programa del equipo
     nuestras, elegidas = _cartas(me), []
     for ref in refs:
         libre = next((aid for aid in sorted(nuestras) if nuestras[aid]["ref"] == ref
@@ -694,7 +733,37 @@ def leer(b, est, tick, con_tablon=True):
         try:
             res = b.board("rastro")
             ofertas = res.get("offers", []) if isinstance(res, dict) else res
-            lectura["tablon"] = [o for o in ofertas or [] if isinstance(o, dict) and o.get("maker") not in nosotros]
+            ofertas = [o for o in ofertas or [] if isinstance(o, dict)]
+            for otro in otros_mercados():                        # los tablones sin comisión: un fallo en uno no quita El Rastro
+                try:
+                    r2 = b.board(otro)
+                    vistas = {o.get("id") for o in ofertas}
+                    ofertas += [o for o in (r2.get("offers", []) if isinstance(r2, dict) else r2) or []
+                                if isinstance(o, dict) and o.get("id") not in vistas]
+                except Exception as e:
+                    _linea("errores.jsonl", {"tick": tick, "tablon": otro, "error": str(e)})
+            somos = {str(x) for x in nosotros}
+            mias = {aid for aid, x in (est.get("anuncios") or {}).items()     # las cartas que tenemos anunciadas ahora
+                    if not isinstance(tick, int) or tick - x.get("tick", tick) < _dura(est)}
+            try:                                                 # nuestras ofertas, dichas por el juego: las ponga quien las ponga
+                en_juego = [o for o in (b.my_offers() or {}).get("offers") or []          # también trae las que nos hacen a nosotros
+                            if isinstance(o, dict) and str(o.get("maker")) in somos]
+                propias = {o.get("id") for o in en_juego}
+                # cartas ya comprometidas por CUALQUIER programa del equipo: no se tocan
+                est["ocupadas_juego"] = sorted({str(a["id"]) for o in en_juego for a in (o.get("give") or {}).get("assets") or []
+                                                if isinstance(a, dict) and a.get("id") is not None})
+            except Exception as e:
+                propias = set()
+                _linea("errores.jsonl", {"tick": tick, "my_offers": str(e)})
+            # el juego firma las ofertas con un identificador (m5e6…), no con el nombre: quien anuncia una carta nuestra somos nosotros
+            somos |= {str(o.get("maker")) for o in ofertas
+                      if o.get("id") in propias or any(isinstance(a, dict) and str(a.get("id")) in mias for a in (o.get("give") or {}).get("assets") or [])}
+            lectura["tablon"] = [o for o in ofertas if str(o.get("maker")) not in somos]
+            duras = [o["expires_tick"] - o["created_tick"] for o in ofertas       # lo que el juego deja vivir un anuncio nuestro
+                     if str(o.get("maker")) in somos and (o.get("give") or {}).get("assets")
+                     and isinstance(o.get("expires_tick"), int) and isinstance(o.get("created_tick"), int)]
+            if duras and min(duras) > 0:
+                est["anuncio_dura"] = min(duras)
             _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
         except Exception as e:
             _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})

@@ -127,3 +127,68 @@ class FormasReales(unittest.TestCase):
         self.assertIn("139", d[0]["texto"])
         director.vendedores_nuevos(Juego(), est, {})
         self.assertEqual(est["niveles"], {"abuela": 1, "pilar": 3})
+
+
+class TablonSinNosotros(unittest.TestCase):
+    def test_nuestros_anuncios_no_cuentan_como_competencia(self):
+        """El juego firma las ofertas con un identificador (m5e6…), no con el nombre del equipo."""
+        import jugar as rastro                                   # rastro.py es ahora jugar.py
+
+        class Juego:
+            def me(self):
+                return {"id": "t07", "name": "Team 7", "cash": 78, "assets": [{"id": 274, "kind": "card", "ref": "MAL-04"}]}
+
+            def board(self, venue):
+                return {"offers": [
+                    {"id": 1, "maker": "m5e679080", "give": {"assets": [{"id": 274, "ref": "MAL-04"}]}, "want": {"cash": 9},
+                     "created_tick": 580, "expires_tick": 600},
+                    {"id": 2, "maker": "m5e679080", "give": {"cash": 4}, "want": {"types": ["card:RET-02"]}},
+                    {"id": 9, "maker": "m5e679080", "give": {"assets": [{"id": 651, "ref": "MAL-01"}]}, "want": {"cash": 14}},
+                    {"id": 3, "maker": "mcd38ffd5", "give": {"assets": [{"id": 8345, "ref": "MAL-04"}]}, "want": {"cash": 7}}]}
+
+            def my_offers(self):                                  # otro programa del equipo anunció la 9: también es nuestra
+                return {"offers": [{"id": 9, "maker": "t07", "give": {"assets": [{"id": 651, "ref": "MAL-01"}]}},
+                                   {"id": 3, "maker": "abuela", "to": "t07", "give": {"assets": [{"id": 730}]}}]}   # nos la hacen: no es nuestra
+
+        est = {"anuncios": {}}                                    # nada en nuestro registro: solo lo que dice el juego
+        with tempfile.TemporaryDirectory() as d:
+            runs, rastro.RUNS = getattr(rastro, "RUNS", None), d
+            try:
+                lectura, _ = rastro.leer(Juego(), est, 581)
+            finally:
+                rastro.RUNS = runs
+        self.assertEqual([o["id"] for o in lectura["tablon"]], [3])       # ni nuestro anuncio ni nuestra petición
+        self.assertEqual(est["ocupadas_juego"], ["651"])                  # esa carta ya está comprometida: ni se anuncia ni se da
+        me = {"assets": [{"id": 651, "kind": "card", "ref": "MAL-01"}]}
+        self.assertIsNone(rastro.cartas_para({"want": {"types": ["card:MAL-01"]}}, me, est))
+        self.assertEqual(rastro.cartas_para({"want": {"types": ["card:MAL-01"]}}, me, {}), [651])
+        self.assertEqual(est["anuncio_dura"], 20)                         # pedimos 40: el juego da 20, y se aprende
+        self.assertEqual(rastro._dura(est), 20)
+        self.assertEqual(rastro._dura({}), rastro.ANUNCIO_VIVE)
+
+
+class CambioCartaPorCarta(unittest.TestCase):
+    """La oferta 8885 del 03/10, tal cual: dan LAV-08 y piden want.types = ["card:LAV-06"]. Se firmó creyendo dar 0."""
+    OFERTA = {"id": 8885, "maker": "m89046474",
+              "give": {"cash": 0, "assets": [{"id": 718, "kind": "card", "ref": "LAV-08"}], "types": []},
+              "want": {"cash": 0, "assets": [], "types": ["card:LAV-06"]}}
+
+    def test_la_carta_que_damos_cuenta(self):
+        self.assertEqual(cambista.pedidas(self.OFERTA["want"]), ["LAV-06"])
+        self.assertEqual(cambista.pedidas({"cards": ["LAT-03"]}), ["LAT-03"])
+        self.assertIsNone(cambista.pedidas({"types": ["pack:LAV"]}))                # no sabemos valorarlo: no se toca
+        cuenta = {"LAV-06": 2, "LAV-08": 1}                                         # repetida por repetida, y la comisión
+        self.assertEqual(cambista.oportunidades([self.OFERTA], cuenta, 78, reserva=60, p=P), [])
+        raro = dict(self.OFERTA, want={"cash": 0, "types": ["pack:LAV"]})
+        self.assertEqual(cambista.oportunidades([raro], cuenta, 78, reserva=60, p=P), [])
+
+    def test_el_ojeador_ve_la_demanda(self):
+        from t7 import ojeador
+        mercado, demanda = {}, {}
+        ojeador.apuntar_mercado(mercado, [{"id": 1, "maker": "mab", "give": {"cash": 10, "assets": [], "types": []},
+                                          "want": {"cash": 0, "assets": [], "types": ["card:RET-02"]}}], demanda)
+        self.assertEqual(demanda, {"RET-02": [10]})
+
+
+if __name__ == "__main__":
+    unittest.main()

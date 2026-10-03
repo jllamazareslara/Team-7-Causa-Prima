@@ -11,9 +11,12 @@
  "duelo": {"rondas": 16, "descuento_ronda": 0.92},
  "enfados": {},
  "apagar": [],
+ "_mercado_barato": "Dónde publica el Cambista lo barato. venue = el mercado de otro equipo (0 % el 3/10: v02 El Duende, v07 Team 10, v01 Team 6); hasta = precio máximo que va allí, lo demás a El Rastro. venue vacío = todo a El Rastro.",
+ "mercado_barato": {"venue": "v02", "hasta": 25, "leer": ["v02", "v07", "v01"]},
  "ajustes": {
   "rastro.publicar": 1,
-  "cambista.pedir": 1,
+  "cambista.pedir": 0,
+  "rastro.precio_inicial_lista": 1.3,
   "tienda.chato.apertura_compra": 0.6
  }
 }

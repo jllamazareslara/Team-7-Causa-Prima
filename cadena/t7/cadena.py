@@ -171,16 +171,37 @@ def operaciones(cuenta, efectivo, menus, mem, lectura, ordenes=None, abiertas=()
 
 def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), listas=None, caducidades=None, maximo=12):
     """El Cambista vende con sus consejeros: anuncios_rastro() sin las cartas que esperan una fiebre (Guion) y con el
-    precio ajustado al mercado y al momento (Ojeador), nunca por debajo de V.suelo_venta_rastro (valor + comisión + margen)."""
+    precio ajustado al mercado y al momento (Ojeador), nunca por debajo de V.suelo_venta_rastro (valor + comisión + margen).
+    Sin demanda no se malvende: una carta que nadie pide y que ya venden cambista.sin_demanda_vendedores equipos no se
+    anuncia (se guarda para cambios). Cazador de páginas: a quien pide la misma carta cambista.caza_veces veces no se
+    le vende por debajo de lo mejor que ha ofrecido."""
     excluidas = set(excluidas) | set(_reservadas(cuenta, mem, lectura))
-    out = anuncios_rastro(cuenta, p, activos, ocupadas, excluidas, listas, caducidades, maximo)
     t = lectura.get("tick") if isinstance(lectura.get("tick"), (int, float)) else 0
+    obs = [{"maker": m, "ref": ref, "precio": pr, "lado": lado}
+           for ref, xs in (mem.historial or {}).items() if V.conocida(ref)
+           for tk, pr, lado, m in xs if lado == "compra" and isinstance(pr, (int, float)) and isinstance(tk, (int, float))
+           and t - tk <= 120]
+    caza = {}
+    for ref, _, mejor, _ in cambista.cazador_de_paginas(obs, cuenta, veces=int(p.get("cambista.caza_veces", 2))):
+        caza[ref] = max(caza.get(ref, 0), mejor)
+    minimo_vend = int(p.get("cambista.sin_demanda_vendedores", 0))
+    sin_demanda = set()
+    if minimo_vend:
+        for ref, n in cuenta.items():
+            if n > 0 and ref not in caza:
+                tend = ojeador.tendencia(mem.historial, ref, t)
+                if tend["compradores"] == 0 and tend["vendedores"] >= minimo_vend:
+                    sin_demanda.add(ref)
+    out = anuncios_rastro(cuenta, p, activos, ocupadas, excluidas | sin_demanda, listas, caducidades, maximo)
     mom = lectura.get("momento") or {"fase": "normal", "vender": 1.0}
     for n in out:
         antes = n["precio"]
         suelo = V.suelo_venta_rastro(n["pierde"], p.get("guardia.margen_venta", 0.10))
         n["precio"] = ojeador.precio_venta(antes, suelo, ojeador.tendencia(mem.historial, n["carta"], t),
                                            mom, mem.escasez.get(n["carta"]))
+        if n["carta"] in caza and n["precio"] < caza[n["carta"]]:
+            n["precio"] = math.ceil(caza[n["carta"]])
+            n["cazador"] = f"la pide varias veces, hasta {caza[n['carta']]} P"
         if n["precio"] != antes:
             n["ojeador"] = f"{antes} → {n['precio']} ({mom.get('fase', 'normal')})"
     return out

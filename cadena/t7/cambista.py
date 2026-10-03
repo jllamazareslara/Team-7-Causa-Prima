@@ -51,6 +51,25 @@ def precio_anuncio(lista_vendedor, perdida, caducidades, p):
     return max(inicial - p["rastro.bajada_por_caducidad"] * caducidades, minimo)
 
 
+def pedidas(want):
+    """Las cartas que pide una oferta, tal como las escribe el juego: want.types = ["card:LAV-06"] (lo que manda de verdad),
+    want.cards = ["LAV-06"] o want.assets (una copia concreta). None si pide algo que no sabemos valorar: no se toca."""
+    refs = []
+    for r in want.get("cards") or []:
+        if not isinstance(r, str):
+            return None
+        refs.append(r)
+    for t in want.get("types") or []:
+        if not (isinstance(t, str) and t.startswith("card:")):
+            return None
+        refs.append(t.split(":", 1)[1])
+    for a in want.get("assets") or []:
+        if not (isinstance(a, dict) and isinstance(a.get("ref"), str)):
+            return None
+        refs.append(a["ref"])
+    return refs
+
+
 def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=None):
     """tablon = [{"id", "maker", "give": {...}, "want": {...}}] tal como lo da board("rastro").
     Devuelve las ofertas que nos convendría ACEPTAR, de más a menos neto, con su ficha.
@@ -62,7 +81,9 @@ def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=N
     for o in tablon:
         give, want = o.get("give", {}), o.get("want", {})
         recibo_cartas = [a["ref"] if isinstance(a, dict) else a for a in give.get("assets", [])]
-        entrego_cartas = list(want.get("cards", []))
+        entrego_cartas = pedidas(want)                     # la carta que damos cuenta: sin esto un cambio parecía gratis
+        if entrego_cartas is None:
+            continue
         prop = {"tipo": "equipo", "mercado": "rastro", "pagamos_comision": True,
                 "recibo": {"cartas": recibo_cartas, "primas": give.get("cash", 0) or 0},
                 "entrego": {"cartas": entrego_cartas, "primas": want.get("cash", 0) or 0}}
