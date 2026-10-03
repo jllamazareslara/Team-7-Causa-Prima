@@ -6,18 +6,22 @@ Sin red y sin azar: no llama al juego, no lee la clave y no acepta nada. Quien h
 `director.py` o el `play.py` del repositorio) solo tiene que hacer dos cosas: construir `lectura` y aplicar `acciones`.
 
 Orden dentro de un tick (cada paso es un agente):
-    1. Escudo        mira el texto que llega, cuenta avisos por contraparte y apunta candidatos a mala fe
-                     (el texto dice un precio y la oferta pide otro). No cambia ninguna decisión.
-    2. Espía         lee pistas del texto de los vendedores (número y tono) y solo las apunta; pregunta a un vendedor
-                     en una conversación de prueba al día, con su escalera ya hecha; y en duelos manda un canario y,
-                     si el rival lee el texto, una pregunta directa.
-                     REGLA: lo que sale de un texto va al diario y a la elección de las palabras, nunca a un precio.
-    3. Regateador    una decisión por conversación con un vendedor: precio nuevo, aceptar o retirarse.
-    4. Duelista      una decisión por duelo.
-    5. Cambista      lo que renta del tablón de El Rastro (solo cuando el director lo trae).
-    6. Contable + Guardia   de todas las propuestas de aceptar, el Director elige el orden y el Guardia firma UNA.
-    7. Portavoz      escribe el mensaje de cada precio nuevo (o una pregunta del Espía, si toca).
-    8. Diario        una línea por decisión, con su motivo.
+    1. Ojos          cuentan qué pasa en el mercado y si hay novedades: novedades del juego (Vigía), perfil de cada
+                     vendedor (Observador) y precios de El Rastro. Solo miran. Ver `ojos.py`.
+    2. Contable      hace las cuentas para todos con la calculadora: tope o suelo de cada conversación, lo que deja
+                     pagar la caja, y la ficha de cada trato que va a firmar el Guardia. No decide. Ver `contable.py`.
+    3. Negociadores  hacen el trámite, cada uno con sus números:
+                       Regateador  una decisión por conversación con un vendedor: precio nuevo, aceptar o retirarse.
+                       Duelista    una decisión por duelo.
+                       Cambista    lo que renta del tablón de El Rastro (solo cuando el director lo trae).
+                     Ayudantes del Regateador y de la Duelista (no son pasos propios):
+                       Escudo      mira el texto que llega, cuenta avisos por contraparte y apunta candidatos a mala fe.
+                       Espía       lee pistas del texto y solo las apunta; pregunta en una conversación de prueba al día;
+                                   en duelos manda un canario y, si el rival lee el texto, una pregunta directa.
+                                   REGLA: lo que sale de un texto va al diario y a las palabras, nunca a un precio.
+                       Portavoz    escribe el mensaje de cada precio nuevo.
+    4. Guardia       confirma al final: de todas las propuestas de aceptar firma UNA, con la ficha de la Contable.
+    5. Diario        una línea por decisión, con su motivo.
 
 lectura = {
   "tick": n, "efectivo": n, "cuenta": {ref: copias},
@@ -26,13 +30,15 @@ lectura = {
                   "texto": su último mensaje, "lista": precio de lista (vendiendo), "cerrado": None|"cooloff"|...}],
   "duelos":     [{"id", "rol": "seller"|"buyer", "limite", "rival": [...], "nuestras": [...], "ronda", "rondas",
                   "ticks_restantes", "texto", "escenario", "dias": bool}],
-  "tablon":     ofertas de El Rastro tal como las da board("rastro"), o None si este tick no se ha leído
+  "tablon":     ofertas de El Rastro tal como las da board("rastro"), o None si este tick no se ha leído,
+  "novedades":  lo nuevo del juego según el Vigía (novedades.comparar), o nada
 }
 """
 import math
 import re
 
-from . import cambista, defensa, duelo, guardia, params, prioridad, sondas, tienda
+from . import cambista, contable, defensa, duelo, guardia, ojos, params, prioridad, sondas, tienda
+from .ojos import MERCADO_RECUERDA, apuntar_mercado  # noqa: F401  (se usan desde fuera: director y pruebas)
 from . import valor as V
 from .portavoz import Portavoz
 
@@ -83,14 +89,6 @@ def _solo_el_precio(texto, precio):
     return all(int(x) == int(precio) for x in re.findall(r"\d+", texto or ""))
 
 
-def _limite_vendedor(c, cuenta):
-    """Nuestro tope (comprando) o suelo (vendiendo) para esa carta, con el bono de página incluido."""
-    if c["lado"] == "compra":
-        return math.floor(V.valor_recibir(cuenta, [c["carta"]]))
-    perdida = V.valor_entregar(cuenta, [c["carta"]])
-    return None if perdida is None else math.ceil(perdida + 1)
-
-
 def _propuesta_vendedor(c, precio):
     if c["lado"] == "compra":
         return {"tipo": "vendedor", "recibo": {"cartas": [c["carta"]]}, "entrego": {"primas": precio}}
@@ -115,9 +113,13 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         mem.vistos[clave] = texto
         return True
 
-    # ---------- vendedores: Escudo → Espía → Regateador ----------
+    # ---------- 1. Ojos: qué pasa en el mercado y qué hay de nuevo ----------
+    vista = ojos.mirar(lectura, mem, p, apunta)
+
+    # ---------- vendedores: Contable → Regateador (con Escudo, Espía y Portavoz) ----------
     def paso_vendedor(c):
         hilo, quien, texto = str(c["id"]), c["vendedor"], c.get("texto") or ""
+        cuentas = contable.para_vendedor(c, cuenta, efectivo, p, ordenes)
         es_nuevo = nuevo(hilo, texto)
         if es_nuevo:
             motivos, _ = mem.escudo.anotar(quien, texto)
@@ -126,7 +128,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         if c.get("cerrado"):
             apunta("TIENDA", f"{quien} cerró la conversación ({c['cerrado']})")
             return
-        if not V.conocida(c["carta"]):                       # conocer el valor antes de comprar: sin dato, no se opera
+        if not cuentas["conocida"]:                          # conocer el valor antes de comprar: sin dato, no se opera
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "carta sin valor conocido"})
             apunta("TIENDA", f"{quien} · {c['carta']}: no sabemos cuánto nos vale (barrio o código nuevo), se cierra")
             return
@@ -147,19 +149,21 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             mala_fe.append({"hilo": c["id"], "vendedor": quien, "motivo": motivo, "tick": t})
             apunta("ESCUDO", f"{quien} · candidato a mala fe: {motivo}. Lo decide el equipo.")
 
-        limite = _limite_vendedor(c, cuenta)
-        if limite is None or (c["lado"] == "venta" and V.protegida(cuenta, c["carta"])):
+        limite = cuentas["limite"]
+        if limite is None or cuentas["protegida"]:
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "carta protegida o que ya no tenemos"})
             apunta("TIENDA", f"{quien} · {c['carta']}: protegida o ya no la tenemos, se cierra")
             return
         if c["lado"] == "compra":                            # no regatear por algo que la caja no puede pagar
-            caja = _caja_para_comprar(c["carta"], cuenta, efectivo, p, ordenes)
+            caja = cuentas["caja"]
             if caja < 1:
                 cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "no hay caja para esta compra"})
                 apunta("TIENDA", f"{quien} · {c['carta']}: no hay caja para comprar sin tocar la reserva, se cierra")
                 return
             limite = min(limite, caja)
-        pf = params.perfil(p, quien)
+        apunta("CONTABLE", f"{quien} · {c['lado']} {c['carta']} · nos vale {cuentas['nos_vale']:.1f} · "
+                           f"{'tope' if c['lado'] == 'compra' else 'suelo'} {limite}")
+        pf = vista["perfiles"].get(quien) or params.perfil(p, quien)       # el perfil lo traen los Ojos
         st = {"lado": c["lado"], "limite": limite, "suyas": c["suyas"], "nuestras": c.get("nuestras", []),
               "final": bool(c.get("final")), "lista": c.get("lista")}
         if not st["nuestras"] and c["lado"] == "compra" and ordenes.get("compras") == "ninguna":
@@ -210,7 +214,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     for c in lectura.get("vendedores") or []:
         aislado(paso_vendedor, c, "vendedor")
 
-    # ---------- duelos: Escudo → Duelista ----------
+    # ---------- duelos: Duelista (con Escudo, Espía y Portavoz) ----------
     def paso_duelo(d):
         quien = f"duelo-{d['id']}"
         if nuevo(quien, d.get("texto") or ""):
@@ -244,7 +248,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         if accion == "aceptar":
             quedan = d.get("ticks_restantes")
             cola.append({"tipo": "duelo", "urgente": quedan is not None and quedan <= 2, "destino": "duelo",
-                         "id": d["id"], "precio": precio, "ganancia": duelo.ganancia(rol, lim, precio)})
+                         "id": d["id"], "precio": precio, "rol": rol, "limite": lim})
         elif accion == "ofrecer":
             nuestras, rival = st["nuestras"], st["rival"]
             cedimos = bool(nuestras) and precio != nuestras[-1]
@@ -269,10 +273,9 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     for d in lectura.get("duelos") or []:
         aislado(paso_duelo, d, "duelo")
 
-    # ---------- El Rastro: Cambista ----------
+    # ---------- El Rastro: Cambista (los precios ya los apuntaron los Ojos) ----------
     def paso_rastro(tablon):
         tablon = [o for o in tablon if isinstance(o, dict)]
-        apuntar_mercado(mem.mercado, tablon, mem.demanda)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
             apunta("CAMBISTA", f"El Rastro · oferta {o['oferta']} de {o['maker']} · neto {o['neto']:+.1f}")
             oferta = next((x for x in tablon if x.get("id") == o["oferta"]), None)
@@ -283,7 +286,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     if tablon and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
         aislado(paso_rastro, tablon, "El Rastro")
 
-    # ---------- una sola firma: Director → Contable → Guardia ----------
+    # ---------- una sola firma: la Contable hace la ficha, el Guardia confirma ----------
     def orden(o):
         return (0 if o.get("urgente") else 1, {"duelo": 0, "final_vendedor": 1, "equipo": 2, "vendedor": 3}[o["tipo"]],
                 -o.get("neto", 0))
@@ -291,12 +294,17 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     def paso_firma(o):
         """Devuelve la firma si el Guardia la da. Si ya hay una en este tick, el Guardia dice que no."""
         if o["tipo"] == "duelo":
-            ok, motivo = guardia.revisar_duelo(o["ganancia"], firma is not None, stop, forzar)
+            gan = contable.ganancia_duelo(o["rol"], o["limite"], o["precio"])
+            apunta("CONTABLE", f"duelo {o['id']} · {o['rol']} · límite {o['limite']} · precio {o['precio']} · gana {gan:+.0f}")
+            ok, motivo = guardia.revisar_duelo(gan, firma is not None, stop, forzar)
             ev = None
         else:
+            ev = contable.ficha(o["propuesta"], cuenta, efectivo, p)
+            apunta("CONTABLE", f"{o['destino']} {o['id']} · recibo {ev['recibo']:.1f} · entrego {ev['entrego']:.1f} · "
+                               f"comisión {ev['comision']} · neto {ev['neto']:+.1f}")
             ok, motivo, ev, _ = guardia.revisar(o["propuesta"], o.get("oferta_juego"), cuenta, efectivo, p,
                                                 ya_firmado_este_tick=firma is not None, stop=stop, forzar=forzar,
-                                                tope_por_trato=ordenes.get("tope_por_trato"))
+                                                tope_por_trato=ordenes.get("tope_por_trato"), ev=ev)
         apunta("GUARDIA", f"{o['destino']} {o['id']} · {'FIRMA' if ok else 'no firma'} · {motivo}")
         if not ok:
             return None
@@ -314,31 +322,6 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     return {"mensajes": mensajes, "firma": firma, "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe}
 
 
-MERCADO_RECUERDA = 12      # precios vistos por carta que guarda el Cambista
-
-
-def _apunta(d, ref, precio):
-    vistos = d.setdefault(ref, [])
-    vistos.append(precio)
-    del vistos[:-MERCADO_RECUERDA]
-
-
-def apuntar_mercado(mercado, tablon, demanda=None):
-    """El Cambista aprende los precios del tablón de El Rastro (los últimos MERCADO_RECUERDA por carta):
-    mercado  ← anuncios que venden UNA carta por efectivo: la lista de la compra espera pagar lo más barato visto
-    demanda  ← peticiones que ofrecen efectivo por UNA carta: si otro equipo compite por una carta que queremos,
-               nuestra petición pide 1 P más que él (mientras quepa en el tope)"""
-    for o in tablon:
-        give, want = o.get("give") or {}, o.get("want") or {}
-        cartas, pide = give.get("assets") or [], want.get("cards") or []
-        if len(cartas) == 1 and not give.get("cash") and not pide and isinstance(want.get("cash"), (int, float))                 and want["cash"] > 0:
-            ref = cartas[0].get("ref") if isinstance(cartas[0], dict) else cartas[0]
-            if isinstance(ref, str):
-                _apunta(mercado, ref, want["cash"])
-        elif demanda is not None and len(pide) == 1 and not cartas and isinstance(give.get("cash"), (int, float))                 and give["cash"] > 0 and isinstance(pide[0], str):
-            _apunta(demanda, pide[0], give["cash"])
-
-
 def lista_compra(cuenta, efectivo, p, mercado=None, listas=None, pagado=None, final=False):
     """El Cambista compra: la lista de la compra (ver cambista.lista_compra)."""
     return cambista.lista_compra(cuenta, efectivo, p, mercado=mercado, listas=listas, pagado=pagado, final=final)
@@ -352,16 +335,6 @@ def peticiones_rastro(lista, cuenta, efectivo, p, activas=None, caducidades=None
 def trueques_rastro(lista, cuenta, p, ocupadas=(), activas=(), vivos=None):
     """El Cambista cambia: qué cambios carta por carta ofrecer en El Rastro (ver cambista.trueques)."""
     return cambista.trueques(lista, cuenta, p, ocupadas, activas, vivos=vivos)
-
-
-def _caja_para_comprar(carta, cuenta, efectivo, p, ordenes):
-    """Lo máximo que la caja deja pagar por esta carta: lo que queda sobre la reserva y, con la caja justa, el tope
-    por trato (salvo la carta que completa una página, igual que en el Guardia)."""
-    libre = math.floor(efectivo - p["guardia.reserva_efectivo"])
-    tope = ordenes.get("tope_por_trato")
-    if tope is None or V.estado_pagina(cuenta, V.barrio(carta))[1] == [carta]:
-        return libre
-    return min(libre, tope)
 
 
 def anuncios_rastro(cuenta, p, activos=None, ocupadas=(), excluidas=(), listas=None, caducidades=None, maximo=12):
