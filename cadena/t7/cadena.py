@@ -390,7 +390,7 @@ def tratos_de_hoy(mem, dia):
 
 
 def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None,
-                        guardar=None, niveles=None):
+                        guardar=None, niveles=None, senales=None):
     """Qué operación abrir con cada vendedor que no tiene conversación: primero vender, luego comprar.
 
     menus = {vendedor: {"vende": {ref: precio de lista}, "compra": {ref: lo que ofrece de entrada}}}
@@ -401,6 +401,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     guardar = {ref: vendedor al que sí se vende ahora, o None} (guion.reservadas): cartas que esperan una fiebre.
     Durante la fiebre van primero al vendedor de la fiebre.
     niveles = {vendedor: nivel}: los niveles altos pesan más en la escalera, así que sus operaciones van delante.
+    senales = {ref: {"rastro": precio hoy en El Rastro con comisión o None, "escasa": bool}} (ojeador.senales_vendedor):
+    una carta casi agotada se compra antes; con la escalera de ese vendedor ya hecha, no se le compra lo que
+    sale más barato en El Rastro (lo compra el Cambista).
     """
     ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
@@ -431,9 +434,13 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
                 continue
             if ordenes.get("compras") == "escalera_y_pagina" and not completa and lista > (ordenes.get("tope_por_trato") or 0):
                 continue
-            compras.append((not completa, -(vale - lista), ref, lista))
+            s = (senales or {}).get(ref) or {}
+            rastro = s.get("rastro")
+            if cupo_lleno and rastro is not None and rastro < lista and not completa:
+                continue                                  # escalera hecha y en El Rastro sale más barata
+            compras.append((not completa, not s.get("escasa"), -(vale - lista), ref, lista))
         if compras:
-            _, _, ref, lista = min(compras)
+            _, _, _, ref, lista = min(compras)
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "compra", "carta": ref, "lista": lista})
     nivel = {v: n for v, n in (niveles or {}).items() if isinstance(n, (int, float)) and not isinstance(n, bool)}

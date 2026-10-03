@@ -112,6 +112,12 @@ def leer(b, est, tick):
         if estado in ("deal", "walked", "closed", "cooloff") or vigente is None:
             if estado in ("deal", "walked", "closed", "cooloff"):
                 est["hilos"].pop(hid)
+                motivo = crudo.get("closed_reason") or estado    # cupo agotado o enfado: ese vendedor descansa
+                desc = ojeador.descanso(motivo, _hora_de_juego(est), tick, crudo.get("until_tick"))
+                if desc and h.get("vendedor"):
+                    est.setdefault("descansos", {})[h["vendedor"]] = desc
+                    print(f"DESCANSA     {h['vendedor']} ({motivo}) hasta " +
+                          (f"la hora de juego {desc['hasta_h']:g}" if "hasta_h" in desc else f"el tick {desc['hasta_tick']}"))
                 if estado != "deal":
                     lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0], cerrado=crudo.get("closed_reason") or estado))
             else:                                                # abierta, pero sin una oferta suya que entendamos
@@ -333,7 +339,7 @@ def precios_de_venta(menus):
     return precios
 
 
-def abrir(b, me, est, plan, vivo, menus=None, tratos=None):
+def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, tick=None):
     """Rellena los huecos: una conversación nueva por vendedor libre, según menus.json. Primero vender, luego comprar."""
     menus = _json(os.path.join(AQUI, "menus.json"), None) if menus is None else menus
     huecos = MAX_HILOS - len(est["hilos"])
@@ -343,9 +349,15 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None):
     for x in (est.get("anuncios") or {}).values():               # lo anunciado en El Rastro no se ofrece además a un vendedor
         cuenta[x["ref"]] -= 1
     abiertas = {h["vendedor"] for h in est["hilos"].values()}
+    hora = _hora_de_juego(est)                                   # los que descansan (cupo agotado, enfado) no se abren
+    abiertas |= {v for v, d in (est.get("descansos") or {}).items() if ojeador.descansa(d, hora, tick)}
+    senales = None
+    if mem is not None:                                          # el Ojeador: El Rastro más barato, cartas que se agotan
+        refs = {r for m in menus.values() if isinstance(m, dict) for r in (m.get("vende") or {})}
+        senales = ojeador.senales_vendedor(mem.historial, refs, tick if isinstance(tick, int) else 0, est.get("escasez"))
     ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos,
                                      plan["p"].get("tienda.tratos_por_vendedor_y_dia"),
-                                     guardar=reservadas(est, cuenta), niveles=est.get("niveles"))
+                                     guardar=reservadas(est, cuenta), niveles=est.get("niveles"), senales=senales)
     for op in ops[:huecos]:
         if op["lado"] == "venta":
             ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
@@ -612,7 +624,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
         aplicar(b, acciones, est, vivo)
         soltar_mudos(b, est, lectura, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: se abre al tick siguiente
-            abrir(b, me, est, plan, vivo, menus, cadena.tratos_de_hoy(mem, dia))
+            abrir(b, me, est, plan, vivo, menus, cadena.tratos_de_hoy(mem, dia), mem=mem, tick=tick)
             if primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0):
                 anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, dia), primero, mem=mem)
         if primero or (isinstance(tick, int) and tick % VENDEDORES_CADA == 0):

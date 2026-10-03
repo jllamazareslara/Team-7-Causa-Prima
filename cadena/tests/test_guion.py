@@ -212,6 +212,31 @@ class Ojeador(unittest.TestCase):
             ojeador.observar(h, self.tablon(p, maker=m, ref="MAL-04", lado="compra"), i)
         self.assertEqual(ojeador.compradores_probables(h, "MAL-04")[0], ("t05", 34, 2))
 
+    def test_descanso_de_vendedores(self):
+        from t7 import ojeador
+        d = ojeador.descanso("persona_quota", h=5.4, tick=300)
+        self.assertEqual(d, {"hasta_h": 6.0})
+        self.assertTrue(ojeador.descansa(d, h=5.9) and not ojeador.descansa(d, h=6.01))
+        self.assertEqual(ojeador.descanso("cooloff", tick=300, until_tick=340), {"hasta_tick": 340})
+        self.assertEqual(ojeador.descanso("sold_out", tick=300), {"hasta_tick": 420})   # sin hora de juego: en ticks
+        self.assertIsNone(ojeador.descanso("walked", h=5.0, tick=300))                   # se fue: se puede volver
+        self.assertFalse(ojeador.descansa(None, h=5.0))
+
+    def test_regateador_usa_al_ojeador(self):
+        from t7 import cadena, ojeador
+        h = {}
+        ojeador.observar(h, self.tablon(5, ref="LAT-01"), 10)                          # en El Rastro: 5 → 7 con comisión
+        s = ojeador.senales_vendedor(h, ["LAT-01", "LAT-02", "LAT-12"], 20, {"LAT-12": 1.0})
+        self.assertEqual((s["LAT-01"]["rastro"], s["LAT-02"]["rastro"], s["LAT-12"]["escasa"]), (7, None, True))
+        menus = {"abuela": {"vende": {"LAT-01": 10, "LAT-02": 10, "LAT-03": 10}}}
+        cuenta = {"LAV-01": 1}
+        libre = cadena.cola_de_operaciones(cuenta, 300, menus, senales=s)
+        self.assertEqual(libre[0]["carta"], "LAT-01")                                   # sin escalera hecha, sigue
+        hecha = cadena.cola_de_operaciones(cuenta, 300, menus, tratos={"abuela": 3}, max_tratos=3, senales=s)
+        self.assertEqual(hecha, [])                    # escalera hecha: solo compraría lo que completa página
+        s2 = {"LAT-03": {"rastro": None, "escasa": True}}
+        self.assertEqual(cadena.cola_de_operaciones(cuenta, 300, menus, senales=s2)[0]["carta"], "LAT-03")
+
     def test_la_cadena_espera_si_el_ojeador_lo_dice(self):
         from t7 import cadena
         mem = cadena.Memoria()
