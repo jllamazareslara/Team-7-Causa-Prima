@@ -9,7 +9,7 @@ from collections import Counter
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import valor as V, cadena, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
+from t7 import valor as V, cadena, contable, ojos, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
 from sim import vendedores as SV, duelos as SD  # noqa: E402
 
 P = params.cargar()
@@ -1093,6 +1093,63 @@ class Vigia(unittest.TestCase):
         self.assertEqual(sorted(n["tipo"] for n in nov), ["abierto", "subimos"])
         with open(os.path.join(runs, "vigia-crudo.json"), encoding="utf-8") as f:
             self.assertNotIn("me", json.load(f))                           # nuestros datos y claves no se vuelcan
+
+class Estructura(unittest.TestCase):
+    """Ojos → Contable → Regateador / Duelista / Cambista → Guardia."""
+
+    def lectura(self):
+        c, _ = coleccion()
+        return {"tick": 5, "efectivo": 300, "cuenta": c,
+                "vendedores": [{"id": 1, "vendedor": "abuela", "lado": "compra", "carta": "RET-01",
+                                "suyas": [12, 9, 8], "nuestras": [1, 3], "final": True, "oferta_id": 11}],
+                "tablon": [{"id": 3, "maker": "t03", "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 60}}],
+                "novedades": [{"titulo": "Llega El Retiro"}]}
+
+    def test_orden_ojos_contable_negociador_guardia(self):
+        diario = cadena.tick(self.lectura(), cadena.Memoria(), P)["diario"]
+
+        def primera(quien):
+            return next(i for i, linea in enumerate(diario) if f"  {quien}" in linea)
+        self.assertLess(primera("OJOS"), primera("CONTABLE"))
+        self.assertLess(primera("CONTABLE"), primera("TIENDA"))
+        self.assertLess(primera("TIENDA"), primera("GUARDIA"))
+        self.assertTrue(any("Llega El Retiro" in linea for linea in diario))
+
+    def test_los_ojos_apuntan_precios_y_perfiles(self):
+        mem = cadena.Memoria()
+        lect = dict(self.lectura(), vendedores=[{"id": 1, "vendedor": "abuela"}, {"id": 2, "vendedor": "paco"}, "basura"])
+        avisos = []
+        vista = ojos.mirar(lect, mem, P, lambda quien, texto: avisos.append(texto))
+        self.assertEqual(mem.mercado, {"LAT-09": [60]})
+        self.assertEqual(vista["perfiles"]["abuela"]["perfil"], "abuela")
+        self.assertEqual((vista["perfiles"]["paco"]["perfil"], vista["nuevos"]), ("desconocido", ["paco"]))
+        ojos.mirar(lect, mem, P, lambda quien, texto: avisos.append(texto))
+        self.assertEqual(sum("paco" in a for a in avisos), 1)              # el vendedor nuevo se avisa una vez
+
+    def test_los_ojos_miran_aunque_el_rastro_este_apagado(self):
+        mem = cadena.Memoria()
+        ac = cadena.tick(self.lectura(), mem, P, forzar={"rastro": "apagado"})
+        self.assertEqual(mem.mercado, {"LAT-09": [60]})
+        self.assertNotEqual((ac["firma"] or {}).get("destino"), "rastro")
+
+    def test_la_contable_da_los_numeros_al_regateador(self):
+        c, _ = coleccion()
+        cu = contable.para_vendedor({"carta": "RET-01", "lado": "compra"}, c, 300, P, {})
+        self.assertEqual((cu["conocida"], cu["limite"], cu["caja"]), (True, 13, 300 - P["guardia.reserva_efectivo"]))
+        self.assertFalse(contable.para_vendedor({"carta": "ZZZ-01", "lado": "compra"}, c, 300, P, {})["conocida"])
+        self.assertTrue(contable.para_vendedor({"carta": "LAT-08", "lado": "venta"}, c, 300, P, {})["protegida"])
+
+    def test_el_guardia_decide_con_la_ficha_de_la_contable(self):
+        c, _ = coleccion()
+        prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
+        ev = contable.ficha(prop, c, 300, P)
+        self.assertTrue(guardia.revisar(prop, None, c, 300, P, ev=ev)[0])
+        mala = dict(ev, neto=-1, renta=False)                              # si la Contable dice que no renta, no firma
+        self.assertFalse(guardia.revisar(prop, None, c, 300, P, ev=mala)[0])
+
+    def test_el_duelo_lo_cuenta_la_contable(self):
+        self.assertEqual(contable.ganancia_duelo("seller", 100, 90), -10)
+        self.assertEqual(contable.ganancia_duelo("buyer", 100, 90), 10)
 
 
 if __name__ == "__main__":

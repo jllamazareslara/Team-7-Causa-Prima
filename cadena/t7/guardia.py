@@ -42,15 +42,17 @@ def revisar_duelo(ganancia, ya_firmado_este_tick=False, stop=False, forzar=None)
 
 
 def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=False, stop=False, forzar=None,
-            tope_por_trato=None, **_):
+            tope_por_trato=None, ev=None, **_):
     """Devuelve (firma: bool, motivo, ficha, estado). estado = "firma" | "espera" | "bloqueo".
 
     propuesta      = lo que el agente cree que firma (para la calculadora)
     oferta_juego   = la oferta tal como está en el juego ahora mismo; se comprueba que coincide con la propuesta
     forzar         = {categoría: "apagado"} (sale de hoy.json a través del plan del día)
     tope_por_trato = lo máximo que puede comprometer una compra cuando la caja está justa (None = sin tope)
+    ev             = la ficha que ya hizo la Contable (contable.ficha); si no llega, se hace aquí con la misma calculadora
     """
-    ev = evaluar(propuesta, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])
+    if ev is None:
+        ev = evaluar(propuesta, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])
     if stop:
         return False, "STOP activado", ev, "bloqueo"
     if ya_firmado_este_tick:
