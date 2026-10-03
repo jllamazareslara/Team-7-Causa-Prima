@@ -44,13 +44,17 @@ def limite_rival_estimado(rol, rivales):
 
 def decidir(st, p):
     """st = {"rol": "seller"|"buyer", "limite": n, "rival": [sus precios], "nuestras": [...], "ronda": t, "rondas": T,
-             "limite_rival": n o None (memoria de escenario)}
+             "limite_rival": n o None (memoria de escenario), "descuento": δ o None}
     Devuelve (acción, precio, motivo): "ofrecer" | "aceptar" | "esperar"."""
     rol, lim = st["rol"], float(st["limite"])
     s = 1 if rol == "seller" else -1                   # signo de "más para nosotros"
     T = st.get("rondas") or p["duelo.rondas"]
     t = min(st.get("ronda", len(st["nuestras"])), T - 1)
-    delta, beta = p["duelo.descuento_ronda"], p["duelo.dureza_beta"]
+    # el descuento real lo dice el propio duelo (decay_per_round): 6 % en Duelos I y 8 % en Duelos II según el
+    # calendario del juego. Cada ronda de más cuesta ese tanto, así que marca cuándo deja de compensar esperar.
+    # Solo si el duelo no lo trae se usa el supuesto de parametros.json.
+    delta = st["descuento"] if st.get("descuento") is not None else p["duelo.descuento_ronda"]
+    beta = p["duelo.dureza_beta"]
     rivales, nuestras = st["rival"], st["nuestras"]
     su = rivales[-1] if rivales else None
 

@@ -341,7 +341,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             visto[rol] = lim
             lr = visto.get("buyer" if rol == "seller" else "seller")
         st = {"rol": rol, "limite": lim, "rival": d.get("rival", []), "nuestras": d.get("nuestras", []),
-              "ronda": d.get("ronda", len(d.get("nuestras", []))), "rondas": d.get("rondas"), "limite_rival": lr}
+              "ronda": d.get("ronda", len(d.get("nuestras", []))), "rondas": d.get("rondas"), "limite_rival": lr,
+              "descuento": d.get("descuento")}
         accion, precio, por_que = duelo.decidir(st, p)
         apunta("DUELISTA", f"{quien} · {rol} · rival {st['rival'][-1] if st['rival'] else '—'} · {accion} "
                            f"{precio if precio is not None else ''} · {por_que}")
