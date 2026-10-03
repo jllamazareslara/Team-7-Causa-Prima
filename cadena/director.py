@@ -23,7 +23,7 @@ from collections import Counter
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
-sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
+sys.path.insert(0, os.path.dirname(AQUI))  # bazaar_sdk.py vive en la raíz del repo, no en una subcarpeta "bazaar-kit"
 
 from t7 import cadena, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
@@ -137,22 +137,27 @@ def leer(b, est, tick):
         if not est.get("crudo_duelo"):
             est["crudo_duelo"] = True
             _linea("crudo.jsonl", {"tipo": "duelo", "crudo": d})
-        if not isinstance(d, dict) or d.get("id") is None:
+        if not isinstance(d, dict) or d.get("duel") is None:
             continue
         rol, limite = str(d.get("role", "")).lower(), d.get("your_limit")
         if rol not in ("seller", "buyer") or not isinstance(limite, (int, float)):
             continue                                             # no se juega lo que no se entiende
-        h = est["duelos"].setdefault(str(d["id"]), {"rival": [], "nuestras": []})
+        h = est["duelos"].setdefault(str(d["duel"]), {"rival": [], "nuestras": []})
         rival = _precio(d.get("rival_offer"))
         if rival is not None and (not h["rival"] or h["rival"][-1] != rival):
             h["rival"].append(rival)
-        plazo = d.get("deadline")
+        # campos reales del juego (comprobado contra un duelo en vivo el 2026-10-03): el id es "duel", no "id";
+        # la ronda es "rounds", no "round"; no hay "max_rounds", el plazo real es "deadline_tick" + "decay_per_round"
+        plazo = d.get("deadline_tick")
+        ronda = d.get("rounds", len(h["nuestras"]))
+        restantes = plazo - tick if isinstance(plazo, (int, float)) and isinstance(tick, (int, float)) else None
         esc = next((d[k] for k in ("scenario", "scenario_id", "scenario_ref", "case", "item")
                     if d.get(k) is not None and not isinstance(d[k], (dict, list))), None)
-        lectura["duelos"].append({"id": d["id"], "rol": rol, "limite": limite, "rival": list(h["rival"]),
-                                  "nuestras": list(h["nuestras"]), "ronda": d.get("round", len(h["nuestras"])),
-                                  "rondas": d.get("max_rounds"), "texto": d.get("rival_text") or d.get("last_message") or "",
-                                  "ticks_restantes": plazo - tick if isinstance(plazo, (int, float)) else None,
+        lectura["duelos"].append({"id": d["duel"], "rol": rol, "limite": limite, "rival": list(h["rival"]),
+                                  "nuestras": list(h["nuestras"]), "ronda": ronda,
+                                  "rondas": ronda + max(1, restantes) if restantes is not None else None,
+                                  "texto": d.get("rival_text") or d.get("last_message") or "",
+                                  "ticks_restantes": restantes,
                                   "escenario": esc, "dias": "days" in (d.get("issues") or []),
                                   "pesos_dias": d.get("your_days_weight")})
 
