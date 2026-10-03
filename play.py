@@ -143,36 +143,51 @@ def play_broker(author, a):
 # ---------------------------------------------------------------------------------------------- duels
 
 def play_duel(author, a):
+    """V1 of the live duel runner. Field names below were wrong against the real server (found by reading a
+    live /api/duels payload on 2026-10-03) and are fixed here: the duel's id is "duel", not "id"; the round
+    counter is "rounds", not "round"; there is no "max_rounds" — the real limit is "deadline_tick" (an
+    absolute tick) plus "decay_per_round" (the pie's per-round shrink, e.g. 0.06). Our own and the rival's
+    price history come straight from "messages" (from == "you" or not) instead of being tracked locally, so a
+    restart picks up offers already on the table instead of re-opening from scratch. The outer loop also
+    survives a paused clock or a dropped connection (both happened in the first live run, right as a session's
+    trading hours opened/closed) instead of crashing the whole process."""
     b, r, log = Bazaar(URL, os.environ["BAZAAR_KEY"]), load_rules("duel", author), Log(author, "duel")
-    history = {}  # duel id -> (our prices, rival prices)
     while True:
-        live = b.duels().get("duels") or []
-        if not live:
-            log("idle")
-            break
-        for d in live:
-            ours, theirs = history.setdefault(d["id"], ([], []))
-            rival = d.get("rival_offer")
-            rival = rival.get("price") if isinstance(rival, dict) else rival
-            if rival is not None and (not theirs or theirs[-1] != rival):
-                theirs.append(rival)
-            s = {"role": d["role"], "limit": d["your_limit"], "rival_offer": rival, "rival_offers": list(theirs),
-                 "our_offers": list(ours), "round": d.get("round", len(ours)), "max_rounds": d.get("max_rounds", 10),
-                 "discount": d.get("discount", 0.95)}
-            if "days" in (d.get("issues") or []):
-                log("skipped", duel=d["id"], reason="two-issue duels (price + days) are not in the rules interface yet")
-                continue
-            dec = r.decide(s)
-            log("decision", duel=d["id"], state=s, decision=list(dec))
-            try:
-                if dec[0] == "accept" and rival is not None:
-                    b.duel_accept(d["id"])
-                elif dec[0] == "offer":
-                    b.duel_say(d["id"], f"{dec[1]}?", price=dec[1])
-                    ours.append(dec[1])
-            except BazaarError as e:
-                log("error", duel=d["id"], code=e.code, message=e.message)
-        b.wait_tick()
+        try:
+            live = b.duels().get("duels") or []
+            if not live:
+                log("idle")
+                break
+            tick = b.clock()["tick"]
+            for d in live:
+                msgs = d.get("messages") or []
+                ours = [m["price"] for m in msgs if m.get("from") == "you" and m.get("price") is not None]
+                theirs = [m["price"] for m in msgs if m.get("from") != "you" and m.get("price") is not None]
+                rival = d.get("rival_offer")
+                rival = rival.get("price") if isinstance(rival, dict) else rival
+                if rival is None and theirs:
+                    rival = theirs[-1]
+                rnd = d.get("rounds", len(ours))
+                remaining = max(0, d.get("deadline_tick", tick) - tick)
+                s = {"role": d["role"], "limit": d["your_limit"], "rival_offer": rival, "rival_offers": list(theirs),
+                     "our_offers": list(ours), "round": rnd, "max_rounds": rnd + max(1, remaining),
+                     "discount": max(0.01, 1 - d.get("decay_per_round", 0.05))}
+                if "days" in (d.get("issues") or []):
+                    log("skipped", duel=d["duel"], reason="two-issue duels (price + days) are not in the rules interface yet")
+                    continue
+                dec = r.decide(s)
+                log("decision", duel=d["duel"], state=s, decision=list(dec))
+                try:
+                    if dec[0] == "accept" and rival is not None:
+                        b.duel_accept(d["duel"])
+                    elif dec[0] == "offer":
+                        b.duel_say(d["duel"], f"{dec[1]}?", price=dec[1])
+                except BazaarError as e:
+                    log("error", duel=d["duel"], code=e.code, message=e.message)
+            b.wait_tick()
+        except BazaarError as e:  # the clock paused between sessions, or a dropped connection: keep watching
+            log("retry", code=e.code, message=e.message)
+            time.sleep(2.0)
 
 
 def main():
