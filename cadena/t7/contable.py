@@ -4,6 +4,7 @@
     para_vendedor(c, ...)   → los números del Regateador para una conversación: si conocemos la carta, cuánto nos vale,
                               nuestro tope (comprando) o suelo (vendiendo), si está protegida y cuánto deja pagar la caja
     ficha(propuesta, ...)   → la ficha que recibe el Guardia antes de cada firma (lo que entra, lo que sale, comisión, neto)
+    para_duelo(d)           → los números de la Duelista antes de decidir: nuestro límite y lo que daría aceptar ya
     ganancia_duelo(...)     → lo que nos da un duelo a ese precio, calculado aquí y no por la Duelista
 El Regateador negocia con sus números; el Guardia decide con su ficha.
 """
@@ -50,6 +51,15 @@ def ficha(propuesta, cuenta, efectivo, p=None, mult=None, reserva=None):
     if reserva is None:
         reserva = p["guardia.reserva_efectivo"] if p else 0
     return V.evaluar(propuesta, cuenta, efectivo, mult or V.NUESTROS_MULT, reserva)
+
+
+def para_duelo(d):
+    """{"rol", "limite", "aceptar_ya"}: nuestro límite (lo da el juego) y lo que nos daría aceptar ya la última oferta
+    del rival (None si aún no ha ofrecido). No decide: la Duelista decide con estos números."""
+    rol, limite = d["rol"], d["limite"]
+    rival = (d.get("rival") or [None])[-1]
+    return {"rol": rol, "limite": limite,
+            "aceptar_ya": ganancia_duelo(rol, limite, rival) if isinstance(rival, (int, float)) else None}
 
 
 def ganancia_duelo(rol, limite, precio):

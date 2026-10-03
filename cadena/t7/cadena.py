@@ -330,7 +330,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         firme = mem.escudo.firme(quien)
         if forzar.get("duelo") == "apagado":
             return
-        rol, lim = d["rol"], d["limite"]
+        cuentas = contable.para_duelo(d)                     # la Contable da los números antes de que la Duelista decida
+        rol, lim = cuentas["rol"], cuentas["limite"]
+        apunta("CONTABLE", f"{quien} · {rol} · límite {lim}" + (f" · aceptar ya da {cuentas['aceptar_ya']:+.0f}"
+                                                                if cuentas["aceptar_ya"] is not None else ""))
         esc = d.get("escenario")
         lr = None
         if esc is not None:

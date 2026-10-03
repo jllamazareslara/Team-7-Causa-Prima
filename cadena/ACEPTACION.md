@@ -75,13 +75,14 @@ Pruebas:
 - [ ] Una carta protegida nunca aparece como vendible; `liquidez()` solo propone ventas sin perder valor.
 - [ ] Con datos del juego (`configurar`) sustituye los supuestos; lo que no entiende no cambia nada.
 - [ ] Modo holgado no cambia ningún ajuste; justo vende primero y baja el tope; seco no compra pero vende.
-- [ ] En la cadena da al Regateador su tope o suelo y lo que deja pagar la caja, y al Guardia la ficha de cada firma (también la ganancia de cada duelo).
+- [ ] En la cadena da al Regateador su tope o suelo y lo que deja pagar la caja; a la Duelista, antes de que decida, nuestro límite y lo que daría aceptar ya; y al Guardia la ficha de cada firma (también la ganancia de cada duelo).
 
 Pruebas:
 
 - `python -m unittest tests.test_todo.Calculadora`
 - `python -m unittest tests.test_todo.ValoresDelJuego`
 - `python -m unittest tests.test_todo.Situacion`
+- `python -m unittest tests.test_todo.Estructura.test_la_contable_da_los_numeros_a_la_duelista`
 
 ## El Guardia · `infra/t7-guardia`
 

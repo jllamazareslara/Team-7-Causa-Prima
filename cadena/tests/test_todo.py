@@ -934,6 +934,16 @@ class Estructura(unittest.TestCase):
         mala = dict(ev, neto=-1, renta=False)                              # si la Contable dice que no renta, no firma
         self.assertFalse(guardia.revisar(prop, None, c, 300, P, ev=mala)[0])
 
+    def test_la_contable_da_los_numeros_a_la_duelista(self):
+        d = {"id": 2, "rol": "seller", "limite": 100, "rival": [150, 170], "nuestras": [200, 190], "ronda": 7, "rondas": 8}
+        self.assertEqual(contable.para_duelo(d), {"rol": "seller", "limite": 100, "aceptar_ya": 70})
+        self.assertIsNone(contable.para_duelo(dict(d, rival=[]))["aceptar_ya"])
+        diario = cadena.tick({"tick": 1, "duelos": [d]}, cadena.Memoria(), P)["diario"]
+
+        def primera(quien):
+            return next(i for i, linea in enumerate(diario) if f"  {quien}" in linea)
+        self.assertLess(primera("CONTABLE"), primera("DUELISTA"))
+
     def test_el_duelo_lo_cuenta_la_contable(self):
         self.assertEqual(contable.ganancia_duelo("seller", 100, 90), -10)
         self.assertEqual(contable.ganancia_duelo("buyer", 100, 90), 10)
