@@ -357,6 +357,34 @@
   "estado": "decisión",
   "por_que": "A una página a la que le faltan como mucho estas cartas, cada carta que falta sube en la lista con su parte del bono de página. Solo ordena: el tope de cada compra sigue siendo lo que esa carta nos vale hoy."
  },
+ "cambista.tope_pct_final": {
+  "valor": 0.98,
+  "min": 0.5,
+  "max": 1.0,
+  "estado": "decisión",
+  "por_que": "En el tramo final del juego el efectivo ya no puntúa: se paga hasta el 98 % de lo que vale una carta y las peticiones salen directamente al tope. Cada carta que entra sigue sumando valor."
+ },
+ "cambista.minutos_final": {
+  "valor": 30,
+  "min": 0,
+  "max": 240,
+  "estado": "decisión",
+  "por_que": "Minutos antes del fin del juego (domingo 15:00, o \"fin_juego\" en hoy.json) en los que empieza el tramo final. 0 = nunca."
+ },
+ "cambista.trueques_max": {
+  "valor": 2,
+  "min": 0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "Cambios carta por carta vivos a la vez en El Rastro (damos repetidas por cartas que nos faltan, sin gastar efectivo). 0 = apagado. Se publican con cambista.pedir = 1."
+ },
+ "cambista.trueque_ratio": {
+  "valor": 0.8,
+  "min": 0.3,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Lo que damos en un cambio tiene que sumar al menos esta parte de la base de lo que pedimos (una poco común, 25, pide 20 de base: una poco común o dos comunes). Por debajo, nadie lo aceptaría."
+ },
  "ataque.inyeccion_equipos": {
   "valor": 0,
   "min": 0,

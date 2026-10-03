@@ -16,8 +16,12 @@ Y para COMPRAR (añadido el 3/10, la estrategia de páginas):
                      (25 % de la suma de la página) solo llega con la ÚLTIMA carta, así que una página a la que le
                      faltan 1 o 2 cartas vale mucho más que cartas sueltas. Ordena por lo que esperamos ganar
                      (lo que nos vale − lo que esperamos pagar) y marca lo que cabe en la caja.
-6. peticiones()      las peticiones que publicamos en El Rastro ("pago X por esta carta"): abren bajo, suben un poco
-                     cada vez que caducan sin respuesta y nunca pasan del tope. Quien acepta paga la comisión.
+                     Con la caja corta elige con una mochila exacta el conjunto de compras que más gana EN TOTAL.
+6. peticiones()      las peticiones que publicamos en El Rastro ("pago X por esta carta"): abren bajo (o un 15 % por
+                     debajo de lo que ya funcionó), suben un poco cada vez que caducan, pasan en 1 P a otro equipo que
+                     pida la misma carta y nunca pasan del tope. En el tramo final, directas al tope: el efectivo ya no
+                     puntúa. Quien acepta paga la comisión.
+7. trueques()        cambios carta por carta: damos repetidas por cartas que nos faltan, sin gastar efectivo.
 REGLA: cada compra renta por sí sola (tope = lo que esa carta nos vale HOY × tope_pct). El bono de página solo
 ordena la lista; nunca se paga de más por una carta "porque luego vendrá la otra".
 """
@@ -122,7 +126,42 @@ def _candidatas(cuenta, b, mult):
     return [r for r in V._extras(b) if cuenta.get(r, 0) <= 0 and V.conocida(r, mult)], []
 
 
-def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None):
+def _mochila(filas, libre):
+    """Qué compras hacer con el efectivo que hay para ganar lo máximo EN TOTAL (problema de la mochila, exacto).
+    Ordenar por ganancia y llenar hasta acabar el dinero se equivoca cuando la caja es corta: dos poco comunes que
+    ganan 15 cada una valen más que una rara que gana 21 si solo hay 50 P. Devuelve los índices elegidos."""
+    libre = int(max(0, libre))
+    mejor = [(0.0, ())] * (libre + 1)          # mejor[c] = (ganancia, índices) gastando como mucho c
+    for i, f in enumerate(filas):
+        coste = int(math.ceil(f["precio"]))
+        if coste > libre:
+            continue
+        for c in range(libre, coste - 1, -1):
+            g = mejor[c - coste][0] + f["gana"]
+            if g > mejor[c][0] + 1e-9:
+                mejor[c] = (g, mejor[c - coste][1] + (i,))
+    return set(mejor[libre][1])
+
+
+def tope_pct(p, final=False):
+    """Parte de lo que nos vale que estamos dispuestos a pagar. En el tramo final del juego el efectivo ya no sirve
+    para nada (no puntúa), así que se paga casi todo lo que vale: cada carta que entra sigue sumando."""
+    return p["cambista.tope_pct_final"] if final else p["cambista.tope_pct_valor"]
+
+
+def apertura(ref, tope, p, pagado=None):
+    """A cuánto abre una petición. Sin datos: cambista.apertura_peticion × base de la rareza.
+    Con datos (pagado = {rareza: [precios a los que ya nos vendieron]}): el 85 % de lo más barato que funcionó,
+    porque si alguien aceptó ese precio quizá otro acepte algo menos."""
+    r = V.rareza(ref)
+    base = math.floor(p["cambista.apertura_peticion"] * V.BASE[r])
+    hechos = [x for x in (pagado or {}).get(r, []) if isinstance(x, (int, float)) and x > 0]
+    if hechos:
+        base = math.floor(0.85 * min(hechos))
+    return max(1, min(tope, base))
+
+
+def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None, pagado=None, final=False):
     """La lista de la compra, de la carta que más nos hace ganar a la que menos.
 
     Para cada carta que nos falta:
@@ -131,12 +170,14 @@ def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None):
                    (cambista.bono_si_faltan): así una página casi completa sube en la lista antes de llegar a la última
       precio       lo que esperamos pagar (precio_referencia)
       gana         estrategico − precio: lo que ordena la lista
-      tope         lo máximo que pagamos: nos_vale × cambista.tope_pct_valor (cada compra renta sola)
-      apertura     a cuánto abre una petición: cambista.apertura_peticion × base de la rareza
-      en_caja      cabe en lo que queda sobre la reserva, contando las de antes en la lista
-    No entra una carta que no conocemos, ni una que esperamos pagar más de lo que nos vale."""
+      tope         lo máximo que pagamos: nos_vale × tope_pct (cada compra renta sola; casi todo en el tramo final)
+      apertura     a cuánto abre una petición (ver apertura(): aprende de lo que ya nos vendieron)
+      en_caja      la elige la mochila: el conjunto de compras que más gana EN TOTAL con lo que queda sobre la reserva
+    No entra una carta que no conocemos, ni una que esperamos pagar más de lo que nos vale.
+    Orden: primero lo que cabe en la caja (por ganancia), luego el resto, que sirve para cambios carta por carta."""
     mult = mult or V.NUESTROS_MULT
     bono_pct = p.get("valor.bono_pagina", 0.25)
+    pct = tope_pct(p, final)
     filas = []
     for b in sorted(mult):
         candidatas, faltan = _candidatas(cuenta, b, mult)
@@ -151,7 +192,7 @@ def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None):
             completa = faltan == [ref]
             estrategico = nos_vale if completa or not reparte else nos_vale + bono * propio.get(ref, 0) / suma_faltan
             precio = precio_referencia(ref, mercado, listas)
-            tope = math.floor(nos_vale * p["cambista.tope_pct_valor"])
+            tope = math.floor(nos_vale * pct)
             if tope < 1 or estrategico <= precio:
                 continue
             nombre = f"{b} {len(V.pagina(b)) - len(faltan)}/{len(V.pagina(b))}"
@@ -162,26 +203,27 @@ def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None):
             filas.append({"carta": ref, "barrio": b, "rareza": V.rareza(ref), "faltan": len(faltan),
                           "completa": completa, "nos_vale": round(nos_vale, 1), "estrategico": round(estrategico, 1),
                           "precio": precio, "gana": round(estrategico - precio, 1), "tope": tope,
-                          "apertura": max(1, min(tope, math.floor(p["cambista.apertura_peticion"] * V.BASE[V.rareza(ref)]))),
-                          "motivo": motivo})
+                          "apertura": apertura(ref, tope, p, pagado), "motivo": motivo})
     filas.sort(key=lambda f: (-f["gana"], f["precio"], f["carta"]))
-    libre = efectivo - p["guardia.reserva_efectivo"]
-    for f in filas:
-        f["en_caja"] = f["precio"] <= libre
-        if f["en_caja"]:
-            libre -= f["precio"]
+    elegidas = _mochila(filas, efectivo - p["guardia.reserva_efectivo"])
+    for i, f in enumerate(filas):
+        f["en_caja"] = i in elegidas
+    filas.sort(key=lambda f: (not f["en_caja"], -f["gana"], f["precio"], f["carta"]))
     return filas
 
 
-def peticiones(lista, cuenta, efectivo, p, activas=None, caducidades=None, mult=None):
+def peticiones(lista, cuenta, efectivo, p, activas=None, caducidades=None, mult=None, demanda=None, final=False):
     """Qué peticiones publicar ahora en El Rastro, siguiendo la lista de la compra.
 
     activas     = {ref: precio} de nuestras peticiones vivas: ese dinero ya está comprometido y esa carta ya está pedida
     caducidades = {ref: veces que su petición caducó sin respuesta}: cada una sube el precio
                   cambista.subida_por_caducidad × base de la rareza, sin pasar nunca del tope
-    Una petición por carta, como mucho cambista.peticiones_max a la vez, y todas juntas sin bajar de la reserva.
-    Cada una se pasa antes por la Contable: si no renta, no se publica (nadie la firmará por nosotros después)."""
-    activas, caducidades = activas or {}, caducidades or {}
+    demanda     = {ref: [lo que otros equipos ofrecen por ella en El Rastro]}: si alguien compite por la misma carta,
+                  pedimos 1 P más que el mejor mientras quepa en el tope (si no, el que vende elegiría al otro)
+    final       = tramo final del juego: se pide directamente al tope, porque el efectivo ya no puntúa
+    Una petición por carta, solo de lo que eligió la mochila, como mucho cambista.peticiones_max a la vez, y todas
+    juntas sin bajar de la reserva. Cada una se pasa antes por la Contable: si no renta, no se publica."""
+    activas, caducidades, demanda = activas or {}, caducidades or {}, demanda or {}
     mult = mult or V.NUESTROS_MULT
     comprometido = sum(activas.values())
     libre = efectivo - p["guardia.reserva_efectivo"] - comprometido
@@ -191,10 +233,14 @@ def peticiones(lista, cuenta, efectivo, p, activas=None, caducidades=None, mult=
         if hueco <= 0:
             break
         ref = f["carta"]
-        if ref in activas or cuenta.get(ref, 0) > 0:
+        if not f.get("en_caja", True) or ref in activas or cuenta.get(ref, 0) > 0:
             continue
         subida = math.ceil(p["cambista.subida_por_caducidad"] * V.BASE[f["rareza"]])
-        precio = min(f["tope"], f["apertura"] + subida * caducidades.get(ref, 0))
+        precio = f["tope"] if final else min(f["tope"], f["apertura"] + subida * caducidades.get(ref, 0))
+        rival = max([x for x in demanda.get(ref, []) if isinstance(x, (int, float))], default=0)
+        compite = rival >= precio and rival + 1 <= f["tope"]
+        if compite:
+            precio = int(rival) + 1
         if precio < 1 or precio > libre:
             continue
         ev = V.evaluar({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
@@ -203,8 +249,62 @@ def peticiones(lista, cuenta, efectivo, p, activas=None, caducidades=None, mult=
         if not ev["renta"]:
             continue
         out.append({"carta": ref, "precio": precio, "tope": f["tope"], "nos_vale": f["nos_vale"],
-                    "gana": round(f["nos_vale"] - precio, 1), "motivo": f["motivo"]})
+                    "gana": round(f["nos_vale"] - precio, 1),
+                    "motivo": f["motivo"] + (f" · otro equipo ofrece {rival:g}: +1" if compite else "")
+                    + (" · tramo final: al tope" if final else "")})
         libre -= precio
+        hueco -= 1
+    return out
+
+
+def trueques(lista, cuenta, p, ocupadas=(), activas=(), mult=None, vivos=None):
+    """Cambios carta por carta en El Rastro: damos lo que a nosotros nos vale poco (repetidas, barrios bajos) a cambio
+    de una carta de la lista. No gasta efectivo, y a quien le falta nuestra carta le vale mucho más que a nosotros:
+    ganan los dos, y con los equipos puntúa todo el valor ganado.
+
+    Para cada carta que queremos (también las que no caben en la caja), ofrece como mucho 2 cartas nuestras vendibles,
+    las de rareza más alta primero, hasta que su base sume cambista.trueque_ratio × la base de la que
+    pedimos (nadie da una rara por una común). Solo si la Contable dice que renta y nos deja al menos el mismo margen
+    que una compra (1 − cambista.tope_pct_valor de lo que vale).
+    ocupadas = refs que no se pueden ofrecer (anunciadas, en venta con un vendedor, ya en otro cambio)
+    activas  = refs que ya tienen (o tuvieron) un cambio: no se repite; si caducó, le toca a una petición con efectivo
+    vivos    = cambios vivos ahora (si no se da, len(activas)). Como mucho cambista.trueques_max a la vez."""
+    mult = mult or V.NUESTROS_MULT
+    usadas = list(ocupadas)
+    hueco = int(p["cambista.trueques_max"]) - (len(activas) if vivos is None else vivos)
+    out = []
+    for f in lista:
+        if hueco <= 0:
+            break
+        quiero = f["carta"]
+        if quiero in activas or cuenta.get(quiero, 0) > 0:
+            continue
+        disponible = dict(cuenta)
+        for r in usadas:
+            disponible[r] = disponible.get(r, 0) - 1
+        candidatas = [(r, perd) for r, perd in vendibles(disponible, mult)
+                      if V.conocida(r, mult) and V.rareza(r) in ("common", "uncommon")]
+        candidatas.sort(key=lambda x: (-V.BASE[V.rareza(x[0])], x[1]))
+        objetivo = p["cambista.trueque_ratio"] * V.BASE[f["rareza"]]
+        doy, suma, actual = [], 0, dict(disponible)
+        for r, _ in candidatas:
+            if len(doy) == 2 or suma >= objetivo:
+                break
+            if actual.get(r, 0) <= 0 or V.protegida(actual, r, mult):
+                continue
+            doy.append(r)
+            actual[r] -= 1
+            suma += V.BASE[V.rareza(r)]
+        if not doy or suma < objetivo:
+            continue
+        ev = V.evaluar({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
+                        "recibo": {"cartas": [quiero], "primas": 0}, "entrego": {"cartas": doy, "primas": 0}},
+                       cuenta, 0, mult, 0)
+        if not ev["renta"] or ev["neto"] < (1 - p["cambista.tope_pct_valor"]) * f["nos_vale"]:
+            continue
+        out.append({"quiero": quiero, "doy": doy, "pierdo": ev["entrego"], "nos_vale": f["nos_vale"],
+                    "gana": ev["neto"], "motivo": f["motivo"]})
+        usadas.extend(doy)
         hueco -= 1
     return out
 

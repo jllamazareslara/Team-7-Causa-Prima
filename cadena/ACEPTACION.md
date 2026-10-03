@@ -15,6 +15,11 @@ Pasa cada oferta de El Rastro por la Contable en los dos sentidos, mapa de deseo
 - [ ] Comprar: no entra una carta que esperamos pagar más de lo que nos vale.
 - [ ] Peticiones: abren a 0,45 × base, suben 0,10 × base por caducidad sin pasar del tope, una por carta, 4 a la vez, sin tocar la reserva; vienen apagadas (`cambista.pedir` = 0).
 - [ ] Aprende los precios: apunta lo que anuncian otros equipos (una carta por efectivo) y espera pagar lo más barato visto.
+- [ ] Caja: con la caja corta elige con una mochila exacta el conjunto de compras que más gana en total.
+- [ ] Cambios carta por carta: da repetidas (nunca protegidas ni ya anunciadas) por cartas que faltan, sin efectivo; como mucho 2 vivos; si caduca, le toca a una petición.
+- [ ] Competencia: si otro equipo pide la misma carta, ofrece 1 P más mientras quepa en el tope; si no, no le sigue.
+- [ ] Aprende: una petición que funcionó hace abrir la siguiente de esa rareza al 85 % de ese precio.
+- [ ] Tramo final (30 min antes del fin): tope al 98 % de lo que vale y peticiones directas al tope.
 
 ## Cómo se comprueba (sin red)
 
