@@ -7,15 +7,24 @@
 
 Needs BAZAAR_KEY (and BROKER_KEY for the broker); BAZAAR_URL defaults to the game server.
 The rule files are the same ones bench/ scores, so live results and benchmark results are comparable.
+
+`dealer` and `duel` take the same candado (cadena/t7/candado.py) as rastro.py and duelos.py, so this never runs
+live at the same time as the chain for the same accept quota (the game allows one trading accept and, separately,
+one duel accept per tick for the whole team; two programs accepting with the same key step on each other). `broker`
+trades through BROKER_KEY, not the team key, so it never competes for that quota and does not take a candado.
 """
 import argparse
 import json
 import os
 import subprocess
+import sys
 import time
 
 import rules
 from bazaar_sdk import Bazaar, BazaarError, Broker
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cadena"))
+from t7 import candado  # noqa: E402
 
 URL = os.environ.get("BAZAAR_URL", "https://bazaar.causaprima.ai")
 
@@ -197,7 +206,16 @@ def main():
     ap.add_argument("--dealer", default="abuela")
     ap.add_argument("--deals", type=int, default=5, help="dealer: stop after this many deals")
     a = ap.parse_args()
-    {"dealer": play_dealer, "broker": play_broker, "duel": play_duel}[a.agent](a.rules, a)
+    ruta = {"dealer": candado.RUTA, "duel": candado.RUTA_DUELOS}.get(a.agent)
+    if ruta:
+        ok, motivo = candado.tomar(ruta, f"play.py {a.agent} --rules {a.rules}")
+        if not ok:
+            sys.exit("NO SE LANZA   " + motivo)
+    try:
+        {"dealer": play_dealer, "broker": play_broker, "duel": play_duel}[a.agent](a.rules, a)
+    finally:
+        if ruta:
+            candado.soltar(ruta)
 
 
 if __name__ == "__main__":

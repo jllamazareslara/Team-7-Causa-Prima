@@ -381,7 +381,12 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         mom, esc = lectura.get("momento") or {}, lectura.get("escasez") or {}
         pasado = {r: list(v) for r, v in mem.historial.items()}       # se compara con lo visto ANTES de este tick
         ojeador.observar(mem.historial, tablon, t)
-        for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"], p=p)[:3]:
+        # las copias ya anunciadas o prometidas en un cambio no están libres para aceptar OTRA oferta que las pida:
+        # si se propusiera igual, el Guardia gastaría la única firma de tienda del tick en un trato que luego no
+        # se puede cumplir (la carta ya no está libre) y la oferta buena de la cola se queda sin firmar.
+        reservadas = lectura.get("reservadas") or {}
+        cuenta_libre = {r: max(0, n - reservadas.get(r, 0)) for r, n in cuenta.items()}
+        for o in cambista.oportunidades(tablon, cuenta_libre, efectivo, reserva=p["guardia.reserva_efectivo"], p=p)[:3]:
             prop = o["propuesta"]
             compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
             if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
