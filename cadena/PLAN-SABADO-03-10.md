@@ -50,7 +50,7 @@ Quedarse el 60 % en la ronda 1 vale 0,60. Quedarse el 70 % en la ronda 5 vale 0,
 
 | # | Qué | Dónde | Estado |
 |---|---|---|---|
-| 1 | **Agente de duelos encendido para las 11:30** | `bazaar-kit/duel_agent.py` (ya existe) o `director.py` solo con duelos (`apagar` todo lo demás en `t7/hoy.json`) | Urgente. Lo lanza quien tiene la clave. |
+| 1 | **Agente de duelos encendido para las 11:30** | `bazaar-kit/duel_agent.py` (ya existe) o el lanzador de la cadena (hoy `director.py`) solo con duelos (`apagar` todo lo demás en `t7/hoy.json`) | Urgente. Lo lanza quien tiene la clave. |
 | 2 | Precio que cambia según el día (cesión cruzada precio ↔ día) | `t7/duelo.py`: nueva función junto a `paquetes_iguales()`, usada por `decidir()` cuando el duelo trae `days` | Hoy antes de las 18:00. Hoy `duelo.py` manda el mejor día pero **no ajusta el precio**. |
 | 3 | Cerrar antes con el pastel que se encoge | `t7/duelo.py` `decidir()`: aceptar si la oferta ≥ lo que esperamos sacar × (1 − descuento) | Hoy. `descuento_ronda` desde `t7/hoy.json` → `duelo` (0,94 / 0,92 / 0,90). |
 | 4 | Pilar y Chato: qué venden y compran | `menus.json` (lo saca `revisar.py --menus` de `dealers()`) | En cuanto se abran. |
@@ -66,9 +66,14 @@ Lee el calendario del juego y tiene **una jugada preparada para cada evento ante
 - `guion.venta_fiebre()`: qué copias venderle al vendedor de la fiebre, con margen, sin romper nunca una página. Con nuestros multiplicadores, Salamanca nos vale × 0,7: la fiebre es para nosotros.
 - El Vigía ya avisa con antelación con el calendario real, que va en horas (`at_hours`) y no en ticks: 2 h antes de una fiebre, 1,5 h antes de que cierre un vendedor, 30 min antes de un duelo.
 - Sin red: `python -m t7.guion datos/calendario-03-10.json --hora 10:10` (añadir `--cartas cartas.json` para la lista de la fiebre).
-- Pruebas: `tests/test_guion.py` (sin lanzar todavía).
+- Pruebas: `tests/test_guion.py`: pasan.
 
-Falta conectar `bloqueadas()` a `cambista.py` / `cadena.py` para que el Cambista no anuncie esas cartas en El Rastro.
+## 4 ter. Hecho al mediodía: El Ojeador y la estructura en tres capas
+
+- **El Ojeador** (`t7/ojeador.py`), el vigilante de precios: historial de precios en el tiempo (El Rastro y feed público), tendencia por carta, momento del juego según el calendario, escasez del catálogo, compradores probables. Aconseja al Cambista (comprar ya o esperar, precio de los anuncios) y al Regateador (vendedores que descansan, cartas que se agotan, El Rastro más barato).
+- **Las cartas guardadas para una fiebre** ya no se venden ni a vendedores ni en El Rastro (antes faltaba conectarlo).
+- **Sin Director:** el Guion y el Ojeador viven en `t7/cadena.py` (`ojear`, `operaciones`, `anuncios`). Ver `ESTRUCTURA.md`.
+- 116 pruebas sin red, todas pasan.
 
 ## 5. Para GitHub
 
