@@ -16,7 +16,8 @@ Interruptores (t7/parametros.json o "ajustes" en t7/hoy.json):
     rastro.publicar = 1              publica anuncios de venta (viene a 0)
     cambista.pedir = 1               publica peticiones de compra y cambios carta por carta (viene a 0)
 
-Una sola aceptación por tick para TODO el equipo: no lanzar a la vez otro programa que acepte con la misma clave.
+Una sola aceptación por tick para TODO el equipo: en vivo toma el candado (t7/candado.py); si otro programa del mismo
+ordenador lo tiene (play.py, por ejemplo), no arranca.
 Parar todo: crear el archivo runs/STOP (o Ctrl + C). El Guardia deja de firmar y no se publica nada más.
 La clave se lee de la variable de entorno BAZAAR_KEY. No se escribe en ningún archivo ni en el diario.
 """
@@ -31,7 +32,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, ojeador, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -430,6 +431,18 @@ def main():
     est = _json(os.path.join(RUNS, "rastro.json"), {})
     mem = cadena.Memoria.de_dict(_json(os.path.join(RUNS, "memoria.json"), {}))
     print("EN VIVO" if a.live else "EN SECO: no se manda ni se acepta nada")
+    if a.live:                                                   # un solo programa acepta a la vez (t7/candado.py)
+        ok, motivo = candado.tomar(candado.RUTA, "rastro.py")
+        if not ok:
+            sys.exit("NO SE LANZA   " + motivo)
+    try:
+        _jugar(b, est, mem, a)
+    finally:
+        if a.live:
+            candado.soltar(candado.RUTA)
+
+
+def _jugar(b, est, mem, a):
     preparar(b)
     hechos, ultimo = 0, None
     while not a.ticks or hechos < a.ticks:

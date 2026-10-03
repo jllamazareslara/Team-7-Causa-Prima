@@ -8,5 +8,8 @@
  "duelo": {},
  "enfados": {},
  "apagar": [],
- "ajustes": {}
+ "ajustes": {
+  "rastro.publicar": 1,
+  "cambista.pedir": 1
+ }
 }

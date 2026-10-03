@@ -267,7 +267,7 @@ class Ojeador(unittest.TestCase):
         from t7 import cadena
         mem = cadena.Memoria()
         mem.historial = self.hist_que_baja()
-        lectura = {"tick": 40, "efectivo": 300, "cuenta": {}, "tablon": self.tablon(100),
+        lectura = {"tick": 40, "efectivo": 300, "cuenta": {}, "tablon": self.tablon(94),        # renta ≥ 10 % (Guardia), margen < 25 %
                    "momento": {"comprar": "normal"}}
         acc = cadena.tick(lectura, mem)
         self.assertTrue(any("OJEADOR" in d and "esperar" in d for d in acc["diario"]))

@@ -13,7 +13,9 @@ from t7 import valor as V, cadena, contable, ojeador, ojos, guardia, tienda, due
 from sim import vendedores as SV, duelos as SD  # noqa: E402
 
 P = params.cargar()
-ESTADO = os.path.join(os.path.dirname(RAIZ), "estado-actual.json")
+ESTADO = os.path.join(os.path.dirname(RAIZ), "estado-actual.json")      # el más reciente, si alguien lo deja al lado
+if not os.path.exists(ESTADO):                                           # si no, el del repositorio (viernes 23:28)
+    ESTADO = os.path.join(RAIZ, "datos", "estado-actual.json")
 
 
 def coleccion():

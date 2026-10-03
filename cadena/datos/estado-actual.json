@@ -1,0 +1,395 @@
+{
+ "updated_at": "2026-10-02T21:28:06Z",
+ "team": "Team 7",
+ "tick": 159,
+ "cash": 123,
+ "level": 2,
+ "unlocked": [
+  "abuela",
+  "chato"
+ ],
+ "frozen": false,
+ "collection_value": 679.1,
+ "score": 8.98,
+ "rank": 14,
+ "deals": 13,
+ "album": {
+  "filled": 28,
+  "slots": 40,
+  "pages": [
+   {
+    "set": "LAV",
+    "name": "Lavapiés",
+    "have": 10,
+    "of": 10,
+    "complete": true
+   },
+   {
+    "set": "MAL",
+    "name": "Malasaña",
+    "have": 6,
+    "of": 10,
+    "complete": false
+   },
+   {
+    "set": "LAT",
+    "name": "La Latina",
+    "have": 8,
+    "of": 10,
+    "complete": false
+   },
+   {
+    "set": "SAL",
+    "name": "Salamanca",
+    "have": 4,
+    "of": 10,
+    "complete": false
+   }
+  ]
+ },
+ "cards": [
+  {
+   "name": "Mural de la Esquina",
+   "ref": "LAV-04",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 83.9
+  },
+  {
+   "name": "Bici de Reparto",
+   "ref": "LAV-05",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 5,
+   "print_run": 300,
+   "value": 83.9
+  },
+  {
+   "name": "Huevos Rotos",
+   "ref": "LAT-03",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 4.0
+  },
+  {
+   "name": "La Corrala",
+   "ref": "LAV-01",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 7,
+   "print_run": 300,
+   "value": 2.8
+  },
+  {
+   "name": "Mercado de la Cebada",
+   "ref": "LAT-04",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 3,
+   "print_run": 300,
+   "value": 16.0
+  },
+  {
+   "name": "Café en Goya",
+   "ref": "SAL-04",
+   "set": "SAL",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 1.8
+  },
+  {
+   "name": "Vinilo de la Movida",
+   "ref": "MAL-01",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 5.0
+  },
+  {
+   "name": "Plaza del Dos de Mayo",
+   "ref": "MAL-02",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 9,
+   "print_run": 300,
+   "value": 1.2
+  },
+  {
+   "name": "Té Moruno",
+   "ref": "LAV-03",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 83.9
+  },
+  {
+   "name": "Caña en la Cava Baja",
+   "ref": "LAT-01",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 4.0
+  },
+  {
+   "name": "Cartel de Conciertos",
+   "ref": "MAL-03",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 4,
+   "print_run": 300,
+   "value": 5.0
+  },
+  {
+   "name": "Huevos Rotos",
+   "ref": "LAT-03",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 5,
+   "print_run": 300,
+   "value": 4.0
+  },
+  {
+   "name": "Perrito con Abrigo",
+   "ref": "SAL-03",
+   "set": "SAL",
+   "rarity": "common",
+   "serial": 3,
+   "print_run": 300,
+   "value": 7.0
+  },
+  {
+   "name": "Teatro Valle-Inclán",
+   "ref": "LAV-08",
+   "set": "LAV",
+   "rarity": "uncommon",
+   "serial": 2,
+   "print_run": 90,
+   "value": 100.4
+  },
+  {
+   "name": "Guantería Antigua",
+   "ref": "SAL-08",
+   "set": "SAL",
+   "rarity": "uncommon",
+   "serial": 1,
+   "print_run": 90,
+   "value": 17.5
+  },
+  {
+   "name": "Cine Doré",
+   "ref": "LAV-09",
+   "set": "LAV",
+   "rarity": "rare",
+   "serial": 1,
+   "print_run": 30,
+   "value": 149.9
+  },
+  {
+   "name": "El Organillero",
+   "ref": "LAT-05",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 7,
+   "print_run": 300,
+   "value": 16.0
+  },
+  {
+   "name": "El Tatuador",
+   "ref": "MAL-04",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 10,
+   "print_run": 300,
+   "value": 0.5
+  },
+  {
+   "name": "El Tatuador",
+   "ref": "MAL-04",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 11,
+   "print_run": 300,
+   "value": 0.5
+  },
+  {
+   "name": "Café de Madrugada",
+   "ref": "MAL-05",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 8,
+   "print_run": 300,
+   "value": 5.0
+  },
+  {
+   "name": "El Frutero de Argumosa",
+   "ref": "LAV-02",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 12,
+   "print_run": 300,
+   "value": 2.8
+  },
+  {
+   "name": "Café en Goya",
+   "ref": "SAL-04",
+   "set": "SAL",
+   "rarity": "common",
+   "serial": 11,
+   "print_run": 300,
+   "value": 1.8
+  },
+  {
+   "name": "Caña en la Cava Baja",
+   "ref": "LAT-01",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 14,
+   "print_run": 300,
+   "value": 4.0
+  },
+  {
+   "name": "Samosas de la Plaza",
+   "ref": "LAV-07",
+   "set": "LAV",
+   "rarity": "uncommon",
+   "serial": 4,
+   "print_run": 90,
+   "value": 100.4
+  },
+  {
+   "name": "Las Vistillas",
+   "ref": "LAT-08",
+   "set": "LAT",
+   "rarity": "uncommon",
+   "serial": 5,
+   "print_run": 90,
+   "value": 40.0
+  },
+  {
+   "name": "Vermut del Domingo",
+   "ref": "LAT-07",
+   "set": "LAT",
+   "rarity": "uncommon",
+   "serial": 7,
+   "print_run": 90,
+   "value": 40.0
+  },
+  {
+   "name": "La Chulapa",
+   "ref": "LAT-06",
+   "set": "LAT",
+   "rarity": "uncommon",
+   "serial": 4,
+   "print_run": 90,
+   "value": 10.0
+  },
+  {
+   "name": "Puesto del Rastro",
+   "ref": "LAT-02",
+   "set": "LAT",
+   "rarity": "common",
+   "serial": 11,
+   "print_run": 300,
+   "value": 16.0
+  },
+  {
+   "name": "La Tabacalera",
+   "ref": "LAV-06",
+   "set": "LAV",
+   "rarity": "uncommon",
+   "serial": 8,
+   "print_run": 90,
+   "value": 100.4
+  },
+  {
+   "name": "Fiesta de San Cayetano",
+   "ref": "LAV-10",
+   "set": "LAV",
+   "rarity": "rare",
+   "serial": 4,
+   "print_run": 30,
+   "value": 149.9
+  },
+  {
+   "name": "Plaza del Dos de Mayo",
+   "ref": "MAL-02",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 22,
+   "print_run": 300,
+   "value": 1.2
+  },
+  {
+   "name": "La Corrala",
+   "ref": "LAV-01",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 17,
+   "print_run": 300,
+   "value": 2.8
+  },
+  {
+   "name": "El Frutero de Argumosa",
+   "ref": "LAV-02",
+   "set": "LAV",
+   "rarity": "common",
+   "serial": 18,
+   "print_run": 300,
+   "value": 2.8
+  },
+  {
+   "name": "El Tatuador",
+   "ref": "MAL-04",
+   "set": "MAL",
+   "rarity": "common",
+   "serial": 16,
+   "print_run": 300,
+   "value": 0.5
+  },
+  {
+   "name": "La Vía Láctea",
+   "ref": "MAL-08",
+   "set": "MAL",
+   "rarity": "uncommon",
+   "serial": 12,
+   "print_run": 90,
+   "value": 12.5
+  },
+  {
+   "name": "Mercado de la Paz",
+   "ref": "SAL-07",
+   "set": "SAL",
+   "rarity": "uncommon",
+   "serial": 11,
+   "print_run": 90,
+   "value": 17.5
+  },
+  {
+   "name": "La Chulapa",
+   "ref": "LAT-06",
+   "set": "LAT",
+   "rarity": "uncommon",
+   "serial": 7,
+   "print_run": 90,
+   "value": 10.0
+  }
+ ],
+ "packs": [],
+ "inicio": {
+  "cash": 400,
+  "cards": 15,
+  "album": 14,
+  "value": 237.5,
+  "deals": 0,
+  "score": 0.0,
+  "rank": 16
+ }
+}
