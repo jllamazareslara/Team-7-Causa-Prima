@@ -1,0 +1,8144 @@
+{
+ "duels": [
+  {
+   "duel": 17,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 27,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 653,
+    "price": 40,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "40 P?",
+     "price": 40,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 18,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 161,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Plata",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 658,
+    "price": 97,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 19,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 171,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Azul",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 687,
+    "price": 103,
+    "tick": 132,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 735,
+    "price": 117,
+    "tick": 133,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "Rival Azul",
+     "text": "Hello, and thank you for meeting me. I would propose 132 P for this one.",
+     "price": 132,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 133,
+     "from": "Rival Azul",
+     "text": "I appreciate it. Let us try to close quickly: 117 P.",
+     "price": 117,
+     "days": null
+    }
+   ],
+   "result": 36.7,
+   "price": 132,
+   "days": 0
+  },
+  {
+   "duel": 20,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 42,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 689,
+    "price": 63,
+    "tick": 132,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 690,
+    "price": 66,
+    "tick": 132,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "63 P?",
+     "price": 63,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "Rival Sol",
+     "text": "Hello, and thank you for meeting me. I would propose 66 P for this one.",
+     "price": 66,
+     "days": null
+    }
+   ],
+   "result": 19.7,
+   "price": 63,
+   "days": 0
+  },
+  {
+   "duel": 27,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 64,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Noche",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 662,
+    "price": 96,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 28,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 141,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 664,
+    "price": 85,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 33,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 93,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 671,
+    "price": 56,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "56 P?",
+     "price": 56,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 34,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 101,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Rojo",
+   "deadline_tick": 132,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 675,
+    "price": 152,
+    "tick": 131,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 121,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 122,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 123,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 124,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 125,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 126,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 127,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 128,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 129,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 130,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    },
+    {
+     "tick": 131,
+     "from": "you",
+     "text": "152 P?",
+     "price": 152,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 49,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 97,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 693,
+    "price": 58,
+    "tick": 132,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 778,
+    "price": 97,
+    "tick": 134,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "58 P?",
+     "price": 58,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "Rival Verde",
+     "text": "Es una pieza que merece su precio: 99 primas. Pienso que es justo.",
+     "price": 99,
+     "days": null
+    },
+    {
+     "tick": 133,
+     "from": "Rival Verde",
+     "text": "Es una pieza que merece su precio: 99 primas. Pienso que es justo.",
+     "price": 99,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Verde",
+     "text": "Es una pieza que merece su precio: 97 primas. Pienso que es justo.",
+     "price": 97,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 97,
+   "days": 0
+  },
+  {
+   "duel": 50,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 99,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Plata",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 5,
+   "your_offer": {
+    "id": 906,
+    "price": 99,
+    "tick": 137,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 878,
+    "price": 86,
+    "tick": 136,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "148 P?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "Rival Plata",
+     "text": "Puedo llegar a 79 primas. Dime si cerramos.",
+     "price": 79,
+     "days": null
+    },
+    {
+     "tick": 133,
+     "from": "Rival Plata",
+     "text": "Puedo llegar a 80 primas. Dime si cerramos.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Plata",
+     "text": "Puedo llegar a 83 primas. Dime si cerramos.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "you",
+     "text": "116 P?",
+     "price": 116,
+     "days": null
+    },
+    {
+     "tick": 135,
+     "from": "you",
+     "text": "100 P?",
+     "price": 100,
+     "days": null
+    },
+    {
+     "tick": 135,
+     "from": "Rival Plata",
+     "text": "Puedo llegar a 83 primas. Dime si cerramos.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "you",
+     "text": "99 P?",
+     "price": 99,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "Rival Plata",
+     "text": "Puedo llegar a 86 primas. Dime si cerramos.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "you",
+     "text": "99 P?",
+     "price": 99,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 99,
+   "days": 0
+  },
+  {
+   "duel": 55,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 106,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Azul",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 702,
+    "price": 159,
+    "tick": 132,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 784,
+    "price": 122,
+    "tick": 134,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "Rival Azul",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 100,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "159 P?",
+     "price": 159,
+     "days": null
+    },
+    {
+     "tick": 133,
+     "from": "Rival Azul",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 114,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Azul",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 122,
+     "days": null
+    }
+   ],
+   "result": 15.0,
+   "price": 122,
+   "days": 0
+  },
+  {
+   "duel": 56,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 135,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 144,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 706,
+    "price": 81,
+    "tick": 132,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 787,
+    "price": 135,
+    "tick": 134,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 132,
+     "from": "Rival Verde",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 155,
+     "days": null
+    },
+    {
+     "tick": 132,
+     "from": "you",
+     "text": "81 P?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 133,
+     "from": "Rival Verde",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 142,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Verde",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos.",
+     "price": 135,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 135,
+   "days": 0
+  },
+  {
+   "duel": 71,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 112,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 149,
+   "decay_per_round": 0.06,
+   "rounds": 5,
+   "your_offer": {
+    "id": 1087,
+    "price": 112,
+    "tick": 141,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1101,
+    "price": 95,
+    "tick": 141,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 137,
+     "from": "you",
+     "text": "168 P?",
+     "price": 168,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "Rival Sol",
+     "text": "Thank you for meeting me. I can offer 81 P.",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "you",
+     "text": "124 P?",
+     "price": 124,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "Rival Sol",
+     "text": "I appreciate your move. 83 P is where I can be.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "you",
+     "text": "112 P?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "Rival Sol",
+     "text": "Let us close quickly: 86 P.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "you",
+     "text": "112 P?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "Rival Sol",
+     "text": "A step towards you: 90 P.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "you",
+     "text": "112 P?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "Rival Sol",
+     "text": "I think 95 P is fair for both of us.",
+     "price": 95,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 112,
+   "days": 0
+  },
+  {
+   "duel": 72,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 162,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Rojo",
+   "deadline_tick": 151,
+   "decay_per_round": 0.06,
+   "rounds": 4,
+   "your_offer": {
+    "id": 1164,
+    "price": 162,
+    "tick": 143,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1134,
+    "price": 177,
+    "tick": 142,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 139,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "Rival Rojo",
+     "text": "Thank you for meeting me. I can offer 178 P.",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "you",
+     "text": "137 P?",
+     "price": 137,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "Rival Rojo",
+     "text": "I appreciate your move. 177 P is where I can be.",
+     "price": 177,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "you",
+     "text": "157 P?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "Rival Rojo",
+     "text": "Let us close quickly: 174 P.",
+     "price": 174,
+     "days": null
+    },
+    {
+     "tick": 142,
+     "from": "Rival Rojo",
+     "text": "A real step towards you: 177 P.",
+     "price": 177,
+     "days": null
+    },
+    {
+     "tick": 142,
+     "from": "you",
+     "text": "162 P?",
+     "price": 162,
+     "days": null
+    },
+    {
+     "tick": 143,
+     "from": "you",
+     "text": "162 P?",
+     "price": 162,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 162,
+   "days": 0
+  },
+  {
+   "duel": 99,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 171,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 1649,
+    "price": 171,
+    "tick": 155,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1326,
+    "price": 187,
+    "tick": 146,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 145,
+     "from": "you",
+     "text": "137 P?",
+     "price": 137,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "you",
+     "text": "154 P?",
+     "price": 154,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "Rival Verde",
+     "text": "I can move a little: 187.",
+     "price": 187,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "170 P?",
+     "price": 170,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 100,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 120,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Luna",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 1650,
+    "price": 120,
+    "tick": 155,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1327,
+    "price": 98,
+    "tick": 146,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "180 P?",
+     "price": 180,
+     "days": null
+    },
+    {
+     "tick": 145,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "you",
+     "text": "135 P?",
+     "price": 135,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "Rival Luna",
+     "text": "I can move a little: 98.",
+     "price": 98,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 101,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 83,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Plata",
+   "deadline_tick": 148,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 857,
+    "price": 124,
+    "tick": 136,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 885,
+    "price": 124,
+    "tick": 136,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 136,
+     "from": "you",
+     "text": "124 P?",
+     "price": 124,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "Rival Plata",
+     "text": "Hello! I can do 124. Thank you for your time.",
+     "price": 124,
+     "days": null
+    }
+   ],
+   "result": 38.5,
+   "price": 124,
+   "days": 0
+  },
+  {
+   "duel": 102,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 114,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Sol",
+   "deadline_tick": 148,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 858,
+    "price": 68,
+    "tick": 136,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 930,
+    "price": 73,
+    "tick": 137,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 136,
+     "from": "you",
+     "text": "68 P?",
+     "price": 68,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "Rival Sol",
+     "text": "Hello! I can do 77. Thank you for your time.",
+     "price": 77,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "Rival Sol",
+     "text": "Thanks for the reply. 73 works for me.",
+     "price": 73,
+     "days": null
+    }
+   ],
+   "result": 34.8,
+   "price": 77,
+   "days": 0
+  },
+  {
+   "duel": 169,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 127,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 1247,
+    "price": 154,
+    "tick": 145,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1308,
+    "price": 148,
+    "tick": 146,
+    "days": 5
+   },
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "190 P?",
+     "price": 190,
+     "days": null
+    },
+    {
+     "tick": 144,
+     "from": "Rival Oro",
+     "text": "117 with delivery on day 5. That day suits you too, I think.",
+     "price": 117,
+     "days": 5
+    },
+    {
+     "tick": 145,
+     "from": "you",
+     "text": "154 P?",
+     "price": 154,
+     "days": null
+    },
+    {
+     "tick": 145,
+     "from": "Rival Oro",
+     "text": "133 with delivery on day 5. That day suits you too, I think.",
+     "price": 133,
+     "days": 5
+    },
+    {
+     "tick": 146,
+     "from": "Rival Oro",
+     "text": "148 with delivery on day 5. That day suits you too, I think.",
+     "price": 148,
+     "days": 5
+    }
+   ],
+   "result": 5.3,
+   "price": 133,
+   "days": 0
+  },
+  {
+   "duel": 170,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de Vallehermoso",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 142,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Oro",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 1197,
+    "price": 85,
+    "tick": 144,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1266,
+    "price": 107,
+    "tick": 145,
+    "days": 5
+   },
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "85 P?",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 144,
+     "from": "Rival Oro",
+     "text": "114 with delivery on day 5. That day suits you too, I think.",
+     "price": 114,
+     "days": 5
+    },
+    {
+     "tick": 145,
+     "from": "Rival Oro",
+     "text": "107 with delivery on day 5. That day suits you too, I think.",
+     "price": 107,
+     "days": 5
+    }
+   ],
+   "result": 26.3,
+   "price": 114,
+   "days": 0
+  },
+  {
+   "duel": 171,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Plaza de Olavide",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 115,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Verde",
+   "deadline_tick": 148,
+   "decay_per_round": 0.06,
+   "rounds": 3,
+   "your_offer": {
+    "id": 1000,
+    "price": 115,
+    "tick": 139,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 988,
+    "price": 67,
+    "tick": 138,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 136,
+     "from": "you",
+     "text": "172 P?",
+     "price": 172,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "Rival Verde",
+     "text": "Thanks for the opening, but 172 is well above what this card is worth to our album right now. We can offer 58 to get things moving.",
+     "price": 58,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "Rival Verde",
+     "text": "Appreciate the move down to 115, but that's still a stretch for our album budget. We can come up to 64 as a fair step toward each other.",
+     "price": 64,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "Rival Verde",
+     "text": "We notice you've held at 115, so we'll move again to 67 in good faith, but we need to see some movement from your side to keep closing the gap.",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 115,
+   "days": 0
+  },
+  {
+   "duel": 172,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Plaza de Olavide",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 115,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 150,
+   "decay_per_round": 0.06,
+   "rounds": 4,
+   "your_offer": {
+    "id": 1145,
+    "price": 115,
+    "tick": 142,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1131,
+    "price": 160,
+    "tick": 141,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 138,
+     "from": "you",
+     "text": "69 P?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "Rival Luna",
+     "text": "Thanks for the opening, but 69 is far below what this card is worth to a collector; we can do 186, which reflects its quality and condition.",
+     "price": 186,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "Rival Luna",
+     "text": "You've moved to 115, which we appreciate, and we'll step down to 177 to meet you partway on a card in this condition. Bring a stronger number and we can close this quickly.",
+     "price": 177,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "Rival Luna",
+     "text": "You've held at 115 while we've already moved twice, so we'll take a smaller step to 168 and wait for you to come up meaningfully. Show us real movement and we'll keep working toward a deal.",
+     "price": 168,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 141,
+     "from": "Rival Luna",
+     "text": "We've come down three times while you've stayed at 115, so this is a modest step to 160 and we'll hold here until you show real movement. Meet us with a serious counter and we can finish this.",
+     "price": 160,
+     "days": null
+    },
+    {
+     "tick": 142,
+     "from": "you",
+     "text": "115 P?",
+     "price": 115,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 115,
+   "days": 0
+  },
+  {
+   "duel": 189,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 76,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 1651,
+    "price": 76,
+    "tick": 155,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "114 P?",
+     "price": 114,
+     "days": null
+    },
+    {
+     "tick": 145,
+     "from": "you",
+     "text": "95 P?",
+     "price": 95,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "you",
+     "text": "86 P?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "81 P?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "you",
+     "text": "78 P?",
+     "price": 78,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "77 P?",
+     "price": 77,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "76 P?",
+     "price": 76,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 190,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "Andén 0",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 120,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 156,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 1655,
+    "price": 120,
+    "tick": 155,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 144,
+     "from": "you",
+     "text": "72 P?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 145,
+     "from": "you",
+     "text": "96 P?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "you",
+     "text": "108 P?",
+     "price": 108,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "114 P?",
+     "price": 114,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "you",
+     "text": "117 P?",
+     "price": 117,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "118 P?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "119 P?",
+     "price": 119,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "120 P?",
+     "price": 120,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 211,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 105,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 146,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 804,
+    "price": 158,
+    "tick": 134,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 846,
+    "price": 116,
+    "tick": 135,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 134,
+     "from": "you",
+     "text": "158 P?",
+     "price": 158,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Oro",
+     "text": "Thanks for the offer. I can do 114 P.",
+     "price": 114,
+     "days": null
+    },
+    {
+     "tick": 135,
+     "from": "Rival Oro",
+     "text": "That's a real step from me: 116 P.",
+     "price": 116,
+     "days": null
+    }
+   ],
+   "result": 8.5,
+   "price": 114,
+   "days": 0
+  },
+  {
+   "duel": 212,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Taxi Blanco",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 97,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 146,
+   "decay_per_round": 0.06,
+   "rounds": 6,
+   "your_offer": {
+    "id": 1046,
+    "price": 97,
+    "tick": 140,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1037,
+    "price": 103,
+    "tick": 139,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 134,
+     "from": "you",
+     "text": "58 P?",
+     "price": 58,
+     "days": null
+    },
+    {
+     "tick": 134,
+     "from": "Rival Luna",
+     "text": "We both lose the longer we talk. 125 P?",
+     "price": 125,
+     "days": null
+    },
+    {
+     "tick": 135,
+     "from": "you",
+     "text": "92 P?",
+     "price": 92,
+     "days": null
+    },
+    {
+     "tick": 135,
+     "from": "Rival Luna",
+     "text": "Thanks for the offer. I can do 121 P.",
+     "price": 121,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 136,
+     "from": "Rival Luna",
+     "text": "Meeting you closer: 116 P.",
+     "price": 116,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 137,
+     "from": "Rival Luna",
+     "text": "Fair is fair: 112 P, and we can close now.",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 138,
+     "from": "Rival Luna",
+     "text": "I've moved towards you again: 107 P.",
+     "price": 107,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    },
+    {
+     "tick": 139,
+     "from": "Rival Luna",
+     "text": "We both lose the longer we talk. 103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 140,
+     "from": "you",
+     "text": "97 P?",
+     "price": 97,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 97,
+   "days": 0
+  },
+  {
+   "duel": 221,
+   "session": 1,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 94,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Plata",
+   "deadline_tick": 168,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 1996,
+    "price": 94,
+    "tick": 167,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 156,
+     "from": "you",
+     "text": "141 P?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 157,
+     "from": "you",
+     "text": "118 P?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 158,
+     "from": "you",
+     "text": "106 P?",
+     "price": 106,
+     "days": null
+    },
+    {
+     "tick": 159,
+     "from": "you",
+     "text": "100 P?",
+     "price": 100,
+     "days": null
+    },
+    {
+     "tick": 160,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 161,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 162,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 163,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 164,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 165,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 166,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 167,
+     "from": "you",
+     "text": "94?",
+     "price": 94,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 222,
+   "session": 1,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 144,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Noche",
+   "deadline_tick": 180,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 2197,
+    "price": 144,
+    "tick": 179,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 168,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 169,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 170,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 171,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 172,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 173,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 174,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 175,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 176,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 177,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 178,
+     "from": "you",
+     "text": "86?",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 179,
+     "from": "you",
+     "text": "144?",
+     "price": 144,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 273,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Plaza de Olavide",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 171,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 158,
+   "decay_per_round": 0.06,
+   "rounds": 4,
+   "your_offer": {
+    "id": 1473,
+    "price": 171,
+    "tick": 150,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1447,
+    "price": 177,
+    "tick": 149,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 146,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 146,
+     "from": "Rival Verde",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 194,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "Rival Verde",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 188,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "149 P?",
+     "price": 149,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "you",
+     "text": "169 P?",
+     "price": 169,
+     "days": null
+    },
+    {
+     "tick": 148,
+     "from": "Rival Verde",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 183,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 149,
+     "from": "Rival Verde",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 177,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "171 P?",
+     "price": 171,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 171,
+   "days": 0
+  },
+  {
+   "duel": 274,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "Plaza de Olavide",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 103,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 163,
+   "decay_per_round": 0.06,
+   "rounds": 7,
+   "your_offer": {
+    "id": 1766,
+    "price": 103,
+    "tick": 158,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1748,
+    "price": 100,
+    "tick": 157,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 151,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "154 P?",
+     "price": 154,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "106 P?",
+     "price": 106,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 66,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 156,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 156,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 93,
+     "days": null
+    },
+    {
+     "tick": 157,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 157,
+     "from": "Rival Oro",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 100,
+     "days": null
+    },
+    {
+     "tick": 158,
+     "from": "you",
+     "text": "103 P?",
+     "price": 103,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 103,
+   "days": 0
+  },
+  {
+   "duel": 277,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 198,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Plata",
+   "deadline_tick": 175,
+   "decay_per_round": 0.06,
+   "rounds": 11,
+   "your_offer": {
+    "id": 2138,
+    "price": 118,
+    "tick": 173,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 2168,
+    "price": 125,
+    "tick": 174,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 163,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 163,
+     "from": "Rival Plata",
+     "text": "El Tren Fantasma is a rare piece and hard to find in this condition. I'm offering it at 175 P, which reflects its scarcity and the demand it draws. I'm happy to hear your reasoning if you see it differently.",
+     "price": 175,
+     "days": null
+    },
+    {
+     "tick": 164,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 164,
+     "from": "Rival Plata",
+     "text": "I'm holding close to where I am, at 173 P, because the piece is scarce and in strong condition. I'd need a serious counter from you before moving further. What do you think it's worth, and why?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 165,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 165,
+     "from": "Rival Plata",
+     "text": "I'm staying at 173 P for now. Repeating the same figure doesn't give me anything to work with, so I'd need a real counter with some movement and your reasoning before I adjust again.",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 166,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 166,
+     "from": "Rival Plata",
+     "text": "I'm holding at 173 P. Repeating the same figure with no reasoning gives me nothing to work with, so I'll move only once you put up a higher number and tell me what's behind it. What's your next figure?",
+     "price": null,
+     "days": null
+    },
+    {
+     "tick": 167,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 167,
+     "from": "Rival Plata",
+     "text": "I'm staying at 173 P. Your figure hasn't moved across several messages, so it gives me nothing to adjust against. I'll move only when you put a materially higher number on the table, so what is your real figure?",
+     "price": null,
+     "days": null
+    },
+    {
+     "tick": 168,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 168,
+     "from": "Rival Plata",
+     "text": "I'm staying where I am at 173 P. Your figure has stayed put through several exchanges, so there's nothing new for me to weigh. When you make a real move upward and explain what's behind it, I'll respond in kind.",
+     "price": null,
+     "days": null
+    },
+    {
+     "tick": 169,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 169,
+     "from": "Rival Plata",
+     "text": "To show good faith I'm coming down to 160 P, a clear step from where I started. That figure is realistic for a piece this scarce, and your current number won't close this. Further movement from me depends on you naming a genuinely higher figure.",
+     "price": 160,
+     "days": null
+    },
+    {
+     "tick": 170,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 170,
+     "from": "Rival Plata",
+     "text": "I've already moved once, to 158 P, and your figure hasn't budged at all. Any further step from me needs a genuinely higher number from you, and with the clock running down it's in both our interests to see real movement.",
+     "price": 158,
+     "days": null
+    },
+    {
+     "tick": 171,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 171,
+     "from": "Rival Plata",
+     "text": "I'm making a small move to 156 P, even though your figure hasn't changed in nine messages. Time is running down, so I need a real counter from you, a genuinely higher number, to keep this going. What is the most you'll put on the table?",
+     "price": 156,
+     "days": null
+    },
+    {
+     "tick": 172,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 172,
+     "from": "Rival Plata",
+     "text": "With time running short, I'm making a clear move to 145 P so we can actually close this. That's a real step down from where I was, and it's grounded in the piece's scarcity and condition. I need you to name a genuinely higher figure now, since your current one can't work.",
+     "price": 145,
+     "days": null
+    },
+    {
+     "tick": 173,
+     "from": "you",
+     "text": "118?",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 173,
+     "from": "Rival Plata",
+     "text": "I'm making one clear final step to 132 P, a substantial move from where I began. With the clock nearly out, I'd like to close on this, so please either meet it or name a real counter, because your current figure can't close this.",
+     "price": 132,
+     "days": null
+    },
+    {
+     "tick": 174,
+     "from": "Rival Plata",
+     "text": "This is my last offer: 125 P. It's the final price I have on the table, and it's a real move from where I began. Take it now, or this ends with no sale.",
+     "price": 125,
+     "days": null
+    }
+   ],
+   "result": 33.4,
+   "price": 132,
+   "days": 0
+  },
+  {
+   "duel": 278,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Tren Fantasma",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 69,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Verde",
+   "deadline_tick": 177,
+   "decay_per_round": 0.06,
+   "rounds": 10,
+   "your_offer": {
+    "id": 2170,
+    "price": 111,
+    "tick": 175,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 2166,
+    "price": 104,
+    "tick": 174,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 165,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 165,
+     "from": "Rival Verde",
+     "text": "That figure is well above what this piece is worth to us. I can offer 80 P, which is a fair price for El Tren Fantasma. If you can come down meaningfully, we can wrap this up quickly.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 166,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 166,
+     "from": "Rival Verde",
+     "text": "I've nudged up to 82 P, but that's a token step: your figure hasn't moved and I need to see a real move down before I go further. Meet me closer and we can finish this quickly.",
+     "price": 82,
+     "days": null
+    },
+    {
+     "tick": 167,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 167,
+     "from": "Rival Verde",
+     "text": "I'm staying at 82 P. I've moved twice while your figure hasn't moved at all, so it's your turn. Give me a real counter below your current number and we can close this out.",
+     "price": 82,
+     "days": null
+    },
+    {
+     "tick": 168,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 168,
+     "from": "Rival Verde",
+     "text": "I'll go to 84 P, another step from me. You've repeated the same figure four times without moving once, so I'd like to see a real counter below it before I go further.",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 169,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 169,
+     "from": "Rival Verde",
+     "text": "I'm holding at 84 P. Repeating the same figure doesn't give me anything to respond to, so I won't move again until you name a lower one.",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 170,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 170,
+     "from": "Rival Verde",
+     "text": "I'll make a small move to 85 P. Any further movement from me depends on you naming a lower figure than the one you keep repeating. Give me something to work with and we can wrap this up.",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 171,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 171,
+     "from": "Rival Verde",
+     "text": "I'll go to 86 P, a small step from me again. I've moved several times and your figure hasn't moved once, so the next real move needs to come from your side.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 172,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 172,
+     "from": "Rival Verde",
+     "text": "I'm making a clear step to 90 P, a real move on my side. I've come up many times while your figure has stayed put, so I need a real counter below it to keep going.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 173,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 173,
+     "from": "Rival Verde",
+     "text": "I'm moving to 96 P, a clear step from me and my last real move with so little time left. Meet me here now rather than let this end with nothing for either of us.",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 174,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 174,
+     "from": "Rival Verde",
+     "text": "I'm raising to 104 P, a firm step and my last real move with so little time left. Please meet me here so we both walk away with something.",
+     "price": 104,
+     "days": null
+    },
+    {
+     "tick": 175,
+     "from": "you",
+     "text": "111?",
+     "price": 111,
+     "days": null
+    }
+   ],
+   "result": 22.6,
+   "price": 111,
+   "days": 0
+  },
+  {
+   "duel": 301,
+   "session": 1,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 44,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Rojo",
+   "deadline_tick": 159,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 1350,
+    "price": 66,
+    "tick": 147,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 1367,
+    "price": 61,
+    "tick": 147,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 147,
+     "from": "you",
+     "text": "66 P?",
+     "price": 66,
+     "days": null
+    },
+    {
+     "tick": 147,
+     "from": "Rival Rojo",
+     "text": "I can offer 61 P for this one.",
+     "price": 61,
+     "days": null
+    }
+   ],
+   "result": 16.0,
+   "price": 61,
+   "days": 0
+  },
+  {
+   "duel": 302,
+   "session": 1,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Rastro al Amanecer",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 151,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Oro",
+   "deadline_tick": 161,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 1768,
+    "price": 150,
+    "tick": 158,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 149,
+     "from": "you",
+     "text": "91 P?",
+     "price": 91,
+     "days": null
+    },
+    {
+     "tick": 150,
+     "from": "you",
+     "text": "121 P?",
+     "price": 121,
+     "days": null
+    },
+    {
+     "tick": 151,
+     "from": "you",
+     "text": "136 P?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 152,
+     "from": "you",
+     "text": "144 P?",
+     "price": 144,
+     "days": null
+    },
+    {
+     "tick": 153,
+     "from": "you",
+     "text": "148 P?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 154,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    },
+    {
+     "tick": 155,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    },
+    {
+     "tick": 156,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    },
+    {
+     "tick": 157,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    },
+    {
+     "tick": 158,
+     "from": "you",
+     "text": "150 P?",
+     "price": 150,
+     "days": null
+    }
+   ],
+   "result": 1.0,
+   "price": 150,
+   "days": 0
+  },
+  {
+   "duel": 2308,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 122,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Oro",
+   "deadline_tick": 475,
+   "decay_per_round": 0.06,
+   "rounds": 6,
+   "your_offer": {
+    "id": 2987,
+    "price": 73,
+    "tick": 473,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3017,
+    "price": 87,
+    "tick": 474,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 459,
+     "from": "Rival Oro",
+     "text": "111 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 111,
+     "days": null
+    },
+    {
+     "tick": 459,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 460,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 460,
+     "from": "Rival Oro",
+     "text": "105 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 105,
+     "days": null
+    },
+    {
+     "tick": 461,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 461,
+     "from": "Rival Oro",
+     "text": "98 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 98,
+     "days": null
+    },
+    {
+     "tick": 462,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 463,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 464,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 465,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 466,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 467,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 468,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 469,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 470,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 471,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 472,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 472,
+     "from": "Rival Oro",
+     "text": "95 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 95,
+     "days": null
+    },
+    {
+     "tick": 473,
+     "from": "you",
+     "text": "73?",
+     "price": 73,
+     "days": null
+    },
+    {
+     "tick": 473,
+     "from": "Rival Oro",
+     "text": "91 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 91,
+     "days": null
+    },
+    {
+     "tick": 474,
+     "from": "Rival Oro",
+     "text": "87 for Café en Goya. Every round costs us both: let's close it now.",
+     "price": 87,
+     "days": null
+    }
+   ],
+   "result": 24.1,
+   "price": 87,
+   "days": 0
+  },
+  {
+   "duel": 2309,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 83,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Azul",
+   "deadline_tick": 475,
+   "decay_per_round": 0.06,
+   "rounds": 6,
+   "your_offer": {
+    "id": 2988,
+    "price": 133,
+    "tick": 473,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3020,
+    "price": 108,
+    "tick": 474,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 459,
+     "from": "Rival Azul",
+     "text": "I can do 80 for Café en Goya. Let's not let the value melt away.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 459,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 460,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 460,
+     "from": "Rival Azul",
+     "text": "I can do 87 for Café en Goya. Let's not let the value melt away.",
+     "price": 87,
+     "days": null
+    },
+    {
+     "tick": 461,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 461,
+     "from": "Rival Azul",
+     "text": "I can do 95 for Café en Goya. Let's not let the value melt away.",
+     "price": 95,
+     "days": null
+    },
+    {
+     "tick": 462,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 463,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 464,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 465,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 466,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 467,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 468,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 469,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 470,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 471,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 472,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 472,
+     "from": "Rival Azul",
+     "text": "I can do 99 for Café en Goya. Let's not let the value melt away.",
+     "price": 99,
+     "days": null
+    },
+    {
+     "tick": 473,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 473,
+     "from": "Rival Azul",
+     "text": "I can do 104 for Café en Goya. Let's not let the value melt away.",
+     "price": 104,
+     "days": null
+    },
+    {
+     "tick": 474,
+     "from": "Rival Azul",
+     "text": "I can do 108 for Café en Goya. Let's not let the value melt away.",
+     "price": 108,
+     "days": null
+    }
+   ],
+   "result": 17.2,
+   "price": 108,
+   "days": 0
+  },
+  {
+   "duel": 2334,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 150,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 523,
+   "decay_per_round": 0.06,
+   "rounds": 6,
+   "your_offer": {
+    "id": 4130,
+    "price": 67,
+    "tick": 522,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4149,
+    "price": 115,
+    "tick": 522,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 507,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 507,
+     "from": "Rival Verde",
+     "text": "Hello, and thank you for meeting me. I would propose 171 P for this one.",
+     "price": 171,
+     "days": null
+    },
+    {
+     "tick": 508,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 509,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 509,
+     "from": "Rival Verde",
+     "text": "I appreciate it, thank you. Could we close at 148 P, please?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 510,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 511,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 511,
+     "from": "Rival Verde",
+     "text": "Fair enough, thank you. I will meet you partway at 139 P.",
+     "price": 139,
+     "days": null
+    },
+    {
+     "tick": 512,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 513,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 513,
+     "from": "Rival Verde",
+     "text": "Thank you, we are getting close. 132 P works for me.",
+     "price": 132,
+     "days": null
+    },
+    {
+     "tick": 514,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 515,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 516,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 517,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 518,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 519,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 520,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 520,
+     "from": "Rival Verde",
+     "text": "Thank you for your offer. I can move to 115 P.",
+     "price": 115,
+     "days": null
+    },
+    {
+     "tick": 521,
+     "from": "you",
+     "text": "89?",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "you",
+     "text": "Quick one: Retiro or Malasaña for a coffee? My offer is 67.",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "Rival Verde",
+     "text": "Thank you. I think 115 P is fair for both of us. Shall we settle, please?",
+     "price": 115,
+     "days": null
+    }
+   ],
+   "result": 24.1,
+   "price": 115,
+   "days": 0
+  },
+  {
+   "duel": 2335,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 118,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 539,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 4251,
+    "price": 121,
+    "tick": 527,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4222,
+    "price": 116,
+    "tick": 525,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 523,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 236.",
+     "price": 236,
+     "days": null
+    },
+    {
+     "tick": 523,
+     "from": "Rival Oro",
+     "text": "Hello, and thank you for meeting me. I would propose 96 P for this one.",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 524,
+     "from": "you",
+     "text": "236?",
+     "price": 236,
+     "days": null
+    },
+    {
+     "tick": 525,
+     "from": "you",
+     "text": "236?",
+     "price": 236,
+     "days": null
+    },
+    {
+     "tick": 525,
+     "from": "Rival Oro",
+     "text": "I appreciate it, thank you. Could we close at 116 P, please?",
+     "price": 116,
+     "days": null
+    },
+    {
+     "tick": 526,
+     "from": "you",
+     "text": "236?",
+     "price": 236,
+     "days": null
+    },
+    {
+     "tick": 527,
+     "from": "you",
+     "text": "We're close. 121 and done?",
+     "price": 121,
+     "days": null
+    }
+   ],
+   "result": 2.7,
+   "price": 121,
+   "days": 0
+  },
+  {
+   "duel": 2366,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 113,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Oro",
+   "deadline_tick": 491,
+   "decay_per_round": 0.06,
+   "rounds": 5,
+   "your_offer": {
+    "id": 3392,
+    "price": 67,
+    "tick": 489,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3412,
+    "price": 110,
+    "tick": 489,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 475,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 475,
+     "from": "Rival Oro",
+     "text": "Palacio de Cristal is a rare glass-and-iron landmark, and that figure is well short of what it is worth. I can offer it at 165 P, which reflects its quality and scarcity.1",
+     "price": 165,
+     "days": null
+    },
+    {
+     "tick": 476,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 477,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 478,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 479,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 480,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 481,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 481,
+     "from": "Rival Oro",
+     "text": "I'm willing to move: I can offer Palacio de Cristal at 148 P, a clear step down from where I began. Your repeated figure is far from a workable level, so please come up meaningfully to show you're serious about closing.",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 482,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 483,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 484,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 485,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 486,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 487,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 487,
+     "from": "Rival Oro",
+     "text": "I'm making one clear move to 132 P for Palacio de Cristal, a substantial step down from my last figure. Time is nearly up, so a real move up from your current level is needed if we are going to close this.",
+     "price": 132,
+     "days": null
+    },
+    {
+     "tick": 488,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 488,
+     "from": "Rival Oro",
+     "text": "I'm moving again to 118 P for Palacio de Cristal, a serious closing price well below where I started. With little time left, please meet it or name a real counter so we can finish this.",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 489,
+     "from": "you",
+     "text": "67?",
+     "price": 67,
+     "days": null
+    },
+    {
+     "tick": 489,
+     "from": "Rival Oro",
+     "text": "My last price for Palacio de Cristal is 110 P, a long way down from where I opened. Time is nearly gone, and if you don't meet it now we both walk away with nothing.",
+     "price": 110,
+     "days": null
+    }
+   ],
+   "result": 2.2,
+   "price": 110,
+   "days": 0
+  },
+  {
+   "duel": 2367,
+   "session": 2,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 62,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Azul",
+   "deadline_tick": 507,
+   "decay_per_round": 0.06,
+   "rounds": 5,
+   "your_offer": {
+    "id": 3768,
+    "price": 101,
+    "tick": 506,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3762,
+    "price": 69,
+    "tick": 505,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 491,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 491,
+     "from": "Rival Azul",
+     "text": "That opening figure is far from what I can justify for Palacio de Cristal. Given its condition and what comparable pieces fetch, I can offer 44 P. If you have a number grounded in real value, I'm happy to hear it.}",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 492,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 493,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 494,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 495,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 496,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 497,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 497,
+     "from": "Rival Azul",
+     "text": "I'm willing to move to 52 P to show good faith. Any further movement from me depends on you coming down substantially from your current figure.",
+     "price": 52,
+     "days": null
+    },
+    {
+     "tick": 498,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 499,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 500,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 501,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 502,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 503,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 503,
+     "from": "Rival Azul",
+     "text": "I'm moving to 60 P, a clear step toward you. With time nearly out, we need you to come down substantially from your current figure to settle this.",
+     "price": 60,
+     "days": null
+    },
+    {
+     "tick": 504,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    },
+    {
+     "tick": 504,
+     "from": "Rival Azul",
+     "text": "I'm making one clear final step to 66 P for Palacio de Cristal. This is my last offer, so it's your move to take it or let the time run out.",
+     "price": 66,
+     "days": null
+    },
+    {
+     "tick": 505,
+     "from": "you",
+     "text": "Quick one: Retiro or Malasaña for a coffee? My offer is 83.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 505,
+     "from": "Rival Azul",
+     "text": "Thanks for moving; I see the effort. I'm making one clear step to 69 P, and with time nearly out this is the figure that can settle it now. As for coffee, Retiro is the better walk.",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 506,
+     "from": "you",
+     "text": "101?",
+     "price": 101,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2434,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 108,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Noche",
+   "deadline_tick": 475,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 2989,
+    "price": 173,
+    "tick": 473,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 2731,
+    "price": 128,
+    "tick": 463,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 459,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 460,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 461,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 462,
+     "from": "Rival Noche",
+     "text": "Thank you, that's kind. I could do 128 P and close it today.",
+     "price": 128,
+     "days": null
+    },
+    {
+     "tick": 462,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 463,
+     "from": "Rival Noche",
+     "text": "I appreciate it. 128 P works for me, if it works for you.",
+     "price": 128,
+     "days": null
+    },
+    {
+     "tick": 463,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 464,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 465,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 466,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 467,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 468,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 469,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 470,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 471,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 472,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 473,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    }
+   ],
+   "result": 17.7,
+   "price": 128,
+   "days": 0
+  },
+  {
+   "duel": 2435,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 69,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 491,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 3393,
+    "price": 41,
+    "tick": 489,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3155,
+    "price": 52,
+    "tick": 479,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 475,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 476,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 477,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 478,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 478,
+     "from": "Rival Verde",
+     "text": "Thank you, that's kind. I could do 52 P and close it today.",
+     "price": 52,
+     "days": null
+    },
+    {
+     "tick": 479,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 479,
+     "from": "Rival Verde",
+     "text": "I appreciate it. 52 P works for me, if it works for you.",
+     "price": 52,
+     "days": null
+    },
+    {
+     "tick": 480,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 481,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 482,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 483,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 484,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 485,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 486,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 487,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 488,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    },
+    {
+     "tick": 489,
+     "from": "you",
+     "text": "41?",
+     "price": 41,
+     "days": null
+    }
+   ],
+   "result": 15.0,
+   "price": 52,
+   "days": 0
+  },
+  {
+   "duel": 2440,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 76,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Verde",
+   "deadline_tick": 523,
+   "decay_per_round": 0.06,
+   "rounds": 16,
+   "your_offer": {
+    "id": 4134,
+    "price": 96,
+    "tick": 522,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4142,
+    "price": 86,
+    "tick": 522,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 507,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 507,
+     "from": "Rival Verde",
+     "text": "Hello! I can do 51. Thank you for your time.",
+     "price": 51,
+     "days": null
+    },
+    {
+     "tick": 508,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 508,
+     "from": "Rival Verde",
+     "text": "Thanks for the reply. 59 works for me.",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 509,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 509,
+     "from": "Rival Verde",
+     "text": "Let me move closer: 65.",
+     "price": 65,
+     "days": null
+    },
+    {
+     "tick": 510,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 510,
+     "from": "Rival Verde",
+     "text": "I'd like to close this. My offer is 70.",
+     "price": 70,
+     "days": null
+    },
+    {
+     "tick": 511,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 511,
+     "from": "Rival Verde",
+     "text": "Meeting you halfway at 74, with thanks.",
+     "price": 74,
+     "days": null
+    },
+    {
+     "tick": 512,
+     "from": "Rival Verde",
+     "text": "Final stretch from me: 77.",
+     "price": 77,
+     "days": null
+    },
+    {
+     "tick": 512,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 513,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 513,
+     "from": "Rival Verde",
+     "text": "Hello! I can do 79. Thank you for your time.",
+     "price": 79,
+     "days": null
+    },
+    {
+     "tick": 514,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 514,
+     "from": "Rival Verde",
+     "text": "Thanks for the reply. 80 works for me.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 515,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 515,
+     "from": "Rival Verde",
+     "text": "Let me move closer: 81.",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 516,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 516,
+     "from": "Rival Verde",
+     "text": "I'd like to close this. My offer is 82.",
+     "price": 82,
+     "days": null
+    },
+    {
+     "tick": 517,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 517,
+     "from": "Rival Verde",
+     "text": "Meeting you halfway at 83, with thanks.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 518,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 518,
+     "from": "Rival Verde",
+     "text": "Final stretch from me: 84.",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 519,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 519,
+     "from": "Rival Verde",
+     "text": "Hello! I can do 85. Thank you for your time.",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 520,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 520,
+     "from": "Rival Verde",
+     "text": "Thanks for the reply. 86 works for me.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 521,
+     "from": "you",
+     "text": "122?",
+     "price": 122,
+     "days": null
+    },
+    {
+     "tick": 521,
+     "from": "Rival Verde",
+     "text": "Let me move closer: 86.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 96.",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "Rival Verde",
+     "text": "I'd like to close this. My offer is 86.",
+     "price": 86,
+     "days": null
+    }
+   ],
+   "result": 3.7,
+   "price": 86,
+   "days": 0
+  },
+  {
+   "duel": 2441,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 88,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Oro",
+   "deadline_tick": 539,
+   "decay_per_round": 0.06,
+   "rounds": 15,
+   "your_offer": {
+    "id": 4448,
+    "price": 46,
+    "tick": 538,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4460,
+    "price": 78,
+    "tick": 538,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 523,
+     "from": "you",
+     "text": "Quick one: Retiro or Malasaña for a coffee? My offer is 39.",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 523,
+     "from": "Rival Oro",
+     "text": "Hello! I can do 110. Thank you for your time.",
+     "price": 110,
+     "days": null
+    },
+    {
+     "tick": 524,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 524,
+     "from": "Rival Oro",
+     "text": "Thanks for the reply. 102 works for me.",
+     "price": 102,
+     "days": null
+    },
+    {
+     "tick": 525,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 525,
+     "from": "Rival Oro",
+     "text": "Let me move closer: 96.",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 526,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 526,
+     "from": "Rival Oro",
+     "text": "I'd like to close this. My offer is 92.",
+     "price": 92,
+     "days": null
+    },
+    {
+     "tick": 527,
+     "from": "Rival Oro",
+     "text": "Meeting you halfway at 89, with thanks.",
+     "price": 89,
+     "days": null
+    },
+    {
+     "tick": 528,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 528,
+     "from": "Rival Oro",
+     "text": "Final stretch from me: 87.",
+     "price": 87,
+     "days": null
+    },
+    {
+     "tick": 529,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 529,
+     "from": "Rival Oro",
+     "text": "Hello! I can do 85. Thank you for your time.",
+     "price": 85,
+     "days": null
+    },
+    {
+     "tick": 530,
+     "from": "you",
+     "text": "That was a real step from my side: 42.",
+     "price": 42,
+     "days": null
+    },
+    {
+     "tick": 530,
+     "from": "Rival Oro",
+     "text": "Thanks for the reply. 84 works for me.",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 531,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 531,
+     "from": "Rival Oro",
+     "text": "Let me move closer: 83.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 532,
+     "from": "you",
+     "text": "That was a real step from my side: 44.",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 532,
+     "from": "Rival Oro",
+     "text": "I'd like to close this. My offer is 82.",
+     "price": 82,
+     "days": null
+    },
+    {
+     "tick": 533,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 533,
+     "from": "Rival Oro",
+     "text": "Meeting you halfway at 81, with thanks.",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 534,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 534,
+     "from": "Rival Oro",
+     "text": "Final stretch from me: 80.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 535,
+     "from": "you",
+     "text": "Let's not burn rounds: 44.",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 535,
+     "from": "Rival Oro",
+     "text": "Hello! I can do 79. Thank you for your time.",
+     "price": 79,
+     "days": null
+    },
+    {
+     "tick": 536,
+     "from": "you",
+     "text": "44?",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 536,
+     "from": "Rival Oro",
+     "text": "Thanks for the reply. 78 works for me.",
+     "price": 78,
+     "days": null
+    },
+    {
+     "tick": 537,
+     "from": "you",
+     "text": "44?",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 537,
+     "from": "Rival Oro",
+     "text": "Let me move closer: 78.",
+     "price": 78,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "you",
+     "text": "That was a real step from my side: 46.",
+     "price": 46,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "Rival Oro",
+     "text": "I'd like to close this. My offer is 78.",
+     "price": 78,
+     "days": null
+    }
+   ],
+   "result": 4.0,
+   "price": 78,
+   "days": 0
+  },
+  {
+   "duel": 2450,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 117,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 507,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 3445,
+    "price": 188,
+    "tick": 491,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 491,
+     "from": "you",
+     "text": "188?",
+     "price": 188,
+     "days": null
+    }
+   ],
+   "result": 71.0,
+   "price": 188,
+   "days": 0
+  },
+  {
+   "duel": 2451,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 183,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Plata",
+   "deadline_tick": 508,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 3477,
+    "price": 109,
+    "tick": 492,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 492,
+     "from": "you",
+     "text": "109?",
+     "price": 109,
+     "days": null
+    }
+   ],
+   "result": 74.0,
+   "price": 109,
+   "days": 0
+  },
+  {
+   "duel": 2466,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 112,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Plata",
+   "deadline_tick": 491,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 3420,
+    "price": 112,
+    "tick": 490,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 475,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 476,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 477,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 478,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 479,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 480,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 481,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 482,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 483,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 484,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 485,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 486,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 487,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 488,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 489,
+     "from": "you",
+     "text": "181?",
+     "price": 181,
+     "days": null
+    },
+    {
+     "tick": 490,
+     "from": "you",
+     "text": "112?",
+     "price": 112,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": 112,
+   "days": 0
+  },
+  {
+   "duel": 2467,
+   "session": 2,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 136,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 507,
+   "decay_per_round": 0.06,
+   "rounds": 11,
+   "your_offer": {
+    "id": 3769,
+    "price": 81,
+    "tick": 506,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3679,
+    "price": 118,
+    "tick": 501,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 491,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 491,
+     "from": "Rival Verde",
+     "text": "We can do 144 P. Thank you for the talk.",
+     "price": 144,
+     "days": null
+    },
+    {
+     "tick": 492,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 492,
+     "from": "Rival Verde",
+     "text": "137 P works well for us.",
+     "price": 137,
+     "days": null
+    },
+    {
+     "tick": 493,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 493,
+     "from": "Rival Verde",
+     "text": "Our offer is 134 P.",
+     "price": 134,
+     "days": null
+    },
+    {
+     "tick": 494,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 494,
+     "from": "Rival Verde",
+     "text": "Let's meet at 132 P, fair for both.",
+     "price": 132,
+     "days": null
+    },
+    {
+     "tick": 495,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 495,
+     "from": "Rival Verde",
+     "text": "130 P, and we close now.",
+     "price": 130,
+     "days": null
+    },
+    {
+     "tick": 496,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 496,
+     "from": "Rival Verde",
+     "text": "We move to 128 P.",
+     "price": 128,
+     "days": null
+    },
+    {
+     "tick": 497,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 497,
+     "from": "Rival Verde",
+     "text": "We can do 126 P. Thank you for the talk.",
+     "price": 126,
+     "days": null
+    },
+    {
+     "tick": 498,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 498,
+     "from": "Rival Verde",
+     "text": "123 P works well for us.",
+     "price": 123,
+     "days": null
+    },
+    {
+     "tick": 499,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 499,
+     "from": "Rival Verde",
+     "text": "Our offer is 121 P.",
+     "price": 121,
+     "days": null
+    },
+    {
+     "tick": 500,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 500,
+     "from": "Rival Verde",
+     "text": "Let's meet at 119 P, fair for both.",
+     "price": 119,
+     "days": null
+    },
+    {
+     "tick": 501,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 501,
+     "from": "Rival Verde",
+     "text": "118 P, and we close now.",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 502,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 503,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 504,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    },
+    {
+     "tick": 505,
+     "from": "you",
+     "text": "Quick one: Retiro or Malasaña for a coffee? My offer is 61.",
+     "price": 61,
+     "days": null
+    },
+    {
+     "tick": 506,
+     "from": "you",
+     "text": "81?",
+     "price": 81,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2468,
+   "session": 2,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 108,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Oro",
+   "deadline_tick": 509,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 3822,
+    "price": 108,
+    "tick": 508,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 493,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 494,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 495,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 496,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 497,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 498,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 499,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 500,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 501,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 502,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 503,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 504,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 505,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 216.",
+     "price": 216,
+     "days": null
+    },
+    {
+     "tick": 506,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 507,
+     "from": "you",
+     "text": "173?",
+     "price": 173,
+     "days": null
+    },
+    {
+     "tick": 508,
+     "from": "you",
+     "text": "108?",
+     "price": 108,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2469,
+   "session": 2,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "Palacio de Cristal",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 57,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Plata",
+   "deadline_tick": 557,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 4755,
+    "price": 34,
+    "tick": 555,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 541,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 543,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 544,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 546,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 547,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 549,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 551,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 553,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    },
+    {
+     "tick": 555,
+     "from": "you",
+     "text": "34?",
+     "price": 34,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2486,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 92,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 569,
+   "decay_per_round": 0.06,
+   "rounds": 9,
+   "your_offer": {
+    "id": 4983,
+    "price": 184,
+    "tick": 567,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4976,
+    "price": 129,
+    "tick": 567,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 553,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 553,
+     "from": "Rival Sol",
+     "text": "Thank you for meeting me. I can do 72 P.",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 555,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 556,
+     "from": "Rival Sol",
+     "text": "I appreciate your move. 102 P is where I can be.",
+     "price": 102,
+     "days": null
+    },
+    {
+     "tick": 557,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 558,
+     "from": "Rival Sol",
+     "text": "Let us close quickly: 114 P.",
+     "price": 114,
+     "days": null
+    },
+    {
+     "tick": 559,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 559,
+     "from": "Rival Sol",
+     "text": "A real step towards you: 124 P.",
+     "price": 124,
+     "days": null
+    },
+    {
+     "tick": 560,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 561,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 561,
+     "from": "Rival Sol",
+     "text": "I think 125 P is fair for both of us.",
+     "price": 125,
+     "days": null
+    },
+    {
+     "tick": 562,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    },
+    {
+     "tick": 562,
+     "from": "Rival Sol",
+     "text": "Thank you for meeting me. I can do 124 P.",
+     "price": 124,
+     "days": null
+    },
+    {
+     "tick": 563,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 184.",
+     "price": 184,
+     "days": null
+    },
+    {
+     "tick": 564,
+     "from": "Rival Sol",
+     "text": "I appreciate your move. 125 P is where I can be.",
+     "price": 125,
+     "days": null
+    },
+    {
+     "tick": 564,
+     "from": "you",
+     "text": "184?",
+     "price": 184,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "you",
+     "text": "184?",
+     "price": 184,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "Rival Sol",
+     "text": "Let us close quickly: 124 P.",
+     "price": 124,
+     "days": null
+    },
+    {
+     "tick": 566,
+     "from": "you",
+     "text": "184?",
+     "price": 184,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "Rival Sol",
+     "text": "A real step towards you: 129 P.",
+     "price": 129,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "you",
+     "text": "184?",
+     "price": 184,
+     "days": null
+    }
+   ],
+   "result": 21.2,
+   "price": 129,
+   "days": 0
+  },
+  {
+   "duel": 2487,
+   "session": 2,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 82,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 573,
+   "decay_per_round": 0.06,
+   "rounds": 10,
+   "your_offer": {
+    "id": 5051,
+    "price": 49,
+    "tick": 571,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5045,
+    "price": 60,
+    "tick": 571,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 557,
+     "from": "Rival Luna",
+     "text": "Thank you for meeting me. I can do 86 P.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 557,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 558,
+     "from": "Rival Luna",
+     "text": "I appreciate your move. 72 P is where I can be.",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 559,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 560,
+     "from": "Rival Luna",
+     "text": "Let us close quickly: 66 P.",
+     "price": 66,
+     "days": null
+    },
+    {
+     "tick": 560,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 561,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 561,
+     "from": "Rival Luna",
+     "text": "A real step towards you: 62 P.",
+     "price": 62,
+     "days": null
+    },
+    {
+     "tick": 562,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 562,
+     "from": "Rival Luna",
+     "text": "I think 61 P is fair for both of us.",
+     "price": 61,
+     "days": null
+    },
+    {
+     "tick": 564,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "Rival Luna",
+     "text": "Thank you for meeting me. I can do 62 P.",
+     "price": 62,
+     "days": null
+    },
+    {
+     "tick": 566,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "Rival Luna",
+     "text": "I appreciate your move. 61 P is where I can be.",
+     "price": 61,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 568,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 568,
+     "from": "Rival Luna",
+     "text": "Let us close quickly: 62 P.",
+     "price": 62,
+     "days": null
+    },
+    {
+     "tick": 569,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 570,
+     "from": "Rival Luna",
+     "text": "A real step towards you: 61 P.",
+     "price": 61,
+     "days": null
+    },
+    {
+     "tick": 571,
+     "from": "Rival Luna",
+     "text": "A real step towards you: 60 P.",
+     "price": 60,
+     "days": null
+    },
+    {
+     "tick": 571,
+     "from": "you",
+     "text": "49?",
+     "price": 49,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2496,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 99,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Sol",
+   "deadline_tick": 565,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 4889,
+    "price": 98,
+    "tick": 562,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4696,
+    "price": 125,
+    "tick": 552,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 549,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 550,
+     "from": "Rival Sol",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 130,
+     "days": null
+    },
+    {
+     "tick": 551,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 552,
+     "from": "Rival Sol",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 125,
+     "days": null
+    },
+    {
+     "tick": 553,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 44.",
+     "price": 44,
+     "days": null
+    },
+    {
+     "tick": 554,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 555,
+     "from": "you",
+     "text": "That was a real step from my side: 98.",
+     "price": 98,
+     "days": null
+    },
+    {
+     "tick": 556,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 557,
+     "from": "you",
+     "text": "Let's not burn rounds: 98.",
+     "price": 98,
+     "days": null
+    },
+    {
+     "tick": 558,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 559,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 560,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 561,
+     "from": "you",
+     "text": "59?",
+     "price": 59,
+     "days": null
+    },
+    {
+     "tick": 562,
+     "from": "you",
+     "text": "Every round shrinks the deal for both of us. 98, and we close now?",
+     "price": 98,
+     "days": null
+    }
+   ],
+   "result": 0.9,
+   "price": 98,
+   "days": 0
+  },
+  {
+   "duel": 2497,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 85,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Plata",
+   "deadline_tick": 579,
+   "decay_per_round": 0.06,
+   "rounds": 4,
+   "your_offer": {
+    "id": 5134,
+    "price": 136,
+    "tick": 577,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5138,
+    "price": 92,
+    "tick": 577,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 564,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 565,
+     "from": "Rival Plata",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 49,
+     "days": null
+    },
+    {
+     "tick": 566,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "Rival Plata",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 56,
+     "days": null
+    },
+    {
+     "tick": 567,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 568,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 569,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 571,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 573,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 574,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 575,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 576,
+     "from": "Rival Plata",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 92,
+     "days": null
+    },
+    {
+     "tick": 576,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 577,
+     "from": "you",
+     "text": "136?",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 577,
+     "from": "Rival Plata",
+     "text": "Propongo este precio, creo que es justo para los dos.",
+     "price": 92,
+     "days": null
+    }
+   ],
+   "result": 5.5,
+   "price": 92,
+   "days": 0
+  },
+  {
+   "duel": 2498,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 67,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Noche",
+   "deadline_tick": 595,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 5313,
+    "price": 39,
+    "tick": 593,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5318,
+    "price": 56,
+    "tick": 593,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 579,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 580,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 581,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 582,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 583,
+     "from": "Rival Noche",
+     "text": "Hola. This one is in perfect condition. 80 P.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 583,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 585,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 586,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 587,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 589,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 591,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 592,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 593,
+     "from": "you",
+     "text": "39?",
+     "price": 39,
+     "days": null
+    },
+    {
+     "tick": 593,
+     "from": "Rival Noche",
+     "text": "Last word from me: 56 P.",
+     "price": 56,
+     "days": null
+    }
+   ],
+   "result": 9.7,
+   "price": 56,
+   "days": 0
+  },
+  {
+   "duel": 2499,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 98,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Luna",
+   "deadline_tick": 595,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 5314,
+    "price": 157,
+    "tick": 593,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5320,
+    "price": 115,
+    "tick": 593,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 579,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 580,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 581,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 582,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 583,
+     "from": "Rival Luna",
+     "text": "Hola. I like it, and I can pay 80 P.",
+     "price": 80,
+     "days": null
+    },
+    {
+     "tick": 583,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 585,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 586,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 587,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 589,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 591,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 592,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 593,
+     "from": "you",
+     "text": "157?",
+     "price": 157,
+     "days": null
+    },
+    {
+     "tick": 593,
+     "from": "Rival Luna",
+     "text": "Last word from me: 115 P.",
+     "price": 115,
+     "days": null
+    }
+   ],
+   "result": 15.0,
+   "price": 115,
+   "days": 0
+  },
+  {
+   "duel": 2516,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 65,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Noche",
+   "deadline_tick": 555,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 4476,
+    "price": 104,
+    "tick": 539,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4484,
+    "price": 90,
+    "tick": 539,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 539,
+     "from": "you",
+     "text": "104?",
+     "price": 104,
+     "days": null
+    },
+    {
+     "tick": 539,
+     "from": "Rival Noche",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos: 90 P.",
+     "price": 90,
+     "days": null
+    }
+   ],
+   "result": 23.5,
+   "price": 90,
+   "days": 0
+  },
+  {
+   "duel": 2517,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 173,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Sol",
+   "deadline_tick": 595,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 5172,
+    "price": 103,
+    "tick": 580,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5162,
+    "price": 125,
+    "tick": 579,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 579,
+     "from": "you",
+     "text": "103?",
+     "price": 103,
+     "days": null
+    },
+    {
+     "tick": 579,
+     "from": "Rival Sol",
+     "text": "Propuesta justa para cerrar pronto y que ganemos los dos: 125 P.",
+     "price": 125,
+     "days": null
+    },
+    {
+     "tick": 580,
+     "from": "you",
+     "text": "103?",
+     "price": 103,
+     "days": null
+    }
+   ],
+   "result": 65.8,
+   "price": 103,
+   "days": 0
+  },
+  {
+   "duel": 2528,
+   "session": 2,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 83,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Noche",
+   "deadline_tick": 527,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 4232,
+    "price": 83,
+    "tick": 526,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4131,
+    "price": 69,
+    "tick": 522,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 511,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 512,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 513,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 514,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 515,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 516,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 517,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 518,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 519,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 520,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 521,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "you",
+     "text": "133?",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 522,
+     "from": "Rival Noche",
+     "text": "69 P y cerramos ahora.",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 523,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 166.",
+     "price": 166,
+     "days": null
+    },
+    {
+     "tick": 524,
+     "from": "you",
+     "text": "166?",
+     "price": 166,
+     "days": null
+    },
+    {
+     "tick": 525,
+     "from": "you",
+     "text": "166?",
+     "price": 166,
+     "days": null
+    },
+    {
+     "tick": 526,
+     "from": "you",
+     "text": "83?",
+     "price": 83,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2529,
+   "session": 2,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 148,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Luna",
+   "deadline_tick": 603,
+   "decay_per_round": 0.06,
+   "rounds": 0,
+   "your_offer": {
+    "id": 5416,
+    "price": 148,
+    "tick": 602,
+    "days": 0
+   },
+   "rival_offer": null,
+   "messages": [
+    {
+     "tick": 587,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 66.",
+     "price": 66,
+     "days": null
+    },
+    {
+     "tick": 588,
+     "from": "you",
+     "text": "88?",
+     "price": 88,
+     "days": null
+    },
+    {
+     "tick": 589,
+     "from": "you",
+     "text": "I just moved for you. 69, your turn to meet me.",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 590,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 591,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 592,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 593,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 594,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 595,
+     "from": "you",
+     "text": "69?",
+     "price": 69,
+     "days": null
+    },
+    {
+     "tick": 596,
+     "from": "you",
+     "text": "That was a real step from my side: 76.",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 597,
+     "from": "you",
+     "text": "76?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 598,
+     "from": "you",
+     "text": "76?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 599,
+     "from": "you",
+     "text": "76?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 600,
+     "from": "you",
+     "text": "76?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 601,
+     "from": "you",
+     "text": "76?",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 602,
+     "from": "you",
+     "text": "148?",
+     "price": 148,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2550,
+   "session": 2,
+   "status": "no_deal",
+   "role": "seller",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 70,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Sol",
+   "deadline_tick": 549,
+   "decay_per_round": 0.06,
+   "rounds": 14,
+   "your_offer": {
+    "id": 4620,
+    "price": 141,
+    "tick": 548,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4625,
+    "price": 83,
+    "tick": 548,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 533,
+     "from": "Rival Sol",
+     "text": "I can do 35. That is a fair deal for both of us.",
+     "price": 35,
+     "days": null
+    },
+    {
+     "tick": 534,
+     "from": "you",
+     "text": "112?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 534,
+     "from": "Rival Sol",
+     "text": "I can do 38. That is a fair deal for both of us.",
+     "price": 38,
+     "days": null
+    },
+    {
+     "tick": 535,
+     "from": "Rival Sol",
+     "text": "I can do 43. That is a fair deal for both of us.",
+     "price": 43,
+     "days": null
+    },
+    {
+     "tick": 536,
+     "from": "you",
+     "text": "112?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 536,
+     "from": "Rival Sol",
+     "text": "I can do 48. That is a fair deal for both of us.",
+     "price": 48,
+     "days": null
+    },
+    {
+     "tick": 537,
+     "from": "Rival Sol",
+     "text": "I can do 54. That is a fair deal for both of us.",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 537,
+     "from": "you",
+     "text": "112?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "you",
+     "text": "112?",
+     "price": 112,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "Rival Sol",
+     "text": "I can do 61. That is a fair deal for both of us.",
+     "price": 61,
+     "days": null
+    },
+    {
+     "tick": 539,
+     "from": "Rival Sol",
+     "text": "I can do 68. That is a fair deal for both of us.",
+     "price": 68,
+     "days": null
+    },
+    {
+     "tick": 539,
+     "from": "you",
+     "text": "Quick one: Retiro or Malasaña for a coffee? My offer is 141.",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 540,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 540,
+     "from": "Rival Sol",
+     "text": "I can do 74. That is a fair deal for both of us.",
+     "price": 74,
+     "days": null
+    },
+    {
+     "tick": 541,
+     "from": "you",
+     "text": "That was a real step from my side: 136.",
+     "price": 136,
+     "days": null
+    },
+    {
+     "tick": 541,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 542,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 542,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 543,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 544,
+     "from": "you",
+     "text": "I just moved for you. 134, your turn to meet me.",
+     "price": 134,
+     "days": null
+    },
+    {
+     "tick": 544,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 545,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 545,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 546,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 547,
+     "from": "you",
+     "text": "That was a real step from my side: 133.",
+     "price": 133,
+     "days": null
+    },
+    {
+     "tick": 547,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    },
+    {
+     "tick": 548,
+     "from": "you",
+     "text": "141?",
+     "price": 141,
+     "days": null
+    },
+    {
+     "tick": 548,
+     "from": "Rival Sol",
+     "text": "I can do 83. That is a fair deal for both of us.",
+     "price": 83,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2551,
+   "session": 2,
+   "status": "no_deal",
+   "role": "buyer",
+   "item": "El Mesón de la Cava",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 120,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Noche",
+   "deadline_tick": 553,
+   "decay_per_round": 0.06,
+   "rounds": 12,
+   "your_offer": {
+    "id": 4693,
+    "price": 72,
+    "tick": 552,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 4699,
+    "price": 109,
+    "tick": 552,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 537,
+     "from": "Rival Noche",
+     "text": "I can do 218. That is a fair deal for both of us.",
+     "price": 218,
+     "days": null
+    },
+    {
+     "tick": 537,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 538,
+     "from": "Rival Noche",
+     "text": "I can do 211. That is a fair deal for both of us.",
+     "price": 211,
+     "days": null
+    },
+    {
+     "tick": 539,
+     "from": "Rival Noche",
+     "text": "I can do 200. That is a fair deal for both of us.",
+     "price": 200,
+     "days": null
+    },
+    {
+     "tick": 540,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 540,
+     "from": "Rival Noche",
+     "text": "I can do 188. That is a fair deal for both of us.",
+     "price": 188,
+     "days": null
+    },
+    {
+     "tick": 541,
+     "from": "Rival Noche",
+     "text": "I can do 174. That is a fair deal for both of us.",
+     "price": 174,
+     "days": null
+    },
+    {
+     "tick": 542,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 542,
+     "from": "Rival Noche",
+     "text": "I can do 159. That is a fair deal for both of us.",
+     "price": 159,
+     "days": null
+    },
+    {
+     "tick": 543,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 543,
+     "from": "Rival Noche",
+     "text": "I can do 143. That is a fair deal for both of us.",
+     "price": 143,
+     "days": null
+    },
+    {
+     "tick": 544,
+     "from": "Rival Noche",
+     "text": "I can do 126. That is a fair deal for both of us.",
+     "price": 126,
+     "days": null
+    },
+    {
+     "tick": 545,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 545,
+     "from": "Rival Noche",
+     "text": "I can do 109. That is a fair deal for both of us.",
+     "price": 109,
+     "days": null
+    },
+    {
+     "tick": 546,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 548,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 549,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 54.",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 549,
+     "from": "Rival Noche",
+     "text": "I can do 109. That is a fair deal for both of us.",
+     "price": 109,
+     "days": null
+    },
+    {
+     "tick": 550,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 550,
+     "from": "Rival Noche",
+     "text": "I can do 109. That is a fair deal for both of us.",
+     "price": 109,
+     "days": null
+    },
+    {
+     "tick": 551,
+     "from": "you",
+     "text": "Good talking to you. I can do 54.",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 551,
+     "from": "Rival Noche",
+     "text": "I can do 109. That is a fair deal for both of us.",
+     "price": 109,
+     "days": null
+    },
+    {
+     "tick": 552,
+     "from": "you",
+     "text": "72?",
+     "price": 72,
+     "days": null
+    },
+    {
+     "tick": 552,
+     "from": "Rival Noche",
+     "text": "I can do 109. That is a fair deal for both of us.",
+     "price": 109,
+     "days": null
+    }
+   ],
+   "result": 0.0,
+   "price": null,
+   "days": null
+  },
+  {
+   "duel": 2560,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 111,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Noche",
+   "deadline_tick": 622,
+   "decay_per_round": 0.06,
+   "rounds": 3,
+   "your_offer": {
+    "id": 5555,
+    "price": 178,
+    "tick": 620,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5552,
+    "price": 118,
+    "tick": 619,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 606,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 608,
+     "from": "Rival Noche",
+     "text": "Hello! I can offer 76 P.",
+     "price": 76,
+     "days": null
+    },
+    {
+     "tick": 610,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 611,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 612,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 613,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 614,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 615,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 616,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 617,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 618,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 618,
+     "from": "Rival Noche",
+     "text": "Last offer from my side: 107 P.",
+     "price": 107,
+     "days": null
+    },
+    {
+     "tick": 619,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    },
+    {
+     "tick": 619,
+     "from": "Rival Noche",
+     "text": "Final offer: 118 P. Happy to close now.",
+     "price": 118,
+     "days": null
+    },
+    {
+     "tick": 620,
+     "from": "you",
+     "text": "178?",
+     "price": 178,
+     "days": null
+    }
+   ],
+   "result": 5.8,
+   "price": 118,
+   "days": 0
+  },
+  {
+   "duel": 2561,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "La Heroína del Dos de Mayo",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 90,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Sol",
+   "deadline_tick": 625,
+   "decay_per_round": 0.06,
+   "rounds": 3,
+   "your_offer": {
+    "id": 5575,
+    "price": 54,
+    "tick": 623,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5572,
+    "price": 86,
+    "tick": 622,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 610,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 611,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 611,
+     "from": "Rival Sol",
+     "text": "Hello! I can let it go for 108 P.",
+     "price": 108,
+     "days": null
+    },
+    {
+     "tick": 612,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 613,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 614,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 615,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 616,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 617,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 618,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 619,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 620,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 621,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 621,
+     "from": "Rival Sol",
+     "text": "Last offer from my side: 91 P.",
+     "price": 91,
+     "days": null
+    },
+    {
+     "tick": 622,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    },
+    {
+     "tick": 622,
+     "from": "Rival Sol",
+     "text": "Final offer: 86 P. Happy to close now.",
+     "price": 86,
+     "days": null
+    },
+    {
+     "tick": 623,
+     "from": "you",
+     "text": "54?",
+     "price": 54,
+     "days": null
+    }
+   ],
+   "result": 3.3,
+   "price": 86,
+   "days": 0
+  },
+  {
+   "duel": 2578,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 141,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Plata",
+   "deadline_tick": 525,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 3870,
+    "price": 84,
+    "tick": 510,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 3877,
+    "price": 129,
+    "tick": 510,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 509,
+     "from": "you",
+     "text": "84?",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 509,
+     "from": "Rival Plata",
+     "text": "Es una pieza que merece su precio: 129 primas. Pienso que es justo.",
+     "price": 129,
+     "days": null
+    },
+    {
+     "tick": 510,
+     "from": "you",
+     "text": "84?",
+     "price": 84,
+     "days": null
+    },
+    {
+     "tick": 510,
+     "from": "Rival Plata",
+     "text": "Es una pieza que merece su precio: 129 primas. Pienso que es justo.",
+     "price": 129,
+     "days": null
+    }
+   ],
+   "result": 10.6,
+   "price": 129,
+   "days": 0
+  },
+  {
+   "duel": 2579,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Mercado de la Paz",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 93,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Verde",
+   "deadline_tick": 585,
+   "decay_per_round": 0.06,
+   "rounds": 4,
+   "your_offer": {
+    "id": 5083,
+    "price": 96,
+    "tick": 573,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5070,
+    "price": 90,
+    "tick": 572,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 569,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 186.",
+     "price": 186,
+     "days": null
+    },
+    {
+     "tick": 569,
+     "from": "Rival Verde",
+     "text": "Te ofrezco 90 primas; me cuesta subir más.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 570,
+     "from": "you",
+     "text": "186?",
+     "price": 186,
+     "days": null
+    },
+    {
+     "tick": 570,
+     "from": "Rival Verde",
+     "text": "90 primas. Me muevo poco ya, pero si tú bajas, cerramos.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 571,
+     "from": "you",
+     "text": "Happy to close at 96.",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 571,
+     "from": "Rival Verde",
+     "text": "Mi propuesta: 90 primas. Dame una cifra concreta y la miro.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 572,
+     "from": "you",
+     "text": "96?",
+     "price": 96,
+     "days": null
+    },
+    {
+     "tick": 572,
+     "from": "Rival Verde",
+     "text": "Puedo llegar a 90 primas. Dime si cerramos.",
+     "price": 90,
+     "days": null
+    },
+    {
+     "tick": 573,
+     "from": "you",
+     "text": "96?",
+     "price": 96,
+     "days": null
+    }
+   ],
+   "result": 2.3,
+   "price": 96,
+   "days": 0
+  },
+  {
+   "duel": 2596,
+   "session": 2,
+   "status": "deal",
+   "role": "seller",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 72,
+   "limit_meaning": "never sell below your cost",
+   "rival": "Rival Rojo",
+   "deadline_tick": 599,
+   "decay_per_round": 0.06,
+   "rounds": 1,
+   "your_offer": {
+    "id": 5215,
+    "price": 116,
+    "tick": 584,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5212,
+    "price": 92,
+    "tick": 583,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 583,
+     "from": "you",
+     "text": "Before we start: which Madrid barrio would you pick for a Sunday walk? I can do 144.",
+     "price": 144,
+     "days": null
+    },
+    {
+     "tick": 583,
+     "from": "Rival Rojo",
+     "text": "Happy to buy the Café en Goya at 92 primas, a fair price we can close on right now.",
+     "price": 92,
+     "days": null
+    },
+    {
+     "tick": 584,
+     "from": "you",
+     "text": "116?",
+     "price": 116,
+     "days": null
+    }
+   ],
+   "result": 18.8,
+   "price": 92,
+   "days": 0
+  },
+  {
+   "duel": 2597,
+   "session": 2,
+   "status": "deal",
+   "role": "buyer",
+   "item": "Café en Goya",
+   "issues": [
+    "price"
+   ],
+   "your_days_weight": null,
+   "days_meaning": null,
+   "your_limit": 203,
+   "limit_meaning": "never pay above your value",
+   "rival": "Rival Verde",
+   "deadline_tick": 613,
+   "decay_per_round": 0.06,
+   "rounds": 2,
+   "your_offer": {
+    "id": 5385,
+    "price": 121,
+    "tick": 599,
+    "days": 0
+   },
+   "rival_offer": {
+    "id": 5391,
+    "price": 188,
+    "tick": 599,
+    "days": 0
+   },
+   "messages": [
+    {
+     "tick": 597,
+     "from": "Rival Verde",
+     "text": "Happy to sell the Café en Goya for 192 primas, a fair price for a quick deal.",
+     "price": 192,
+     "days": null
+    },
+    {
+     "tick": 598,
+     "from": "you",
+     "text": "121?",
+     "price": 121,
+     "days": null
+    },
+    {
+     "tick": 598,
+     "from": "Rival Verde",
+     "text": "190 P works for me and we can close now.",
+     "price": 190,
+     "days": null
+    },
+    {
+     "tick": 599,
+     "from": "you",
+     "text": "121?",
+     "price": 121,
+     "days": null
+    },
+    {
+     "tick": 599,
+     "from": "Rival Verde",
+     "text": "Meeting you closer: 188 P.",
+     "price": 188,
+     "days": null
+    }
+   ],
+   "result": 11.5,
+   "price": 190,
+   "days": 0
+  }
+ ]
+}
