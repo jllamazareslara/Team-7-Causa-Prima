@@ -506,9 +506,12 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     senales = {ref: {"rastro": precio hoy en El Rastro con comisión o None, "escasa": bool}} (ojeador.senales_vendedor):
     una carta casi agotada se compra antes; con la escalera de ese vendedor ya hecha, no se le compra lo que
     sale más barato en El Rastro (lo compra el Cambista).
+    ordenes["libre"] = efectivo sobre la reserva: no se abre una compra cuyo precio de lista × 0,8 no cabe ahí (el vendedor
+    no baja de eso y la conversación no puede cerrarse).
     """
     ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
+    libre = ordenes.get("libre")                          # efectivo sobre la reserva (situacion.plan); None = sin dato
     pendientes, usadas = [], set()
     for vendedor, menu in menus.items():
         if vendedor in abiertas or not isinstance(menu, dict):
@@ -534,6 +537,8 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             completa = V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref]
             if vale < 0.8 * lista or (cupo_lleno and not completa):
                 continue
+            if libre is not None and 0.8 * lista > libre:
+                continue                                  # la caja no llega a su precio: no abrir (3/10: 14 hilos por RET-10)
             if ordenes.get("compras") == "escalera_y_pagina" and not completa and lista > (ordenes.get("tope_por_trato") or 0):
                 continue
             s = (senales or {}).get(ref) or {}

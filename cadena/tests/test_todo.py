@@ -712,6 +712,14 @@ class Cadena(unittest.TestCase):
         self.assertEqual([o["lado"] for o in seco], ["venta"])
         self.assertEqual(cadena.cola_de_operaciones(c, 300, menus, abiertas=("abuela", "chato")), [])
 
+    def test_cola_no_abre_una_compra_que_la_caja_no_alcanza(self):
+        c, _ = coleccion()
+        menus = {"chato": {"vende": {"RET-10": 77}, "compra": {}}}
+        self.assertEqual(len(cadena.cola_de_operaciones(c, 300, menus)), 1)                       # sin dato de caja: como antes
+        self.assertEqual(cadena.cola_de_operaciones(c, 101, menus, {"libre": 41}), [])            # 41 P libres: Chato no baja de 62
+        self.assertEqual(len(cadena.cola_de_operaciones(c, 250, menus, {"libre": 190})), 1)
+        self.assertEqual(situacion.plan({"efectivo": 101, "cuenta": {}}, hoy={})["ordenes"]["libre"], 41)
+
 
 class ValoresDelJuego(unittest.TestCase):
     """Conocer el valor antes de comprar: los multiplicadores y las rarezas se leen del juego; lo que no se sabe, no se opera."""

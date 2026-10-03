@@ -88,6 +88,7 @@ def plan(estado, hoy=None, precios_venta=None):
     ordenes["compras"] = "todas"
     ordenes["ventas_primero"] = modo != "holgado"
     ordenes["tope_por_trato"] = None
+    ordenes["libre"] = max(0, libre)                 # lo que la caja deja pagar sin tocar la reserva
     if modo != "holgado":
         tope = max(0, libre // TRATOS_ESCALERA)
         ordenes["tope_por_trato"] = tope
