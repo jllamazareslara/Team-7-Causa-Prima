@@ -175,6 +175,62 @@
   "estado": "simulado",
   "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
  },
+ "tienda.pilar.apertura_compra": {
+  "valor": 0.15,
+  "min": 0.05,
+  "max": 0.7,
+  "estado": "supuesto",
+  "por_que": "Pilar no vende cartas (solo el sobre de oro): no le compramos. Igual que un vendedor nuevo."
+ },
+ "tienda.pilar.paciencia_estimada": {
+  "valor": 10,
+  "min": 3,
+  "max": 12,
+  "estado": "supuesto",
+  "por_que": "Ficha del juego: paciencia 0,6, entre Chato (0,35 → 7 rondas) y Abuela (0,85 → 13). Se corrige con el diario."
+ },
+ "tienda.pilar.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor nuevo."
+ },
+ "tienda.pilar.imitacion_inicial": {
+  "valor": 0.7,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Sin datos todavía."
+ },
+ "tienda.pilar.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "Memoria 0,7 y astucia 0,75: se acuerda de los trucos. No se le prueba nada."
+ },
+ "tienda.pilar.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor nuevo."
+ },
+ "tienda.pilar.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.pilar.venta_multiplo_oferta": {
+  "valor": 2.0,
+  "min": 1.5,
+  "max": 5.0,
+  "estado": "supuesto",
+  "por_que": "Vendiéndole, primera petición = este múltiplo de su oferta (en vez de tienda.venta.multiplo_oferta, 3). Coleccionista que ya paga bien y desprecia lo que no le gusta: un ancla de 3× la puede echar."
+ },
  "tienda.desconocido.apertura_compra": {
   "valor": 0.15,
   "min": 0.05,

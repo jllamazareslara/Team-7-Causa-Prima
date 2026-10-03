@@ -1,6 +1,7 @@
 """El Portavoz: escribe los mensajes. Recibe el precio ya decidido y no conoce nuestros límites.
 
-Con vendedores: amable con Abuela (le gusta), solo el número con Chato (estricto), neutro con los nuevos.
+Con vendedores: amable con Abuela (le gusta), solo el número con Chato (estricto), de usted y hablando de su álbum
+con Pilar (coleccionista), neutro con los nuevos.
 Con equipos en duelos: las palabras son libres ("tu agente puede decir cualquier cosa"). Usamos tácticas de presión
 que la investigación de negociación documenta, sin mentir sobre la oferta estructurada (que es lo único que obliga):
 
@@ -24,6 +25,12 @@ ABUELA = ["Buenas, Abuela Carmen. ¿Qué tal el puesto hoy? Puedo llegar a {p} P
           "Qué gusto tratar con usted. {p} P y trato hecho.",
           "Le prometo cuidarla bien. ¿{p} P?",
           "Hago un esfuerzo más: {p} P."]
+PILAR = ["Buenas tardes, Doña Pilar. Es una pieza en muy buen estado para su álbum: {p} P.",
+         "Sé que usted aprecia una buena carta. Le propongo {p} P.",
+         "Para una coleccionista como usted, {p} P me parece justo.",
+         "Encaja perfectamente en su álbum. ¿Cerramos en {p} P?",
+         "Con mucho gusto me acerco a usted: {p} P.",
+         "Sé que la cuidará bien. {p} P y es suya."]
 SECO = ["{p} P.", "{p}.", "Ofrezco {p} P.", "{p} P, ¿sí?"]
 NEUTRO = ["Buenas. Ofrezco {p} P.", "Puedo {p} P.", "Me muevo a {p} P.", "{p} P por mi parte.", "Subo a {p} P."]
 
@@ -55,6 +62,8 @@ class Portavoz:
             return self._rotar("seco", SECO, precio)
         if vendedor == "abuela":
             return self._rotar("abuela", ABUELA, precio)
+        if vendedor == "pilar":
+            return self._rotar("pilar", PILAR, precio)
         return self._rotar("neutro", NEUTRO, precio)
 
     def duelo(self, precio, ronda, cedimos, su_precio_cerca, rival_firme, firme=False):

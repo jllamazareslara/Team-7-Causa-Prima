@@ -177,6 +177,17 @@ class Guardia(unittest.TestCase):
 
 
 class Tienda(unittest.TestCase):
+    def test_perfil_de_pilar(self):
+        pf = params.perfil(P, "pilar")
+        self.assertEqual(pf["perfil"], "pilar")
+        self.assertEqual(tienda.apertura("venta", 16, pf, 4.0, P), 32)              # 2 × su oferta, no 3
+        self.assertEqual(tienda.apertura("venta", 16, params.perfil(P, "chato"), 4.0, P), 48)
+        txt = portavoz.Portavoz().vendedor("pilar", 30)
+        self.assertIn("Pilar", txt)
+        self.assertTrue(defensa.revisar_salida(txt, 30)[0])
+        for i in range(len(portavoz.PILAR)):
+            self.assertTrue(defensa.revisar_salida(portavoz.PILAR[i].format(p=27), 27)[0])
+
     def test_nunca_cruza_el_limite_ni_repite(self):
         rng = random.Random(3)
         for perfil in SV.PERFILES:
@@ -1186,3 +1197,20 @@ class Jugar(unittest.TestCase):
         self.assertEqual(self.r.precios_de_venta(menus), {"LAT-03": 6})
         self.assertEqual(self.r.precios_de_venta(None), {})
 
+
+    def test_oferta_del_vendedor_que_nos_compra(self):
+        # forma real (conversación 860): chato da 13 P y pide la carta con cash 0; su precio es 13, no 0
+        hilo = {"standing_offers": [{"id": 9041, "maker": "chato", "status": "open", "final": False,
+                                     "give": {"cash": 13, "assets": []}, "want": {"cash": 0, "assets": [{"id": 536}]}}]}
+        self.assertEqual(self.r._oferta_del_otro(hilo, "t07"), (9041, 13, False))
+        hilo["standing_offers"][0].update(give={"cash": 0, "assets": [{"id": 1}]}, want={"cash": 9})
+        self.assertEqual(self.r._oferta_del_otro(hilo, "t07"), (9041, 9, False))
+
+    def test_no_aceptamos_nuestra_propia_oferta(self):
+        # conversación 890: nuestra oferta lleva maker "t07" y el juego nos llama "Team 7" en me()["name"]
+        hilo = {"standing_offers": [{"id": 9495, "maker": "t07", "status": "open",
+                                     "give": {"cash": 0, "assets": [{"id": 1}]}, "want": {"cash": 15}}]}
+        self.assertIsNone(self.r._oferta_del_otro(hilo, ("t07", "Team 7")))
+        self.assertIsNone(self.r._oferta_del_otro(hilo, "t07"))
+        # si me() no trae el id, basta con el "team" de la conversación
+        self.assertIsNone(self.r._oferta_del_otro(dict(hilo, team="t07"), ("Team 7",)))

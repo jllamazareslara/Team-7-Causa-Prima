@@ -13,6 +13,8 @@ MATRIZ = [
      "Imita nuestros pasos y perdona. En el simulador el ancla extrema da 0,54 de rango frente a 0,42 del equipo que gana."),
     ("Chato", "EXTREMA en precio, CERO en palabras", "10 % de lo que pide", "solo números, 7 rondas", "no",
      "Estricto y rencoroso: el riesgo no está en el ancla sino en repetir o en trucos. Simulado: 0,55 frente a 0,20."),
+    ("Pilar (coleccionista)", "MEDIA al venderle", "2 × su oferta (no 3)", "pasos fijos del 11 %, de usted y hablando de su álbum",
+     "no", "Paga bien lo que le gusta (SAL y RET primero) y se acuerda (memoria 0,7): un ancla extrema la puede echar."),
     ("Vendedor nuevo", "PRUDENTE, luego según perfil", "15 %", "primera conversación = sondeo", "no hasta conocerlo",
      "No sabemos si se ofende. El sondeo mide cómo cede y en qué ronda da la final."),
     ("Vender a un vendedor", "MEDIA", "max(2 × lista, 3 × su oferta)", "pasos fijos del 11 %", "como al comprar",

@@ -80,12 +80,18 @@ def _precio(x):
     return x if isinstance(x, (int, float)) else None
 
 
+def _somos(nosotros):
+    """Cómo nos llama el juego: el id ("t07", el autor de las ofertas) y el nombre ("Team 7"), más "me" y "you"."""
+    return ((nosotros,) if isinstance(nosotros, str) else tuple(nosotros or ())) + ("me", "you")
+
+
 def _oferta_del_otro(hilo, nosotros):
     """La oferta vigente de la otra parte en una conversación: (id, precio, final). None si no se entiende."""
     for o in reversed(hilo.get("standing_offers") or []):
-        if o.get("maker") in (nosotros, "me", "you") or o.get("status") not in (None, "open", "standing"):
+        if o.get("maker") in _somos(nosotros) + (hilo.get("team"),) or o.get("status") not in (None, "open", "standing"):
             continue
-        precio = _precio(o.get("want")) if _precio(o.get("want")) is not None else _precio(o.get("give"))
+        # el lado con dinero: comprándonos, el vendedor da {cash: 13} y pide {cash: 0, la carta}; el 0 no es su precio
+        precio = next((p for p in (_precio(o.get("want")), _precio(o.get("give"))) if p), None)
         if precio is not None:
             return o.get("id"), precio, bool(o.get("final"))
     return None
@@ -94,7 +100,7 @@ def _oferta_del_otro(hilo, nosotros):
 def _ultimo_texto(hilo, nosotros):
     for m in reversed(hilo.get("messages") or []):
         autor = m.get("from", m.get("sender", m.get("author")))
-        if autor is not None and autor not in (nosotros, "me", "you"):
+        if autor is not None and autor not in _somos(nosotros) + (hilo.get("team"),):
             return m.get("text") or ""
     return ""
 
@@ -462,7 +468,7 @@ def leer(b, est, tick, con_tablon=True):
     """La lectura de la cadena: efectivo, cartas, las conversaciones con vendedores que abrimos nosotros y, cuando toca,
     el tablón de El Rastro (sin nuestras ofertas), el feed, el calendario, el catálogo y los niveles."""
     me = b.me()
-    nosotros = me.get("name")
+    nosotros = tuple(x for x in (me.get("id"), me.get("name")) if x)   # las ofertas llevan el id ("t07"), no el nombre
     cartas = list(_cartas(me).values())
     V.configurar(cartas=cartas)                                  # la rareza de lo que tenemos, tal como la dice el juego
     lectura = {"tick": tick, "efectivo": me.get("cash", 0), "cuenta": Counter(a["ref"] for a in cartas),
@@ -506,7 +512,7 @@ def leer(b, est, tick, con_tablon=True):
         try:
             res = b.board("rastro")
             ofertas = res.get("offers", []) if isinstance(res, dict) else res
-            lectura["tablon"] = [o for o in ofertas or [] if isinstance(o, dict) and o.get("maker") != nosotros]
+            lectura["tablon"] = [o for o in ofertas or [] if isinstance(o, dict) and o.get("maker") not in nosotros]
             _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
         except Exception as e:
             _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})

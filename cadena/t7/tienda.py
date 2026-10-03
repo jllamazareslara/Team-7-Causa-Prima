@@ -40,7 +40,7 @@ def imitacion_estimada(nuestras, suyas, s, k0, peso=3.0):
 def apertura(lado, su_precio, pf, lista=None, p=None):
     if lado == "compra":
         return max(1, math.floor(pf["apertura_compra"] * su_precio))
-    mult_oferta = p["tienda.venta.multiplo_oferta"] if p else 3.0
+    mult_oferta = pf.get("venta_multiplo_oferta") or (p["tienda.venta.multiplo_oferta"] if p else 3.0)   # propio del vendedor (Pilar)
     mult_lista = p["tienda.venta.multiplo_lista"] if p else 2.0
     return math.ceil(max(mult_oferta * su_precio, mult_lista * (lista or 0)))
 
