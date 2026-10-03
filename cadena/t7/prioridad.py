@@ -7,8 +7,13 @@ Dos reglas del juego lo deciden todo:
   o vendiendo repetidas (no gasta efectivo).
 - Con los equipos cuenta todo el valor ganado → no hay techo: cada trato que renta suma.
 
-Orden en cada tick para la única aceptación: 1. duelo urgente  2. oferta final de vendedor que mejora el top 3
-3. trato con equipo de más neto  4. trato con vendedor que mejora el top 3.
+Los duelos tienen su propio cupo de aceptación por tick, aparte del de la tienda/El Rastro (confirmado por Causa
+Prima: "duel messages and accepts have their own limits: they never block your trading"), así que esta prioridad
+ordena cada categoría por separado, no una contra otra:
+
+Duelos: el más urgente primero (menos ticks hasta el plazo).
+Tienda y equipos, con la única aceptación de esa categoría: 1. oferta final de vendedor que mejora el top 3
+2. trato con equipo de más neto  3. trato con vendedor que mejora el top 3.
 """
 
 
