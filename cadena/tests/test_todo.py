@@ -937,6 +937,18 @@ class Estructura(unittest.TestCase):
         self.assertFalse(contable.para_vendedor({"carta": "ZZZ-01", "lado": "compra"}, c, 300, P, {})["conocida"])
         self.assertTrue(contable.para_vendedor({"carta": "LAT-08", "lado": "venta"}, c, 300, P, {})["protegida"])
 
+    def test_el_your_value_del_juego_manda_en_los_limites_del_regateador(self):
+        c, _ = coleccion()
+        try:
+            V.valores_del_juego(recibir={"RET-01": {"card": "RET-01", "your_value": 5.5}})
+            self.assertEqual(contable.limite_vendedor("compra", "RET-01", c), 5)      # nunca más de lo que nos suma
+            V.valores_del_juego(cartas=[{"ref": "LAT-03", "your_value": 50}, {"ref": "LAT-03", "your_value": 40}])
+            self.assertEqual(contable.limite_vendedor("venta", "LAT-03", c), 41)     # nunca menos de lo que nos quita
+            self.assertEqual(V.VALOR_RECIBIR, {})                                    # cambiaron las cartas: se repregunta
+        finally:
+            V.VALOR_DAR.clear()
+            V.VALOR_RECIBIR.clear()
+
     def test_el_guardia_decide_con_la_ficha_de_la_contable(self):
         c, _ = coleccion()
         prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
@@ -944,6 +956,46 @@ class Estructura(unittest.TestCase):
         self.assertTrue(guardia.revisar(prop, None, c, 300, P, ev=ev)[0])
         mala = dict(ev, neto=-1, renta=False)                              # si la Contable dice que no renta, no firma
         self.assertFalse(guardia.revisar(prop, None, c, 300, P, ev=mala)[0])
+
+    def test_el_regateador_nunca_vende_por_menos_de_lo_que_le_ofrecen(self):
+        pf = params.perfil(P, "abuela")
+        st = {"lado": "venta", "limite": 2, "suyas": [5], "nuestras": [], "final": False, "lista": 1}
+        accion, precio, _ = tienda.decidir(st, pf, P)
+        self.assertTrue((accion, precio) == ("aceptar", 5) or precio > 5)        # abuela daba 5: nunca pedir 2
+        baja = dict(P, **{"tienda.venta.multiplo_oferta": 0.5, "tienda.venta.multiplo_lista": 0})
+        self.assertEqual(tienda.decidir(st, pf, baja)[:2], ("aceptar", 5))      # pediría 3 < 5: se acepta su 5
+        st = {"lado": "venta", "limite": 11, "suyas": [9, 13], "nuestras": [30], "final": False, "lista": None}
+        accion, precio, _ = tienda.decidir(st, pf, P)
+        self.assertTrue(accion == "aceptar" or precio > 13)
+
+    def test_el_regateador_no_compra_si_la_caja_no_llega(self):
+        pf = params.perfil(P, "chato")
+        st = {"lado": "compra", "limite": 55, "caja": 55, "suyas": [82], "nuestras": [], "final": False}
+        self.assertEqual(tienda.decidir(st, pf, P)[0], "retirarse")
+        self.assertTrue(tienda.caja_llega(90, 82))
+        self.assertFalse(tienda.caja_llega(55, 82))
+
+    def test_el_regateador_abre_cerca_y_puede_limitar_el_paso(self):
+        pf = params.perfil(P, "chato")
+        st = {"lado": "compra", "limite": 100, "caja": 100, "suyas": [80], "nuestras": [], "final": False}
+        self.assertEqual(tienda.decidir(st, pf, P)[1], 32)                       # 40 % de 80
+        q = dict(P, **{"tienda.compra.paso_maximo": 0.05})
+        st = dict(st, suyas=[80, 75], nuestras=[32])
+        self.assertLessEqual(tienda.decidir(st, pf, q)[1] - 32, 4)               # paso ≤ 5 % de 80
+
+    def test_el_guardia_no_firma_si_el_juego_dice_que_no_renta(self):
+        c, _ = coleccion()
+        prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
+        try:
+            V.valores_del_juego(recibir={"RET-01": {"your_value": 7.5}})           # el juego: nos suma 7,5, no 13
+            ok, motivo, _, _ = guardia.revisar(prop, None, c, 300, P)
+            self.assertFalse(ok)
+            self.assertIn("según el juego", motivo)
+            V.valores_del_juego(recibir={"RET-01": {"your_value": 20}})
+            self.assertTrue(guardia.revisar(prop, None, c, 300, P)[0])
+        finally:
+            V.VALOR_DAR.clear()
+            V.VALOR_RECIBIR.clear()
 
     def test_la_contable_da_los_numeros_a_la_duelista(self):
         d = {"id": 2, "rol": "seller", "limite": 100, "rival": [150, 170], "nuestras": [200, 190], "ronda": 7, "rondas": 8}
@@ -1077,8 +1129,8 @@ class Jugar(unittest.TestCase):
         self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
         self.assertEqual(len(b.dichos), 1)
         tid, precio, texto = b.dichos[0]
-        self.assertEqual((tid, precio), (7, 2))                              # ancla al 10 % de su precio
-        self.assertEqual(est["hilos"]["7"]["nuestras"], [2])
+        self.assertEqual((tid, precio), (7, 8))                              # abre al 40 % de su precio
+        self.assertEqual(est["hilos"]["7"]["nuestras"], [8])
         self.assertTrue(defensa.revisar_salida(texto, precio)[0])           # el Portavoz: solo el número
 
     def test_la_oferta_final_la_firma_el_guardia(self):

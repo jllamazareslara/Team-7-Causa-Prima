@@ -208,6 +208,18 @@ def precios_de_venta(menus):
     return precios
 
 
+def valor_de_compra(b, carta):
+    """your_value de una copia más de `carta` (GET /api/me/value), una vez mientras no cambien nuestras cartas.
+    Lo usa la Contable como tope del Regateador. None si el juego no responde: se sigue con el valor calculado."""
+    if carta in V.VALOR_RECIBIR:
+        return V.VALOR_RECIBIR[carta]
+    try:
+        V.valores_del_juego(recibir={carta: b.value(carta)})
+    except Exception as e:
+        _linea("errores.jsonl", {"valor": carta, "error": str(e)})
+    return V.VALOR_RECIBIR.get(carta)
+
+
 def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=None):
     """Rellena los huecos: una conversación nueva por vendedor libre, según menus.json. Primero vender, luego comprar."""
     menus = _json(os.path.join(AQUI, "menus.json"), None) if menus is None else menus
@@ -230,6 +242,10 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
                 continue
             tema = {"sell": {"assets": [ids[-1]]}}
         else:
+            nos_suma = valor_de_compra(b, op["carta"])
+            if nos_suma is not None and nos_suma < 1:            # el juego dice que no nos suma nada: no se abre
+                print(f"NO ABRE      {op['vendedor']} · compra {op['carta']}: el juego dice que nos vale {nos_suma}")
+                continue
             tema = {"buy": {"card": op["carta"]}}
         print(f"ABRIR        {op['vendedor']} · {op['lado']} {op['carta']}")
         if not vivo:
@@ -471,6 +487,7 @@ def leer(b, est, tick, con_tablon=True):
     nosotros = tuple(x for x in (me.get("id"), me.get("name")) if x)   # las ofertas llevan el id ("t07"), no el nombre
     cartas = list(_cartas(me).values())
     V.configurar(cartas=cartas)                                  # la rareza de lo que tenemos, tal como la dice el juego
+    V.valores_del_juego(cartas=cartas)                           # su your_value: el suelo del Regateador al vender
     lectura = {"tick": tick, "efectivo": me.get("cash", 0), "cuenta": Counter(a["ref"] for a in cartas),
                "vendedores": [], "duelos": [], "tablon": None, "mudos": []}
     hilos = est.setdefault("hilos", {})
@@ -504,6 +521,8 @@ def leer(b, est, tick, con_tablon=True):
         oid, precio, final = vigente
         if not h["suyas"] or h["suyas"][-1] != precio:
             h["suyas"].append(precio)
+        if h["lado"] == "compra":                                # el tope: lo que el juego nos suma (si cambiaron nuestras cartas, se repregunta)
+            valor_de_compra(b, h["carta"])
         lectura["vendedores"].append({"id": int(hid), "vendedor": h["vendedor"], "lado": h["lado"], "carta": h["carta"],
                                       "suyas": list(h["suyas"]), "nuestras": list(h["nuestras"]), "final": final,
                                       "oferta_id": oid, "texto": _ultimo_texto(crudo, nosotros), "lista": h.get("lista")})

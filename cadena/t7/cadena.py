@@ -43,6 +43,7 @@ from . import valor as V
 from .portavoz import Portavoz
 
 DIA_POR_DEFECTO = 5          # duelos con día de entrega: día 5 hasta ver uno real
+NO_INSISTIR = {"pilar"}      # memoria y astucia altas: una carta que no quiso a nuestro precio no se le ofrece otra vez ese día
 
 
 class Memoria:
@@ -68,13 +69,15 @@ class Memoria:
         self.escasez = {}       # carta → acuñadas / tirada, del catálogo (Ojeador)
         self.descansos = {}     # vendedor → hasta cuándo no se le abre nada (Ojeador)
         self.niveles = {}       # vendedor → nivel: la escalera pesa más en los niveles altos
+        self.sin_acuerdo = {}   # "vendedor|carta|día" → motivo: con NO_INSISTIR no se le vuelve a ofrecer ese día
 
     def a_dict(self):
         return {"sondeadas": self.sondeadas, "sondas": self.sondas, "pistas": self.pistas, "escenarios": self.escenarios, "mala_fe": self.mala_fe,
                 "capturas": self.capturas, "avisos": self.escudo.cuenta, "frases": self.portavoz.usadas,
                 "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas,
                 "mercado": self.mercado, "demanda": self.demanda, "historial": self.historial,
-                "calendario": self.calendario, "escasez": self.escasez, "descansos": self.descansos, "niveles": self.niveles}
+                "calendario": self.calendario, "escasez": self.escasez, "descansos": self.descansos, "niveles": self.niveles,
+                "sin_acuerdo": self.sin_acuerdo}
 
     @classmethod
     def de_dict(cls, d):
@@ -90,6 +93,7 @@ class Memoria:
         m.historial = d.get("historial", {})
         m.calendario, m.escasez = d.get("calendario", {}), d.get("escasez", {})
         m.descansos, m.niveles = d.get("descansos", {}), d.get("niveles", {})
+        m.sin_acuerdo = d.get("sin_acuerdo", {})
         return m
 
 
@@ -158,8 +162,11 @@ def operaciones(cuenta, efectivo, menus, mem, lectura, ordenes=None, abiertas=()
     quietos = {v for v, d in mem.descansos.items() if ojeador.descansa(d, lectura.get("hora"), t)}
     refs = {r for m in (menus or {}).values() if isinstance(m, dict) for r in (m.get("vende") or {})}
     senales = ojeador.senales_vendedor(mem.historial, refs, t if isinstance(t, (int, float)) else 0, mem.escasez)
+    hoy = f"|{lectura.get('dia')}"
+    evitar = {tuple(k[:-len(hoy)].split("|", 1)) for k in mem.sin_acuerdo if k.endswith(hoy)}
     return cola_de_operaciones(cuenta, efectivo, menus, ordenes, set(abiertas) | quietos, tratos, max_tratos,
-                               guardar=_reservadas(cuenta, mem, lectura), niveles=mem.niveles, senales=senales)
+                               guardar=_reservadas(cuenta, mem, lectura), niveles=mem.niveles, senales=senales,
+                               evitar=evitar)
 
 
 def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), listas=None, caducidades=None, maximo=12):
@@ -232,8 +239,12 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         hilo, quien, texto = str(c["id"]), c["vendedor"], c.get("texto") or ""
         cuentas = contable.para_vendedor(c, cuenta, efectivo, p, ordenes)
         es_nuevo = hilo in vista["textos_nuevos"]
+        def sin_acuerdo(motivo):                         # con Pilar no se insiste: esa carta, ese día, ya no
+            if quien in NO_INSISTIR:
+                mem.sin_acuerdo[f"{quien}|{c['carta']}|{lectura.get('dia')}"] = motivo
         if c.get("cerrado"):
             apunta("TIENDA", f"{quien} cerró la conversación ({c['cerrado']})")
+            sin_acuerdo(c["cerrado"])
             return
         if not cuentas["conocida"]:                          # conocer el valor antes de comprar: sin dato, no se opera
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "carta sin valor conocido"})
@@ -275,7 +286,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             apunta("OBSERVADOR", f"{quien}: vendedor sin perfil propio, se le trata con prudencia")
         st = {"lado": c["lado"], "limite": limite, "suyas": c["suyas"], "nuestras": c.get("nuestras", []),
               "final": bool(c.get("final")), "lista": c.get("lista")}
-        if not st["nuestras"] and c["lado"] == "compra" and ordenes.get("compras") == "ninguna":
+        if c["lado"] == "compra":
+            st["caja"] = cuentas["caja"]
+        if not st["nuestras"] and c["lado"] == "compra" and ordenes.get("compras") == "ninguna" and \
+                not contable.para_completar(c["carta"], ordenes):
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "caja seca: no se abren compras"})
             apunta("TIENDA", f"{quien} · {c['carta']}: caja seca, no se abre la compra")
             return
@@ -283,6 +297,9 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         apunta("TIENDA", f"{quien} · {c['lado']} {c['carta']} · él {suya} · {accion} {precio if precio is not None else ''} · {por_que}")
         if accion == "retirarse":
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": por_que})
+            sin_acuerdo(por_que)
+            if c["lado"] == "compra" and not st["nuestras"] and not tienda.caja_llega(st.get("caja"), suya):
+                mem.sin_acuerdo[f"{quien}|{c['carta']}|{lectura.get('dia')}"] = por_que   # hoy no se le vuelve a abrir
         elif accion == "aceptar":
             cola.append({"tipo": "final_vendedor" if st["final"] else "vendedor", "urgente": st["final"],
                          "destino": "vendedor", "id": c["id"], "oferta_id": c.get("oferta_id"), "precio": suya,
@@ -308,7 +325,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 else:
                     txt = None
             if txt is None:
-                txt = mem.portavoz.vendedor(quien, precio, firme)
+                txt = mem.portavoz.vendedor(quien, precio, firme, carta=c["carta"])
             mensajes.append({"destino": "vendedor", "id": c["id"], "precio": precio, "texto": txt})
 
     for c in lectura.get("vendedores") or []:
@@ -411,12 +428,16 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             ok, motivo = guardia.revisar_duelo(gan, firma is not None, stop, forzar)
             ev = None
         else:
+            recibo = (o["propuesta"].get("recibo") or {}).get("cartas") or []
+            completar = bool(recibo) and not (o["propuesta"].get("entrego") or {}).get("cartas") and \
+                o["tipo"] in ("vendedor", "final_vendedor") and all(contable.para_completar(r, ordenes) for r in recibo)
+            tope = None if completar else ordenes.get("tope_por_trato")   # página a completar: sin tope por trato
             ev = contable.ficha(o["propuesta"], cuenta, efectivo, p)
             apunta("CONTABLE", f"{o['destino']} {o['id']} · recibo {ev['recibo']:.1f} · entrego {ev['entrego']:.1f} · "
                                f"comisión {ev['comision']} · neto {ev['neto']:+.1f}")
             ok, motivo, ev, _ = guardia.revisar(o["propuesta"], o.get("oferta_juego"), cuenta, efectivo, p,
                                                 ya_firmado_este_tick=firma is not None, stop=stop, forzar=forzar,
-                                                tope_por_trato=ordenes.get("tope_por_trato"), ev=ev)
+                                                tope_por_trato=tope, ev=ev, para_completar=completar)
         apunta("GUARDIA", f"{o['destino']} {o['id']} · {'FIRMA' if ok else 'no firma'} · {motivo}")
         if not ok:
             return None
@@ -484,7 +505,7 @@ def tratos_de_hoy(mem, dia):
 
 
 def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None,
-                        guardar=None, niveles=None, senales=None):
+                        guardar=None, niveles=None, senales=None, evitar=()):
     """Qué operación abrir con cada vendedor que no tiene conversación: primero vender, luego comprar.
 
     menus = {vendedor: {"vende": {ref: precio de lista}, "compra": {ref: lo que ofrece de entrada}}}
@@ -498,43 +519,66 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     senales = {ref: {"rastro": precio hoy en El Rastro con comisión o None, "escasa": bool}} (ojeador.senales_vendedor):
     una carta casi agotada se compra antes; con la escalera de ese vendedor ya hecha, no se le compra lo que
     sale más barato en El Rastro (lo compra el Cambista).
+    evitar = {(vendedor, carta)} que hoy ya acabaron sin acuerdo con un vendedor de NO_INSISTIR: no se repiten.
+    ordenes["completar"] = páginas a completar (hoy.json): sus cartas van delante, también con solo_vender y sin cupo,
+    al vendedor más barato y solo con margen_completar × la lista libre sobre la reserva (si no, se espera a las ventas).
     """
     ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
     pendientes, usadas = [], set()
+    mas_barato = {}                                       # ref → la lista más baja entre los vendedores
+    for menu in menus.values():
+        for ref, lista in ((menu.get("vende") or {}).items() if isinstance(menu, dict) else ()):
+            if isinstance(lista, (int, float)):
+                mas_barato[ref] = min(mas_barato.get(ref, lista), lista)
     for vendedor, menu in menus.items():
         if vendedor in abiertas or not isinstance(menu, dict):
             continue
         ventas = [(ref, perdida) for ref, perdida in cambista.vendibles(cuenta)
                   if ref in (menu.get("compra") or {}) and ref not in usadas and V.conocida(ref)
-                  and (ref not in guardar or guardar[ref] == vendedor)
+                  and (ref not in guardar or guardar[ref] == vendedor) and not contable.para_completar(ref, ordenes)
+                  and (vendedor, ref) not in evitar
                   and V.rareza(ref) in ("common", "uncommon") and menu["compra"][ref] * 3 > perdida]
-        ventas.sort(key=lambda x: (x[0] not in guardar, x[0] not in urgentes, x[1]))
+        # la de mejor coste-beneficio: lo que nos ofrece de entrada menos lo que perdemos al darla
+        ventas.sort(key=lambda x: (x[0] not in guardar, x[0] not in urgentes, -(menu["compra"][x[0]] - x[1]), x[1]))
         if ventas:
             ref = ventas[0][0]
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "venta", "carta": ref, "lista": menu["compra"][ref]})
             continue
-        if ordenes.get("compras") == "ninguna":
+        if ordenes.get("compras") == "ninguna" and not ordenes.get("completar"):
             continue
         cupo_lleno = max_tratos is not None and tratos.get(vendedor, 0) >= max_tratos
         compras = []
         for ref, lista in (menu.get("vende") or {}).items():
-            if cuenta.get(ref, 0) > 0 or ref in usadas or not V.conocida(ref):
+            if cuenta.get(ref, 0) > 0 or ref in usadas or not V.conocida(ref) or (vendedor, ref) in evitar:
                 continue
+            objetivo = contable.para_completar(ref, ordenes)     # página que el equipo quiere completar (hoy.json)
+            if ordenes.get("compras") == "ninguna" and not objetivo:
+                continue
+            if objetivo and lista > mas_barato.get(ref, lista):
+                continue                                  # una página a completar se compra al vendedor más barato
+            if objetivo:                                  # primero la más cara: las baratas guardan caja para las que cuestan más
+                mas_caras = sum(mas_barato[r] for r in V.estado_pagina(cuenta, V.barrio(ref))[1]
+                                if r != ref and mas_barato.get(r, 0) > lista)
+                if efectivo - ordenes.get("reserva", 0) < ordenes.get("margen_completar", 1) * (lista + mas_caras):
+                    continue                              # se espera a que las ventas llenen la caja
+            if not tienda.caja_llega(efectivo - ordenes.get("reserva", 0), lista):
+                continue                                  # la caja no llega a su precio: no se abre (ni se le cansa)
             vale = V.valor_recibir(cuenta, [ref])
             completa = V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref]
-            if vale < 0.8 * lista or (cupo_lleno and not completa):
+            if vale < 0.8 * lista or (cupo_lleno and not (completa or objetivo)):
                 continue
-            if ordenes.get("compras") == "escalera_y_pagina" and not completa and lista > (ordenes.get("tope_por_trato") or 0):
+            if ordenes.get("compras") == "escalera_y_pagina" and not (completa or objetivo) and \
+                    lista > (ordenes.get("tope_por_trato") or 0):
                 continue
             s = (senales or {}).get(ref) or {}
             rastro = s.get("rastro")
-            if cupo_lleno and rastro is not None and rastro < lista and not completa:
+            if cupo_lleno and rastro is not None and rastro < lista and not (completa or objetivo):
                 continue                                  # escalera hecha y en El Rastro sale más barata
-            compras.append((not completa, not s.get("escasa"), -(vale - lista), ref, lista))
+            compras.append((not completa, not objetivo, not s.get("escasa"), -(vale - lista), ref, lista))
         if compras:
-            _, _, _, ref, lista = min(compras)
+            *_, ref, lista = min(compras)
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "compra", "carta": ref, "lista": lista})
     nivel = {v: n for v, n in (niveles or {}).items() if isinstance(n, (int, float)) and not isinstance(n, bool)}
