@@ -26,8 +26,8 @@ Fuera de la cadena: El Vigía (solo lee, enseña en pantalla lo que viene) · El
 
 | Papel | Nombre | Archivo |
 |---|---|---|
-| El presente: lo que pasa ahora | Los Ojos | el lector del programa que lanza la cadena |
-| Cuánto vale y cuánto renta | La Contable | `t7/valor.py` |
+| El presente: lo que pasa ahora (novedades, perfiles de vendedores, precios del Rastro) | Los Ojos | `t7/ojos.py` (`mirar()`): la vista de cada tick |
+| Cuánto vale y cuánto renta | La Contable | `t7/contable.py`, con la calculadora `t7/valor.py` |
 | El pasado del mercado · el vigilante de precios | El Ojeador | `t7/ojeador.py` |
 | El futuro del juego · anticipar la estrategia según lo que viene | El Guion | `t7/guion.py` |
 | El futuro del mercado | El Ojeador, con el calendario del Guion | `t7/ojeador.py`, `momento()` |
