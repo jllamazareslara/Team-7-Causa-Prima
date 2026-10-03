@@ -559,6 +559,8 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     evitar = {(vendedor, carta)} que hoy ya acabaron sin acuerdo con un vendedor de NO_INSISTIR: no se repiten.
     ordenes["completar"] = páginas a completar (hoy.json): sus cartas van delante, también con solo_vender y sin cupo,
     al vendedor más barato y solo con margen_completar × la lista libre sobre la reserva (si no, se espera a las ventas).
+    ordenes["escalera"] = comprar para la escalera (hoy.json): también con solo_vender, a cada vendedor que aún no tiene
+    max_tratos tratos hoy se le compra una carta que nos falte con lista ≤ ordenes["tope_escalera"].
     """
     ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
@@ -583,7 +585,7 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "venta", "carta": ref, "lista": menu["compra"][ref]})
             continue
-        if ordenes.get("compras") == "ninguna" and not ordenes.get("completar"):
+        if ordenes.get("compras") == "ninguna" and not ordenes.get("completar") and not ordenes.get("escalera"):
             continue
         cupo_lleno = max_tratos is not None and tratos.get(vendedor, 0) >= max_tratos
         compras = []
@@ -591,8 +593,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             if cuenta.get(ref, 0) > 0 or ref in usadas or not V.conocida(ref) or (vendedor, ref) in evitar:
                 continue
             objetivo = contable.para_completar(ref, ordenes)     # página que el equipo quiere completar (hoy.json)
-            if ordenes.get("compras") == "ninguna" and not objetivo:
-                continue
+            escalera = ordenes.get("escalera") and not cupo_lleno and lista <= (ordenes.get("tope_escalera") or 0)
+            if ordenes.get("compras") == "ninguna" and not (objetivo or escalera):
+                continue                                  # solo vender: salvo páginas a completar y la escalera
             if objetivo and lista > mas_barato.get(ref, lista):
                 continue                                  # una página a completar se compra al vendedor más barato
             if objetivo:                                  # primero la más cara: las baratas guardan caja para las que cuestan más
