@@ -1,23 +1,22 @@
-# La Contable · criterios de aceptación
+# El Guardia · criterios de aceptación
 
-**Rama:** `infra/t7-contable` · **Lugar en la cadena:** 6 · antes de cada firma (con el Guardia)
+**Rama:** `infra/t7-guardia` · **Lugar en la cadena:** 6 · la única puerta antes de `accept`
 
-Calcula cuánto nos vale cada carta (valor marginal, con bono de página) y si un trato renta. Con `situacion.py` saca el modo de caja del día (holgado, justo, seco).
+Es la única función que puede devolver «firma». No lee texto. Cinco comprobaciones y firma solo, sin aprobación humana (el Semáforo se quitó el 3/10).
 
 ## Aceptado cuando
 
-- [ ] El valor de la colección coincide con el juego al céntimo (679,12 frente a 679,1) y carta a carta.
-- [ ] El bono de página es el 25 % de la suma de la página; la carta que completa página vale su valor más ese bono.
-- [ ] Una carta protegida nunca aparece como vendible; `liquidez()` solo propone ventas sin perder valor.
-- [ ] Con datos del juego (`configurar`) sustituye los supuestos; lo que no entiende no cambia nada.
-- [ ] Modo holgado no cambia ningún ajuste; justo vende primero y baja el tope; seco no compra pero vende.
+- [ ] Con `runs/STOP` no firma nada.
+- [ ] Como mucho una firma por tick para todo el equipo.
+- [ ] Un campo desconocido en la oferta, o una oferta cuyo precio cambió desde que el agente la miró: no firma.
+- [ ] Nunca paga más de lo que vale la carta ni baja de la reserva de 60 P; las ventas que rentan pasan siempre.
+- [ ] Una categoría apagada en `hoy.json` no se firma; con caja justa respeta el tope por trato.
+- [ ] Un duelo solo se firma dentro de nuestro límite.
 
 ## Cómo se comprueba (sin red)
 
 Las pruebas viven en la rama `infra/t7`, que tiene la cadena entera. Desde `cadena/`:
 
-- `python -m unittest tests.test_todo.Calculadora`
-- `python -m unittest tests.test_todo.ValoresDelJuego`
-- `python -m unittest tests.test_todo.Situacion`
+- `python -m unittest tests.test_todo.Guardia`
 
 Nada de esta rama llama al juego, lee la clave ni acepta ofertas.
