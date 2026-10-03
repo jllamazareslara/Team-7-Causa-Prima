@@ -137,5 +137,92 @@ class Plan(unittest.TestCase):
         self.assertEqual(tabla[0][1]["automatico"], 13)                             # (30−20) + (25−22)
 
 
+class Ojeador(unittest.TestCase):
+    """Cuándo comprar y vender: historial, tendencia, momento, escasez."""
+
+    @staticmethod
+    def tablon(precio, maker="t01", ref="LAT-09", lado="venta"):
+        if lado == "venta":
+            return [{"id": 1, "maker": maker, "give": {"assets": [{"ref": ref}]}, "want": {"cash": precio}}]
+        return [{"id": 2, "maker": maker, "give": {"cash": precio}, "want": {"cards": [ref]}}]
+
+    def hist_que_baja(self):
+        from t7 import ojeador
+        h = {}
+        for i, p in enumerate([60, 56, 52, 48, 44]):
+            ojeador.observar(h, self.tablon(p, maker=f"t0{i % 3}"), 10 * i)
+        return h
+
+    def test_historial_y_tendencia(self):
+        from t7 import ojeador
+        h = self.hist_que_baja()
+        ojeador.observar(h, self.tablon(44, maker="t01"), 40)                  # misma oferta, mismo tick: no se repite
+        self.assertEqual(len(h["LAT-09"]), 5)
+        t = ojeador.tendencia(h, "LAT-09", 40)
+        self.assertEqual((t["sentido"], t["minimo"], t["vendedores"]), ("baja", 44, 3))
+        sube = {}
+        for i, p in enumerate([20, 24, 28, 32]):
+            ojeador.observar(sube, self.tablon(p, ref="RET-02"), 10 * i)
+        self.assertEqual(ojeador.tendencia(sube, "RET-02", 30)["sentido"], "sube")
+        self.assertEqual(ojeador.tendencia({}, "X-01", 0)["sentido"], "sin datos")
+
+    def test_feed_tolerante(self):
+        from t7 import ojeador
+        h = {}
+        ojeador.observar_feed(h, {"events": [{"type": "settlement", "ref": "LAV-10", "price": 50, "tick": 5},
+                                             {"type": "pack_opened", "ref": "LAV-01"}, "basura"]}, 6)
+        self.assertEqual(h, {"LAV-10": [[5, 50, "trato", None]]})
+
+    def test_cuando_comprar(self):
+        from t7 import ojeador
+        h, normal = self.hist_que_baja(), {"comprar": "normal"}
+        t = ojeador.tendencia(h, "LAT-09", 40)
+        self.assertFalse(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal)[0])        # renta poco y baja: esperar
+        self.assertTrue(ojeador.comprar_ahora("LAT-09", 50, 112, t, normal)[0])          # margen grande: ya
+        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal, completa=True)[0])
+        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal, esc=0.9)[0])
+        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, {"comprar": "ya"})[0])
+        self.assertFalse(ojeador.comprar_ahora("LAT-09", 120, 112, t, {"comprar": "ya"})[0])  # nunca por encima
+
+    def test_momentos_del_calendario(self):
+        from t7 import ojeador
+        self.assertEqual(ojeador.momento(EVS, 4.0)["fase"], "normal")
+        self.assertEqual(ojeador.momento(EVS, 15.5)["fase"], "antes_dinero")        # sábado noche: comprar
+        self.assertEqual(ojeador.momento(EVS, 17.0)["fase"], "dinero_nuevo")        # domingo tras los 150 P: vender
+        self.assertEqual(ojeador.momento(EVS, 22.0)["fase"], "final")
+        self.assertTrue(ojeador.inicio_de_hora(7.05) and not ojeador.inicio_de_hora(7.5))
+
+    def test_precio_de_venta_nunca_bajo_el_suelo(self):
+        from t7 import ojeador
+        quieto = {"sentido": "quieto", "compradores": 0, "vendedores": 0, "minimo": None}
+        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.0}), 20)
+        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.25}), 25)
+        baja = {"sentido": "baja", "compradores": 0, "vendedores": 4, "minimo": 15}
+        self.assertEqual(ojeador.precio_venta(20, 5, baja, {"vender": 1.0}), 14)     # justo debajo del más barato
+        self.assertEqual(ojeador.precio_venta(20, 18, baja, {"vender": 1.0}), 18)    # pero nunca bajo el suelo
+        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.25}, esc=0.95), 26)  # tope × 1,3
+
+    def test_escasez_y_compradores(self):
+        from t7 import ojeador
+        cat = {"sets": [{"id": "LAT", "cards": [{"id": "LAT-12", "print_run": 3, "minted": 3},
+                                                {"id": "LAT-01", "print_run": 300, "minted": 30}]}]}
+        self.assertEqual(ojeador.escasez(cat), {"LAT-12": 1.0, "LAT-01": 0.1})
+        h = {}
+        for i, (m, p) in enumerate([("t05", 30), ("t05", 34), ("t09", 40)]):
+            ojeador.observar(h, self.tablon(p, maker=m, ref="MAL-04", lado="compra"), i)
+        self.assertEqual(ojeador.compradores_probables(h, "MAL-04")[0], ("t05", 34, 2))
+
+    def test_la_cadena_espera_si_el_ojeador_lo_dice(self):
+        from t7 import cadena
+        mem = cadena.Memoria()
+        mem.historial = self.hist_que_baja()
+        lectura = {"tick": 40, "efectivo": 300, "cuenta": {}, "tablon": self.tablon(100),
+                   "momento": {"comprar": "normal"}}
+        acc = cadena.tick(lectura, mem)
+        self.assertTrue(any("OJEADOR" in d and "esperar" in d for d in acc["diario"]))
+        self.assertIsNone(acc["firma"])
+        self.assertIn("historial", cadena.Memoria.de_dict(mem.a_dict()).a_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
