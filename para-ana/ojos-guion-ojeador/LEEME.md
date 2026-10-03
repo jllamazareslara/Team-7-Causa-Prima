@@ -24,8 +24,8 @@ Todo desde `t7/cadena.py`:
 
 `calendario` (/api/schedule), `catalogo` (/api/catalog), `feed` (/api/feed), `t_hours` y `tick_segundos`
 (/api/clock), `niveles` de los vendedores (/api/dealers) y, en cada vendedor cerrado, `cerrado` (closed_reason) y
-`until_tick`. El Director no es parte del flujo: hoy lo hace `rastro.py` para El Rastro (`leer()`, `leer_calendario()`);
-vendedores y duelos, pendiente de `play.py`. Lo que falte se salta: la cadena sigue sin ese consejo.
+`until_tick`. El Director no es parte del flujo: hoy lo hace `jugar.py` para vendedores y El Rastro (`leer()`, `leer_calendario()`, `vendedores_nuevos()`);
+duelos, pendiente. Lo que falte se salta: la cadena sigue sin ese consejo.
 
 ## Pruebas
 

@@ -177,6 +177,17 @@ class Guardia(unittest.TestCase):
 
 
 class Tienda(unittest.TestCase):
+    def test_perfil_de_pilar(self):
+        pf = params.perfil(P, "pilar")
+        self.assertEqual(pf["perfil"], "pilar")
+        self.assertEqual(tienda.apertura("venta", 16, pf, 4.0, P), 32)              # 2 × su oferta, no 3
+        self.assertEqual(tienda.apertura("venta", 16, params.perfil(P, "chato"), 4.0, P), 48)
+        txt = portavoz.Portavoz().vendedor("pilar", 30)
+        self.assertIn("Pilar", txt)
+        self.assertTrue(defensa.revisar_salida(txt, 30)[0])
+        for i in range(len(portavoz.PILAR)):
+            self.assertTrue(defensa.revisar_salida(portavoz.PILAR[i].format(p=27), 27)[0])
+
     def test_nunca_cruza_el_limite_ni_repite(self):
         rng = random.Random(3)
         for perfil in SV.PERFILES:
@@ -958,6 +969,18 @@ class Estructura(unittest.TestCase):
         self.assertFalse(contable.para_vendedor({"carta": "ZZZ-01", "lado": "compra"}, c, 300, P, {})["conocida"])
         self.assertTrue(contable.para_vendedor({"carta": "LAT-08", "lado": "venta"}, c, 300, P, {})["protegida"])
 
+    def test_el_your_value_del_juego_manda_en_los_limites_del_regateador(self):
+        c, _ = coleccion()
+        try:
+            V.valores_del_juego(recibir={"RET-01": {"card": "RET-01", "your_value": 5.5}})
+            self.assertEqual(contable.limite_vendedor("compra", "RET-01", c), 5)      # nunca más de lo que nos suma
+            V.valores_del_juego(cartas=[{"ref": "LAT-03", "your_value": 50}, {"ref": "LAT-03", "your_value": 40}])
+            self.assertEqual(contable.limite_vendedor("venta", "LAT-03", c), 41)     # nunca menos de lo que nos quita
+            self.assertEqual(V.VALOR_RECIBIR, {})                                    # cambiaron las cartas: se repregunta
+        finally:
+            V.VALOR_DAR.clear()
+            V.VALOR_RECIBIR.clear()
+
     def test_el_guardia_decide_con_la_ficha_de_la_contable(self):
         c, _ = coleccion()
         prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
@@ -965,6 +988,46 @@ class Estructura(unittest.TestCase):
         self.assertTrue(guardia.revisar(prop, None, c, 300, P, ev=ev)[0])
         mala = dict(ev, neto=-1, renta=False)                              # si la Contable dice que no renta, no firma
         self.assertFalse(guardia.revisar(prop, None, c, 300, P, ev=mala)[0])
+
+    def test_el_regateador_nunca_vende_por_menos_de_lo_que_le_ofrecen(self):
+        pf = params.perfil(P, "abuela")
+        st = {"lado": "venta", "limite": 2, "suyas": [5], "nuestras": [], "final": False, "lista": 1}
+        accion, precio, _ = tienda.decidir(st, pf, P)
+        self.assertTrue((accion, precio) == ("aceptar", 5) or precio > 5)        # abuela daba 5: nunca pedir 2
+        baja = dict(P, **{"tienda.venta.multiplo_oferta": 0.5, "tienda.venta.multiplo_lista": 0})
+        self.assertEqual(tienda.decidir(st, pf, baja)[:2], ("aceptar", 5))      # pediría 3 < 5: se acepta su 5
+        st = {"lado": "venta", "limite": 11, "suyas": [9, 13], "nuestras": [30], "final": False, "lista": None}
+        accion, precio, _ = tienda.decidir(st, pf, P)
+        self.assertTrue(accion == "aceptar" or precio > 13)
+
+    def test_el_regateador_no_compra_si_la_caja_no_llega(self):
+        pf = params.perfil(P, "chato")
+        st = {"lado": "compra", "limite": 55, "caja": 55, "suyas": [82], "nuestras": [], "final": False}
+        self.assertEqual(tienda.decidir(st, pf, P)[0], "retirarse")
+        self.assertTrue(tienda.caja_llega(90, 82))
+        self.assertFalse(tienda.caja_llega(55, 82))
+
+    def test_el_regateador_abre_cerca_y_puede_limitar_el_paso(self):
+        pf = params.perfil(P, "chato")
+        st = {"lado": "compra", "limite": 100, "caja": 100, "suyas": [80], "nuestras": [], "final": False}
+        self.assertEqual(tienda.decidir(st, pf, P)[1], 32)                       # 40 % de 80
+        q = dict(P, **{"tienda.compra.paso_maximo": 0.05})
+        st = dict(st, suyas=[80, 75], nuestras=[32])
+        self.assertLessEqual(tienda.decidir(st, pf, q)[1] - 32, 4)               # paso ≤ 5 % de 80
+
+    def test_el_guardia_no_firma_si_el_juego_dice_que_no_renta(self):
+        c, _ = coleccion()
+        prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
+        try:
+            V.valores_del_juego(recibir={"RET-01": {"your_value": 7.5}})           # el juego: nos suma 7,5, no 13
+            ok, motivo, _, _ = guardia.revisar(prop, None, c, 300, P)
+            self.assertFalse(ok)
+            self.assertIn("según el juego", motivo)
+            V.valores_del_juego(recibir={"RET-01": {"your_value": 20}})
+            self.assertTrue(guardia.revisar(prop, None, c, 300, P)[0])
+        finally:
+            V.VALOR_DAR.clear()
+            V.VALOR_RECIBIR.clear()
 
     def test_la_contable_da_los_numeros_a_la_duelista(self):
         d = {"id": 2, "rol": "seller", "limite": 100, "rival": [150, 170], "nuestras": [200, 190], "ronda": 7, "rondas": 8}
@@ -980,17 +1043,20 @@ class Estructura(unittest.TestCase):
         self.assertEqual(contable.ganancia_duelo("seller", 100, 90), -10)
         self.assertEqual(contable.ganancia_duelo("buyer", 100, 90), 10)
 
-class Rastro(unittest.TestCase):
-    """rastro.py, el programa del Cambista en El Rastro, contra un juego de mentira (sin red)."""
+class Jugar(unittest.TestCase):
+    """jugar.py (vendedores + El Rastro) contra un juego de mentira (sin red)."""
 
     def setUp(self):
         import tempfile
-        import rastro
-        self.r = rastro
-        rastro.RUNS = tempfile.mkdtemp()
+        import jugar
+        self.r = jugar
+        jugar.RUNS = tempfile.mkdtemp()
+        self._leer_hoy = situacion.leer_hoy                  # estas pruebas no dependen de lo que diga hoy.json
+        situacion.leer_hoy = lambda: {}
         self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
 
     def tearDown(self):
+        situacion.leer_hoy = self._leer_hoy
         V.NUESTROS_MULT.clear()
         V.NUESTROS_MULT.update(self.mult)
         V.RAREZAS.clear()
@@ -1000,6 +1066,7 @@ class Rastro(unittest.TestCase):
         def __init__(self, tablon=None, cartas=None):
             self.tablon, self.aceptadas, self.ofertas, self.canceladas, self.abiertos = tablon or [], [], [], [], []
             self.activos = cartas if cartas is not None else []
+            self.hilo, self.dichos, self.cerrados, self.abiertas_ = None, [], [], []
 
         def me(self):
             return {"name": "t07", "cash": 300, "assets": self.activos}
@@ -1020,6 +1087,23 @@ class Rastro(unittest.TestCase):
         def open_pack(self, aid):
             self.abiertos.append(aid)
             return {"cards": []}
+
+        # vendedores: una conversación con su oferta vigente (forma de play.py, probada en vivo)
+        def thread(self, tid):
+            return self.hilo
+
+        def say(self, tid, text, price=None):
+            self.dichos.append((tid, price, text))
+
+        def close_thread(self, tid):
+            self.cerrados.append(tid)
+
+        def open_thread(self, with_, topic=None, venue=None):
+            self.abiertas_ = self.abiertas_ + [(with_, topic)]
+            return {"id": 70 + len(self.abiertas_)}
+
+        def my_threads(self, status=None):
+            return {"threads": [{"id": 99, "with": "chato", "status": "open"}, {"id": 7, "with": "abuela", "status": "open"}]}
 
     def cartas(self):
         c, _ = coleccion()
@@ -1064,6 +1148,85 @@ class Rastro(unittest.TestCase):
         self.assertEqual([a["ref"] for a in me["assets"] if a["id"] in dar], ["LAT-03"])
         self.assertIsNone(self.r.aceptar(b, dict(firma, oferta_id=99), self.TABLON, me, {}, vivo=True))   # ya no está
         self.assertIsNone(self.r.aceptar(b, {"destino": "duelo", "id": 5}, self.TABLON, me, {}, vivo=True))
+
+    def hilo_abuela(self, precio, final=False, oferta=55):
+        return {"status": "open", "standing_offers": [{"id": oferta, "maker": "abuela", "status": "open", "final": final,
+                                                       "want": {"cash": precio}}],
+                "messages": [{"from": "abuela", "text": f"Te lo dejo en {precio}"}]}
+
+    def test_regateador_manda_su_precio(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = self.hilo_abuela(20)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(len(b.dichos), 1)
+        tid, precio, texto = b.dichos[0]
+        self.assertEqual((tid, precio), (7, 8))                              # abre al 40 % de su precio
+        self.assertEqual(est["hilos"]["7"]["nuestras"], [8])
+        self.assertTrue(defensa.revisar_salida(texto, precio)[0])           # el Portavoz: solo el número
+
+    def test_la_oferta_final_la_firma_el_guardia(self):
+        b = self.Juego(cartas=self.cartas())
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        b.hilo = self.hilo_abuela(11, final=True)                            # nos vale 13: 11 renta un 15 %
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(b.aceptadas, [(55, None)])
+        b2 = self.Juego(cartas=self.cartas())
+        b2.hilo = self.hilo_abuela(12, final=True)                           # 12 no llega al 10 %: el Guardia no firma
+        est2 = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        self.r.un_tick(b2, est2, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(b2.aceptadas, [])
+
+    def test_en_seco_no_manda_ni_acepta_a_vendedores(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = self.hilo_abuela(11, final=True)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=False, stop=False)
+        self.assertEqual((b.aceptadas, b.dichos, b.cerrados), ([], [], []))
+
+    def test_abre_una_conversacion_por_vendedor(self):
+        b = self.Juego(cartas=self.cartas())
+        menus = {"abuela": {"vende": {"RET-01": 12}, "compra": {}}, "chato": {"vende": {"RET-02": 12}, "compra": {}}}
+        plan = {"p": dict(P), "forzar": {}, "ordenes": {}}
+        est = {"hilos": {}}
+        self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 1})
+        self.assertEqual(sorted(v for v, _ in b.abiertas_), ["abuela", "chato"])   # todos a la vez, uno por vendedor
+        self.assertEqual(len(est["hilos"]), 2)
+        self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 2})
+        self.assertEqual(len(b.abiertas_), 2)                                 # ya tienen conversación: no se repite
+
+    def test_solo_vender(self):
+        """Con solo_vender: no se abre una compra a un vendedor ni se compra en El Rastro; vender sigue."""
+        situacion.leer_hoy = lambda: {"solo_vender": True}
+        b = self.Juego(self.TABLON, self.cartas())
+        b.hilo = self.hilo_abuela(20)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 3, 30, vivo=True, stop=False)
+        self.assertEqual((b.dichos, b.cerrados), ([], [7]))                 # la compra no se abre: se cierra
+        self.assertNotIn(1, [oid for oid, _ in b.aceptadas])                  # la oferta 1 era comprar LAT-09: no
+        self.assertEqual(b.aceptadas, [(2, b.aceptadas[0][1])])               # la 2 nos compra una LAT-03: sí
+        plan = {"p": dict(P), "forzar": {}, "ordenes": {"compras": "ninguna"}}
+        menus = {"abuela": {"vende": {"RET-01": 12}, "compra": {"LAT-03": 4}}}
+        b2 = self.Juego(cartas=self.cartas())
+        self.r.abrir(b2, b2.me(), {"hilos": {}}, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 1})
+        self.assertEqual([t for _, t in b2.abiertas_], [{"sell": {"assets": [max(a["id"] for a in b2.me()["assets"] if a["ref"] == "LAT-03")]}}])
+
+    def test_al_arrancar_cierra_conversaciones_sueltas(self):
+        b = self.Juego()
+        est = {"hilos": {"7": {}}}
+        self.r.limpiar_hilos(b, est, vivo=False)
+        self.assertEqual(b.cerrados, [])
+        self.r.limpiar_hilos(b, est, vivo=True)
+        self.assertEqual(b.cerrados, [99])                                    # la nuestra (7) se queda
+
+    def test_conversacion_muda_se_suelta(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = {"status": "open", "standing_offers": []}
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        for t in range(4, 4 + self.r.MUDO_MAX):
+            self.r.un_tick(b, est, cadena.Memoria(), t, 30, vivo=True, stop=False)
+        self.assertEqual(b.cerrados, [7])
+        self.assertNotIn("7", est["hilos"])
 
     def test_anunciar_en_el_rastro(self):
         me = {"assets": [{"id": 1, "kind": "card", "ref": "LAT-03"}, {"id": 2, "kind": "card", "ref": "LAT-03"},
@@ -1118,3 +1281,20 @@ class Rastro(unittest.TestCase):
         self.assertEqual(self.r.precios_de_venta(menus), {"LAT-03": 6})
         self.assertEqual(self.r.precios_de_venta(None), {})
 
+
+    def test_oferta_del_vendedor_que_nos_compra(self):
+        # forma real (conversación 860): chato da 13 P y pide la carta con cash 0; su precio es 13, no 0
+        hilo = {"standing_offers": [{"id": 9041, "maker": "chato", "status": "open", "final": False,
+                                     "give": {"cash": 13, "assets": []}, "want": {"cash": 0, "assets": [{"id": 536}]}}]}
+        self.assertEqual(self.r._oferta_del_otro(hilo, "t07"), (9041, 13, False))
+        hilo["standing_offers"][0].update(give={"cash": 0, "assets": [{"id": 1}]}, want={"cash": 9})
+        self.assertEqual(self.r._oferta_del_otro(hilo, "t07"), (9041, 9, False))
+
+    def test_no_aceptamos_nuestra_propia_oferta(self):
+        # conversación 890: nuestra oferta lleva maker "t07" y el juego nos llama "Team 7" en me()["name"]
+        hilo = {"standing_offers": [{"id": 9495, "maker": "t07", "status": "open",
+                                     "give": {"cash": 0, "assets": [{"id": 1}]}, "want": {"cash": 15}}]}
+        self.assertIsNone(self.r._oferta_del_otro(hilo, ("t07", "Team 7")))
+        self.assertIsNone(self.r._oferta_del_otro(hilo, "t07"))
+        # si me() no trae el id, basta con el "team" de la conversación
+        self.assertIsNone(self.r._oferta_del_otro(dict(hilo, team="t07"), ("Team 7",)))

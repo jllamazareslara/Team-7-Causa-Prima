@@ -14,21 +14,33 @@ from . import duelo
 from . import valor as V
 
 
+def para_completar(carta, ordenes):
+    """¿Es de una página que el equipo quiere completar (hoy.json "completar")?"""
+    return isinstance(carta, str) and V.barrio(carta) in (ordenes or {}).get("completar", ())
+
+
 def caja_para_comprar(carta, cuenta, efectivo, p, ordenes):
     """Lo máximo que la caja deja pagar por esta carta: lo que queda sobre la reserva y, con la caja justa, el tope
-    por trato (salvo la carta que completa una página, igual que en el Guardia)."""
+    por trato (salvo la carta que completa una página o es de una página a completar, igual que en el Guardia)."""
     libre = math.floor(efectivo - p["guardia.reserva_efectivo"])
     tope = ordenes.get("tope_por_trato")
-    if tope is None or V.estado_pagina(cuenta, V.barrio(carta))[1] == [carta]:
+    if tope is None or V.estado_pagina(cuenta, V.barrio(carta))[1] == [carta] or para_completar(carta, ordenes):
         return libre
     return min(libre, tope)
 
 
 def limite_vendedor(lado, carta, cuenta):
-    """Nuestro tope (comprando) o suelo (vendiendo) para esa carta, con el bono de página incluido."""
+    """Nuestro tope (comprando) o suelo (vendiendo) para esa carta, con el bono de página incluido.
+    Si el juego ya nos ha dicho su your_value (/api/me, /api/me/value), gana el más prudente de los dos:
+    nunca pagar más de lo que el juego nos suma ni vender por menos de lo que nos quita."""
     if lado == "compra":
-        return math.floor(V.valor_recibir(cuenta, [carta]))
+        tope = math.floor(V.valor_recibir(cuenta, [carta]))
+        juego = V.VALOR_RECIBIR.get(carta)
+        return tope if juego is None else min(tope, math.floor(juego))
     perdida = V.valor_entregar(cuenta, [carta])
+    juego = V.VALOR_DAR.get(carta)
+    if juego is not None:
+        perdida = juego if perdida is None else max(perdida, juego)
     return None if perdida is None else math.ceil(perdida + 1)
 
 
@@ -38,9 +50,9 @@ def para_vendedor(c, cuenta, efectivo, p, ordenes):
     if not isinstance(carta, str) or not V.conocida(carta):
         return {"conocida": False, "nos_vale": None, "limite": None, "protegida": False, "caja": None}
     if lado == "compra":
-        nos_vale = V.valor_recibir(cuenta, [carta])
+        nos_vale = V.VALOR_RECIBIR.get(carta, V.valor_recibir(cuenta, [carta]))
     else:
-        nos_vale = V.valor_entregar(cuenta, [carta])
+        nos_vale = V.VALOR_DAR.get(carta, V.valor_entregar(cuenta, [carta]))
     return {"conocida": True, "nos_vale": nos_vale, "limite": limite_vendedor(lado, carta, cuenta),
             "protegida": lado == "venta" and V.protegida(cuenta, carta),
             "caja": caja_para_comprar(carta, cuenta, efectivo, p, ordenes) if lado == "compra" else None}

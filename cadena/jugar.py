@@ -1,24 +1,29 @@
-"""El Cambista en El Rastro: el programa que juega la cadena SOLO en El Rastro. Lee el tablón, llama a cadena.tick() y,
-si el Guardia firma una oferta de El Rastro, la acepta. Además publica anuncios, peticiones y cambios carta por carta
-cuando sus interruptores están encendidos.
+"""Jugar: conecta la cadena con el juego, para los VENDEDORES (el Regateador) y EL RASTRO (el Cambista).
 
-    python rastro.py                mira y escribe lo que haría. NO manda ni acepta nada (modo seco).
-    python rastro.py --live         juega de verdad. Solo desde el ordenador que tiene la clave, y un solo proceso.
-    python rastro.py --ticks 3      para tras 3 ticks (para la primera prueba en seco)
+No es un agente ni un paso del flujo: son las flechas con EL JUEGO. Lee el juego, llama a cadena.tick()
+(Ojos → Contable → Cambista / Regateador → Guardia, con el Guion y el Ojeador al lado) y aplica lo que devuelve:
+los precios del Regateador, los cierres y la ÚNICA firma del tick (de un vendedor o de El Rastro).
 
-AVISO: nadie ha lanzado este archivo contra el juego. Las funciones de publicar vienen del antiguo director.py (probadas
-contra un juego de mentira); la forma real de las ofertas de board("rastro") todavía no se ha visto. Por eso:
-  1. la primera vez SIEMPRE en seco, y mirar runs/rastro-crudo.jsonl: ahí queda el primer tablón tal cual;
-  2. una oferta que no se entiende no se acepta (el Guardia rechaza un campo desconocido).
+    python jugar.py                mira y escribe lo que haría. NO manda ni acepta nada (modo seco).
+    python jugar.py --live         juega de verdad. Solo desde el ordenador que tiene la clave, y un solo proceso.
+    python jugar.py --ticks 3      para tras 3 ticks (para la primera prueba en seco)
 
-Interruptores (t7/parametros.json o "ajustes" en t7/hoy.json):
-    aceptar ofertas del tablón       siempre que el Guardia firme (una por tick como mucho)
-    rastro.publicar = 1              publica anuncios de venta (viene a 0)
-    cambista.pedir = 1               publica peticiones de compra y cambios carta por carta (viene a 0)
+Vendedores (el Regateador): una conversación por vendedor, todos a la vez (hasta MAX_HILOS), según menus.json
+(`python revisar.py --menus`). Qué abrir lo dice cadena.operaciones(): primero vender, luego comprar, con los consejos
+del Guion (cartas guardadas para una fiebre) y del Ojeador (vendedores que descansan, El Rastro más barato, cartas que
+se agotan). Los precios solo se mueven en un sentido y nunca se repiten; la oferta final se acepta si está dentro del
+límite. Toda firma pasa por el Guardia.
+El Rastro (el Cambista): acepta lo que firme el Guardia, y lo que ningún vendedor puede comprarnos hoy se anuncia
+(rastro.publicar = 1); peticiones y cambios carta por carta con cambista.pedir = 1. No abre mercado propio.
+Duelos: este programa NO los juega.
+
+AVISO: nadie ha lanzado este archivo contra el juego. La forma de vendedores y del tablón está vista en la prueba en
+seco del 3/10 (PRUEBA-EN-SECO-03-10.md); la de una conversación, en play.py. La primera vez SIEMPRE en seco, y mirar
+runs/crudo.jsonl (la primera conversación tal cual) y runs/rastro-crudo.jsonl (el primer tablón).
 
 Una sola aceptación por tick para TODO el equipo: en vivo toma el candado (t7/candado.py); si otro programa del mismo
-ordenador lo tiene (play.py, por ejemplo), no arranca.
-Parar todo: crear el archivo runs/STOP (o Ctrl + C). El Guardia deja de firmar y no se publica nada más.
+ordenador lo tiene, no arranca. No lanzar a la vez dealers/smart_agent.py ni play.py: no toman el candado.
+Parar todo: crear el archivo runs/STOP (o Ctrl + C). El Guardia deja de firmar y no se abre ni se publica nada más.
 La clave se lee de la variable de entorno BAZAAR_KEY. No se escribe en ningún archivo ni en el diario.
 """
 import argparse
@@ -41,7 +46,9 @@ for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) n
 
 RUNS = os.path.join(AQUI, "runs")
 RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peticiones al juego
-CALENDARIO_CADA = 20     # calendario y catálogo (El Guion y El Ojeador) cada 20 ticks
+CALENDARIO_CADA = 20     # vendedores, calendario y catálogo (El Guion y El Ojeador) cada 20 ticks
+MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
+MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
 ANUNCIO_DURA = 40        # ticks que vive un anuncio nuestro en El Rastro
 MAX_ANUNCIOS_TICK, MAX_OFERTAS = 12, 30   # límites del juego: anuncios nuevos por tick y ofertas abiertas a la vez
 
@@ -67,6 +74,43 @@ def _linea(nombre, d):
         print("ERROR        no se pudo escribir en", nombre, e)
 
 
+def _precio(x):
+    if isinstance(x, dict):
+        x = x.get("price", x.get("cash"))
+    return x if isinstance(x, (int, float)) else None
+
+
+def _somos(nosotros):
+    """Cómo nos llama el juego: el id ("t07", el autor de las ofertas) y el nombre ("Team 7"), más "me" y "you"."""
+    return ((nosotros,) if isinstance(nosotros, str) else tuple(nosotros or ())) + ("me", "you")
+
+
+def _oferta_del_otro(hilo, nosotros):
+    """La oferta vigente de la otra parte en una conversación: (id, precio, final). None si no se entiende."""
+    for o in reversed(hilo.get("standing_offers") or []):
+        if o.get("maker") in _somos(nosotros) + (hilo.get("team"),) or o.get("status") not in (None, "open", "standing"):
+            continue
+        # el lado con dinero: comprándonos, el vendedor da {cash: 13} y pide {cash: 0, la carta}; el 0 no es su precio
+        precio = next((p for p in (_precio(o.get("want")), _precio(o.get("give"))) if p), None)
+        if precio is not None:
+            return o.get("id"), precio, bool(o.get("final"))
+    return None
+
+
+def _ultimo_texto(hilo, nosotros):
+    for m in reversed(hilo.get("messages") or []):
+        autor = m.get("from", m.get("sender", m.get("author")))
+        if autor is not None and autor not in _somos(nosotros) + (hilo.get("team"),):
+            return m.get("text") or ""
+    return ""
+
+
+def _cartas(me):
+    """{id de la carta como texto: la carta} de lo que tenemos (solo cartas con código)."""
+    return {str(a["id"]): a for a in me.get("assets") or []
+            if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref") and a.get("id") is not None}
+
+
 def preparar(b):
     """Antes del primer tick: nuestros multiplicadores y las rarezas, leídos del juego en vez de supuestos.
     Si algo falla o no se entiende, se sigue con los supuestos y se dice."""
@@ -86,6 +130,44 @@ def preparar(b):
     return avisos
 
 
+def vendedores_nuevos(b, est, menus):
+    """Caras nuevas (y el nivel de cada vendedor, para la escalera): la primera vez que aparece un vendedor se guarda tal cual en runs/crudo.jsonl y se avisa.
+    No se adivina su menú: hasta que alguien lo ponga en menus.json no se le abre nada."""
+    try:
+        res = b.dealers()
+    except Exception as e:
+        _linea("errores.jsonl", {"vendedores": str(e)})
+        return []
+    lista = (res.get("dealers") or res.get("in_play") or res.get("personas") or []) if isinstance(res, dict) else res
+    # el juego real responde {"personas": [...]} (visto el 3/10); los anunciados traen "status": "announced"
+    nuevos = []
+    for d in lista if isinstance(lista, list) else []:
+        vid = d.get("id") if isinstance(d, dict) else None
+        if vid is not None and isinstance(d.get("level"), (int, float)):
+            est.setdefault("niveles", {})[vid] = d["level"]     # la escalera: los niveles altos pesan más
+        if vid is None or vid in est.setdefault("vendedores", []):
+            continue
+        est["vendedores"].append(vid)
+        nuevos.append(vid)
+        _linea("crudo.jsonl", {"tipo": "vendedor", "crudo": d})
+        print(f"VENDEDOR     {vid}" + ("" if vid in (menus or {}) else " · no está en menus.json: no se le abre nada todavía"))
+    return nuevos
+
+
+def leer_calendario(b, est):
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y El Ojeador (t7/cadena.py, ojear)."""
+    try:
+        cal = b.schedule()
+        if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
+            est["calendario_nuevo"] = cal
+    except Exception as e:
+        _linea("errores.jsonl", {"calendario": str(e)})
+    try:
+        est["catalogo_nuevo"] = b.catalog()
+    except Exception as e:
+        _linea("errores.jsonl", {"catalogo": str(e)})
+
+
 def abrir_sobres(b, me, vivo):
     """Abre los sobres que tengamos ANTES de comprar, para no comprar una carta que venía dentro.
     Devuelve cuántos se han abierto de verdad (en seco, ninguno)."""
@@ -103,6 +185,19 @@ def abrir_sobres(b, me, vivo):
     return abiertos
 
 
+def soltar_mudos(b, est, lectura, vivo):
+    """Suelta las conversaciones abiertas en las que llevamos MUDO_MAX ticks sin entender la oferta del otro."""
+    for hid in lectura.get("mudos") or []:
+        print(f"SUELTA       conversación {hid}: {MUDO_MAX} ticks sin una oferta que entendamos (mirar runs/errores.jsonl)")
+        if not vivo:
+            continue
+        try:
+            b.close_thread(int(hid))
+        except Exception as e:
+            _linea("errores.jsonl", {"soltar": hid, "error": str(e)})
+        est["hilos"].pop(hid, None)
+
+
 def precios_de_venta(menus):
     """{ref: lo mejor que nos ofrece de entrada algún vendedor}: para que el plan del día sepa qué vender si falta caja."""
     precios = {}
@@ -111,6 +206,57 @@ def precios_de_venta(menus):
             if isinstance(precio, (int, float)):
                 precios[ref] = max(precios.get(ref, 0), precio)
     return precios
+
+
+def valor_de_compra(b, carta):
+    """your_value de una copia más de `carta` (GET /api/me/value), una vez mientras no cambien nuestras cartas.
+    Lo usa la Contable como tope del Regateador. None si el juego no responde: se sigue con el valor calculado."""
+    if carta in V.VALOR_RECIBIR:
+        return V.VALOR_RECIBIR[carta]
+    try:
+        V.valores_del_juego(recibir={carta: b.value(carta)})
+    except Exception as e:
+        _linea("errores.jsonl", {"valor": carta, "error": str(e)})
+    return V.VALOR_RECIBIR.get(carta)
+
+
+def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=None):
+    """Rellena los huecos: una conversación nueva por vendedor libre, según menus.json. Primero vender, luego comprar."""
+    menus = _json(os.path.join(AQUI, "menus.json"), None) if menus is None else menus
+    huecos = MAX_HILOS - len(est["hilos"])
+    if not menus or huecos <= 0:
+        return
+    cuenta = Counter(a["ref"] for a in me.get("assets") or [] if a.get("kind") == "card" and a.get("ref"))
+    for x in (est.get("anuncios") or {}).values():               # lo anunciado en El Rastro no se ofrece además a un vendedor
+        cuenta[x["ref"]] -= 1
+    abiertas = {h["vendedor"] for h in est["hilos"].values()}
+    tope = plan["p"].get("tienda.tratos_por_vendedor_y_dia")
+    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
+        ops = cadena.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
+    else:
+        ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
+    for op in ops[:huecos]:
+        if op["lado"] == "venta":
+            ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
+            if not ids:
+                continue
+            tema = {"sell": {"assets": [ids[-1]]}}
+        else:
+            nos_suma = valor_de_compra(b, op["carta"])
+            if nos_suma is not None and nos_suma < 1:            # el juego dice que no nos suma nada: no se abre
+                print(f"NO ABRE      {op['vendedor']} · compra {op['carta']}: el juego dice que nos vale {nos_suma}")
+                continue
+            tema = {"buy": {"card": op["carta"]}}
+        print(f"ABRIR        {op['vendedor']} · {op['lado']} {op['carta']}")
+        if not vivo:
+            continue
+        try:
+            r = b.open_thread(op["vendedor"], topic=tema)
+            hid = r.get("id", r.get("thread_id", (r.get("thread") or {}).get("id")))
+            if hid is not None:
+                est["hilos"][str(hid)] = dict(op, suyas=[], nuestras=[])
+        except Exception as e:
+            _linea("errores.jsonl", {"abrir": op, "error": str(e)})
 
 
 def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
@@ -294,54 +440,6 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     return cambios + nuevas
 
 
-def _cartas(me):
-    """{id de la carta como texto: la carta} de lo que tenemos (solo cartas con código)."""
-    return {str(a["id"]): a for a in me.get("assets") or []
-            if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref") and a.get("id") is not None}
-
-
-def leer_calendario(b, est):
-    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y El Ojeador (t7/cadena.py, ojear)."""
-    try:
-        cal = b.schedule()
-        if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
-            est["calendario_nuevo"] = cal
-    except Exception as e:
-        _linea("errores.jsonl", {"calendario": str(e)})
-    try:
-        est["catalogo_nuevo"] = b.catalog()
-    except Exception as e:
-        _linea("errores.jsonl", {"catalogo": str(e)})
-
-
-def leer(b, tick, con_tablon=True, est=None):
-    """La lectura que necesita la cadena para El Rastro: efectivo, cartas y el tablón sin nuestras propias ofertas;
-    y, cuando toca, el feed público, el calendario y el catálogo para El Guion y El Ojeador."""
-    me = b.me()
-    nosotros = me.get("name")
-    cartas = list(_cartas(me).values())
-    V.configurar(cartas=cartas)                                  # la rareza de lo que tenemos, tal como la dice el juego
-    lectura = {"tick": tick, "efectivo": me.get("cash", 0), "cuenta": Counter(a["ref"] for a in cartas),
-               "vendedores": [], "duelos": [], "tablon": None}
-    if con_tablon:
-        try:                                                     # si El Rastro no se puede leer, el tick sigue sin él
-            res = b.board("rastro")
-            ofertas = res.get("offers", []) if isinstance(res, dict) else res
-            lectura["tablon"] = [o for o in ofertas or [] if isinstance(o, dict) and o.get("maker") != nosotros]
-            _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
-        except Exception as e:
-            _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})
-        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para el Ojeador
-            try:
-                lectura["feed"] = b.feed(limit=100)
-            except Exception as e:
-                _linea("errores.jsonl", {"tick": tick, "feed": str(e)})
-    est = est if est is not None else {}
-    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para la cadena (El Guion y El Ojeador)
-    lectura["catalogo"] = est.pop("catalogo_nuevo", None)
-    return lectura, me
-
-
 def cartas_para(oferta, me, est):
     """Los ids de nuestras copias que pide una oferta (want.cards = ["LAT-03"] o want.types = ["card:LAT-03"]).
     [] si no pide cartas; None si nos falta alguna libre. Una copia ya anunciada o comprometida en un cambio no se da."""
@@ -382,16 +480,154 @@ def aceptar(b, firma, tablon, me, est, vivo):
     return dar
 
 
+def leer(b, est, tick, con_tablon=True):
+    """La lectura de la cadena: efectivo, cartas, las conversaciones con vendedores que abrimos nosotros y, cuando toca,
+    el tablón de El Rastro (sin nuestras ofertas), el feed, el calendario, el catálogo y los niveles."""
+    me = b.me()
+    nosotros = tuple(x for x in (me.get("id"), me.get("name")) if x)   # las ofertas llevan el id ("t07"), no el nombre
+    cartas = list(_cartas(me).values())
+    V.configurar(cartas=cartas)                                  # la rareza de lo que tenemos, tal como la dice el juego
+    V.valores_del_juego(cartas=cartas)                           # su your_value: el suelo del Regateador al vender
+    lectura = {"tick": tick, "efectivo": me.get("cash", 0), "cuenta": Counter(a["ref"] for a in cartas),
+               "vendedores": [], "duelos": [], "tablon": None, "mudos": []}
+    hilos = est.setdefault("hilos", {})
+
+    for hid, h in list(hilos.items()):                           # el Regateador: cada conversación que abrimos
+        try:
+            crudo = b.thread(int(hid))
+        except Exception as e:                                   # un fallo afecta solo a esta conversación
+            _linea("errores.jsonl", {"tick": tick, "hilo": hid, "error": str(e)})
+            continue
+        if not est.get("crudo_hilo"):
+            est["crudo_hilo"] = True
+            _linea("crudo.jsonl", {"tipo": "hilo", "crudo": crudo})
+        estado = crudo.get("status")
+        vigente = _oferta_del_otro(crudo, nosotros)
+        if estado in ("deal", "walked", "closed", "cooloff") or vigente is None:
+            if estado in ("deal", "walked", "closed", "cooloff"):
+                hilos.pop(hid)
+                if estado != "deal":                             # el motivo y until_tick: el Ojeador decide el descanso
+                    lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0],
+                                                      cerrado=crudo.get("closed_reason") or estado,
+                                                      until_tick=crudo.get("until_tick")))
+            else:                                                # abierta, pero sin una oferta suya que entendamos
+                h["mudo"] = h.get("mudo", 0) + 1
+                if h["mudo"] >= MUDO_MAX:                        # no se queda ocupando el hueco de ese vendedor
+                    lectura["mudos"].append(hid)
+                    _linea("errores.jsonl", {"tick": tick, "hilo": hid, "error": "sin oferta entendida; se suelta",
+                                             "crudo": crudo})
+            continue
+        h["mudo"] = 0
+        oid, precio, final = vigente
+        if not h["suyas"] or h["suyas"][-1] != precio:
+            h["suyas"].append(precio)
+        if h["lado"] == "compra":                                # el tope: lo que el juego nos suma (si cambiaron nuestras cartas, se repregunta)
+            valor_de_compra(b, h["carta"])
+        lectura["vendedores"].append({"id": int(hid), "vendedor": h["vendedor"], "lado": h["lado"], "carta": h["carta"],
+                                      "suyas": list(h["suyas"]), "nuestras": list(h["nuestras"]), "final": final,
+                                      "oferta_id": oid, "texto": _ultimo_texto(crudo, nosotros), "lista": h.get("lista")})
+
+    if con_tablon:                                               # el Cambista: El Rastro
+        try:
+            res = b.board("rastro")
+            ofertas = res.get("offers", []) if isinstance(res, dict) else res
+            lectura["tablon"] = [o for o in ofertas or [] if isinstance(o, dict) and o.get("maker") not in nosotros]
+            _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
+        except Exception as e:
+            _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})
+        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para el Ojeador
+            try:
+                lectura["feed"] = b.feed(limit=100)
+            except Exception as e:
+                _linea("errores.jsonl", {"tick": tick, "feed": str(e)})
+    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para el Guion y el Ojeador
+    lectura["catalogo"] = est.pop("catalogo_nuevo", None)
+    lectura["niveles"] = est.get("niveles")
+    return lectura, me
+
+
+def limpiar_hilos(b, est, vivo):
+    """Al arrancar: una conversación abierta que no recordamos (de otra ejecución) ocupa el hueco de ese vendedor.
+    Se cierra, como hace play.py, para poder abrir la nuestra."""
+    try:
+        res = b.my_threads()
+    except Exception as e:
+        _linea("errores.jsonl", {"mis_hilos": str(e)})
+        return []
+    lista = res.get("threads", []) if isinstance(res, dict) else res
+    sueltas = [t for t in lista or [] if isinstance(t, dict) and t.get("status") == "open"
+               and t.get("id") is not None and str(t["id"]) not in est.setdefault("hilos", {})]
+    for t in sueltas:
+        print(f"CIERRA       conversación {t['id']} con {t.get('with')}: abierta de otra ejecución"
+              + ("" if vivo else " · en seco: no se cierra"))
+        if vivo:
+            try:
+                b.close_thread(t["id"])
+            except Exception as e:
+                _linea("errores.jsonl", {"cerrar_suelta": t["id"], "error": str(e)})
+    return sueltas
+
+
+def aplicar(b, acciones, est, lectura, me, vivo):
+    """Manda los precios del Regateador, cierra lo que toca y aplica la ÚNICA firma del tick (vendedor o El Rastro).
+    En seco solo lo escribe. Los duelos no los juega este programa."""
+    hilos = est.setdefault("hilos", {})
+    for m in acciones["mensajes"]:
+        if m["destino"] != "vendedor":
+            continue
+        print(f"PRECIO       conversación {m['id']} · {m['precio']} P · «{m['texto']}»" + ("" if vivo else " · en seco: no se manda"))
+        if not vivo:
+            continue
+        try:
+            b.say(m["id"], m["texto"], price=m["precio"])
+            if str(m["id"]) in hilos:
+                hilos[str(m["id"])]["nuestras"].append(m["precio"])
+        except Exception as e:
+            _linea("errores.jsonl", {"mensaje": m, "error": str(e)})
+    for c in acciones["cerrar"]:
+        if c.get("destino") != "vendedor":
+            continue
+        print(f"CIERRA       conversación {c['id']} · {c.get('motivo', '')}" + ("" if vivo else " · en seco: no se cierra"))
+        if not vivo:
+            continue
+        try:
+            b.close_thread(c["id"])
+            hilos.pop(str(c["id"]), None)
+        except Exception as e:
+            _linea("errores.jsonl", {"cerrar": c, "error": str(e)})
+    f = acciones["firma"]
+    if not f:
+        return None
+    if f["destino"] == "rastro":
+        return aceptar(b, f, lectura.get("tablon"), me, est, vivo)
+    if f["destino"] == "vendedor" and f.get("oferta_id") is not None:
+        print(f"FIRMA        vendedor · conversación {f['id']} · {f.get('motivo', '')}" + ("" if vivo else " · en seco: no se acepta"))
+        if vivo:
+            try:
+                b.accept(f["oferta_id"])
+                _linea("tratos.jsonl", {"conversacion": f["id"], "precio": f.get("precio"), "motivo": f.get("motivo")})
+            except Exception as e:                               # nunca se repite a ciegas: se relee en el tick siguiente
+                _linea("errores.jsonl", {"firma": f, "error": str(e)})
+        return f
+    return None
+
+
 def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas=None):
-    """Un tick de El Rastro. Un fallo aquí no tira el programa: se apunta y se espera al tick siguiente.
+    """Un tick entero. Un fallo aquí no tira el programa: se apunta y se espera al tick siguiente.
     Devuelve True si el tick se completó."""
     try:
+        est.setdefault("hilos", {})
         menus = _json(os.path.join(AQUI, "menus.json"), None)
-        toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
+        dia = time.strftime("%Y-%m-%d")
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
+            vendedores_nuevos(b, est, menus)
             leer_calendario(b, est)
-        lectura, me = leer(b, tick, con_tablon=toca, est=est)
-        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para El Ojeador
+        if primero:
+            limpiar_hilos(b, est, vivo)
+        toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
+        lectura, me = leer(b, est, tick, con_tablon=toca)
+        lectura["dia"] = dia
+        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para el Ojeador
         plan = situacion.plan({"efectivo": lectura["efectivo"], "cuenta": lectura["cuenta"],
                                "tick_segundos": tick_segundos}, precios_venta=precios_de_venta(menus) or None)
         if primero:
@@ -400,11 +636,14 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         for linea in acciones["diario"]:
             print(linea)
             _linea("diario.jsonl", {"linea": linea, "vivo": vivo})
-        aceptar(b, acciones["firma"], lectura["tablon"], me, est, vivo)
-        if toca and not stop and not abrir_sobres(b, me, vivo):  # tras abrir un sobre las cartas cambian: al tick siguiente
-            anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, time.strftime("%Y-%m-%d")), primero,
-                     mem=mem, lectura=lectura)
-            pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
+        aplicar(b, acciones, est, lectura, me, vivo)
+        soltar_mudos(b, est, lectura, vivo)
+        if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: al tick siguiente
+            tratos = cadena.tratos_de_hoy(mem, dia)
+            abrir(b, me, est, plan, vivo, menus, tratos, mem=mem, lectura=lectura)
+            if toca:
+                anunciar(b, me, est, plan, tick, vivo, menus, tratos, primero, mem=mem, lectura=lectura)
+                pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
             mom = lectura.get("momento") or {}
             if mom.get("fase", "normal") != "normal":
@@ -428,11 +667,11 @@ def main():
         sys.exit("Falta la variable de entorno BAZAAR_KEY (la clave del equipo). No se escribe en ningún archivo.")
     os.makedirs(RUNS, exist_ok=True)
     b = Bazaar(os.environ.get("BAZAAR_URL", "https://bazaar.causaprima.ai"), os.environ["BAZAAR_KEY"], wait_on_tick=False)
-    est = _json(os.path.join(RUNS, "rastro.json"), {})
+    est = _json(os.path.join(RUNS, "jugar.json"), {"hilos": {}})
     mem = cadena.Memoria.de_dict(_json(os.path.join(RUNS, "memoria.json"), {}))
     print("EN VIVO" if a.live else "EN SECO: no se manda ni se acepta nada")
     if a.live:                                                   # un solo programa acepta a la vez (t7/candado.py)
-        ok, motivo = candado.tomar(candado.RUTA, "rastro.py")
+        ok, motivo = candado.tomar(candado.RUTA, "jugar.py")
         if not ok:
             sys.exit("NO SE LANZA   " + motivo)
     try:
@@ -457,13 +696,18 @@ def _jugar(b, est, mem, a):
             time.sleep(min(2.0, max(0.2, float(reloj.get("next_tick_in") or 1.0))))
             continue
         ultimo, hechos = tick, hechos + 1
-        un_tick(b, est, mem, tick, reloj.get("tick_seconds"), a.live, os.path.exists(os.path.join(RUNS, "STOP")),
-                primero=hechos == 1, t_horas=reloj.get("t_hours"))
+        t0 = time.time()
+        seg = reloj.get("tick_seconds")
+        hecho = un_tick(b, est, mem, tick, seg, a.live, os.path.exists(os.path.join(RUNS, "STOP")),
+                        primero=hechos == 1, t_horas=reloj.get("t_hours"))
         try:
-            _guardar(os.path.join(RUNS, "rastro.json"), est)
+            _guardar(os.path.join(RUNS, "jugar.json"), est)
             _guardar(os.path.join(RUNS, "memoria.json"), mem.a_dict())
         except Exception as e:
             print("ERROR        no se pudo guardar el estado:", e)
+        tardo = time.time() - t0
+        if hecho and isinstance(seg, (int, float)) and tardo > 0.6 * seg:   # el latido rápido: avisar si no llegamos
+            print(f"LENTO        el tick tardó {tardo:.1f} s de {seg} s: hay riesgo de saltarse ticks")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 """El Portavoz: escribe los mensajes. Recibe el precio ya decidido y no conoce nuestros límites.
 
-Con vendedores: amable con Abuela (le gusta), solo el número con Chato (estricto), neutro con los nuevos.
+Con vendedores: amable con Abuela (le gusta), solo el número con Chato (estricto), de usted y hablando de su álbum
+con Pilar (coleccionista; nombrando Salamanca o El Retiro si la carta es de ahí, y de usted incluso firmes), neutro
+con los nuevos.
 Con equipos en duelos: las palabras son libres ("tu agente puede decir cualquier cosa"). Usamos tácticas de presión
 que la investigación de negociación documenta, sin mentir sobre la oferta estructurada (que es lo único que obliga):
 
@@ -24,6 +26,23 @@ ABUELA = ["Buenas, Abuela Carmen. ¿Qué tal el puesto hoy? Puedo llegar a {p} P
           "Qué gusto tratar con usted. {p} P y trato hecho.",
           "Le prometo cuidarla bien. ¿{p} P?",
           "Hago un esfuerzo más: {p} P."]
+# Pilar: coleccionista seria, astuta y con memoria. Conoce cada tirada ("ninety is a figure for dreamers") y quiere
+# cerrar con gente seria: de usted, sin trucos ni prisas fingidas, hablando de su álbum y del estado de la carta.
+PILAR = ["Buenas tardes, Doña Pilar. Le traigo una pieza en estado impecable para su álbum: {p} P.",
+         "Usted conoce cada tirada mejor que nadie. Por esta carta le propongo {p} P.",
+         "Es una carta seria para una coleccionista seria. {p} P.",
+         "Con mucho gusto me acerco a usted: {p} P.",
+         "No le hago perder la tarde, Doña Pilar: {p} P, y esta noche descansa en su álbum.",
+         "Cerremos como gente de palabra: {p} P y es suya."]
+# las que ella ama (Salamanca y El Retiro, primeras en lo que compra): se nombra su barrio
+PILAR_FAVORITA = ["Buenas tardes, Doña Pilar. Una pieza de {b} en estado impecable, para su álbum: {p} P.",
+                  "Sé lo que {b} significa para usted. Por esta carta le propongo {p} P.",
+                  "Para su página de {b}, {p} P me parece justo.",
+                  "Con mucho gusto me acerco a usted: {p} P.",
+                  "No le hago perder la tarde, Doña Pilar: {p} P, y esta noche descansa en su álbum.",
+                  "Cerremos como gente de palabra: {p} P y la carta de {b} es suya."]
+PILAR_FIRME = ["Con todo respeto, Doña Pilar: {p} P.", "Mi propuesta es {p} P, Doña Pilar.", "{p} P, señora."]
+BARRIOS_PILAR = {"SAL": "Salamanca", "RET": "El Retiro"}
 SECO = ["{p} P.", "{p}.", "Ofrezco {p} P.", "{p} P, ¿sí?"]
 NEUTRO = ["Buenas. Ofrezco {p} P.", "Puedo {p} P.", "Me muevo a {p} P.", "{p} P por mi parte.", "Subo a {p} P."]
 
@@ -43,14 +62,21 @@ class Portavoz:
     def __init__(self):
         self.usadas = {}
 
-    def _rotar(self, clave, lista, precio):
+    def _rotar(self, clave, lista, precio, **extra):
         i = self.usadas.get(clave, 0)
         self.usadas[clave] = i + 1
-        txt = lista[i % len(lista)].format(p=int(precio))
+        txt = lista[i % len(lista)].format(p=int(precio), **extra)
         ok, _ = revisar_salida(txt, precio)
         return txt if ok else f"{int(precio)} P."
 
-    def vendedor(self, vendedor, precio, firme=False):
+    def vendedor(self, vendedor, precio, firme=False, carta=None):
+        if vendedor == "pilar":                          # con Pilar, incluso firmes, siempre de usted
+            if firme:
+                return self._rotar("pilar_firme", PILAR_FIRME, precio)
+            barrio = BARRIOS_PILAR.get(str(carta).split("-")[0]) if carta else None
+            if barrio:
+                return self._rotar("pilar", PILAR_FAVORITA, precio, b=barrio)
+            return self._rotar("pilar", PILAR, precio)
         if firme or vendedor == "chato":
             return self._rotar("seco", SECO, precio)
         if vendedor == "abuela":

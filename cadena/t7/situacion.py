@@ -25,6 +25,7 @@ TRATOS_ESCALERA = 3            # cuentan los tres mejores tratos por vendedor: e
 APERTURA_TRAS_ENFADOS = 0.20   # "Lo que no sabemos": si un vendedor corta mucho, apertura al 20 %
 ENFADOS_PARA_SUBIR = 2
 RESERVA_MERCADO = 270          # 250 de fianza + 20: lo que cuesta abrir mercado propio
+MARGEN_COMPLETAR = 1.2         # hoy.json "completar": se abre la compra con 1,2 × la lista libre (Chato cierra ~85-91 por 77)
 
 
 def leer_hoy(ruta=RUTA_HOY):
@@ -95,6 +96,12 @@ def plan(estado, hoy=None, precios_venta=None):
         forzar["sobre"] = "apagado"
         motivos.append(f"caja {modo}: quedan {max(0, libre):.0f} P libres, tope de {tope} P por trato")
     ordenes["sin_coste"] = ["duelos", "vender a vendedores", "cambios carta por carta", "Market Test del puesto gratuito"]
+    if hoy.get("solo_vender"):                          # el equipo solo quiere vender (las repetidas): nada de compras
+        ordenes["compras"] = "ninguna"
+        cambios["cambista.pedir"] = 0                     # manda sobre lo que diga "ajustes"
+        motivos[:] = [m for m in motivos if not m.startswith("cambista.pedir:")]
+        motivos.append("solo vender: no se abren compras a vendedores, no se publican peticiones ni cambios y no se "
+                       "compra en El Rastro")
 
     # 3. Qué vender para volver al colchón, sin perder valor.
     ventas = None
@@ -107,6 +114,14 @@ def plan(estado, hoy=None, precios_venta=None):
 
     p = params.cargar(cambios=cambios)
     avisos.extend(p["_avisos"])
+    # 4. Páginas que el equipo quiere completar: sus cartas se compran a los vendedores también con solo_vender,
+    #    pero solo cuando sobra MARGEN_COMPLETAR × su lista por encima de la reserva (primero entran las ventas).
+    ordenes["completar"] = [s for s in hoy.get("completar") or [] if isinstance(s, str)]
+    ordenes["reserva"] = p["guardia.reserva_efectivo"]
+    ordenes["margen_completar"] = MARGEN_COMPLETAR
+    if ordenes["completar"]:
+        motivos.append(f"completar {', '.join(ordenes['completar'])}: se compran a vendedores las cartas que faltan, "
+                       f"cuando sobran {MARGEN_COMPLETAR} × su lista por encima de la reserva")
     return {"modo_caja": modo, "efectivo": efectivo, "libre": libre, "cambios": cambios, "motivos": motivos,
             "forzar": forzar, "ordenes": ordenes, "ventas": ventas, "avisos": avisos, "p": p}
 

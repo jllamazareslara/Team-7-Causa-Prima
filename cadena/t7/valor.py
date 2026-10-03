@@ -124,6 +124,40 @@ def configurar(afinidad=None, catalogo=None, cartas=None):
     return avisos
 
 
+VALOR_DAR = {}       # ref → your_value de una copia que tenemos (me()["assets"]): lo que el juego nos quita al darla
+VALOR_RECIBIR = {}   # ref → your_value de una copia más (GET /api/me/value?card=): lo que el juego nos suma al recibirla
+
+
+def _your_value(x):
+    v = x.get("your_value", x.get("value")) if isinstance(x, dict) else x
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0 else None
+
+
+def valores_del_juego(cartas=None, recibir=None):
+    """El valor que cuenta el juego manda sobre el calculado. cartas = me()["assets"] (rehace VALOR_DAR: de cada carta,
+    la copia que menos vale, que es la que perdemos al dar una); recibir = {ref: respuesta de /api/me/value}.
+    Si nuestras cartas cambian, lo de VALOR_RECIBIR ya no vale y se borra. No lanza nunca."""
+    if cartas is not None:
+        nuevo = {}
+        for c in cartas:
+            v = _your_value(c) if isinstance(c, dict) and isinstance(c.get("ref"), str) else None
+            if v is not None:
+                nuevo[c["ref"]] = min(v, nuevo.get(c["ref"], v))
+        if _refs(cartas) != getattr(valores_del_juego, "_cuenta", None):
+            VALOR_RECIBIR.clear()
+            valores_del_juego._cuenta = _refs(cartas)
+        VALOR_DAR.clear()
+        VALOR_DAR.update(nuevo)
+    for ref, r in (recibir or {}).items():
+        v = _your_value(r)
+        if isinstance(ref, str) and v is not None:
+            VALOR_RECIBIR[ref] = v
+
+
+def _refs(cartas):
+    return sorted(c["ref"] for c in cartas or [] if isinstance(c, dict) and isinstance(c.get("ref"), str))
+
+
 def factor(n_copia):
     """n_copia empieza en 1: la primera copia vale entera."""
     return FACTOR_COPIA[n_copia - 1] if n_copia <= len(FACTOR_COPIA) else FACTOR_RESTO

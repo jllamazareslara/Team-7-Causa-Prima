@@ -127,7 +127,7 @@ Nota robusta = media de (media de los cuatro mundos simulados + el peor mundo) /
 
 1. **`python revisar.py`** solo lee. Dice con OK, AVISO o FALTA si todo está listo: reloj, caja, valores leídos del juego, la calculadora comparada carta a carta con el juego, vendedores y menús. Con algún FALTA no se lanza en vivo.
 2. **Los menús.** La revisión deja un borrador en `menus.borrador.json`. Se mira y, si está bien, `python revisar.py --menus` añade a `menus.json` los vendedores que falten. Sin `menus.json` no se abren conversaciones con vendedores.
-3. **En seco:** `python rastro.py --ticks 3` para El Rastro (el Cambista). Vendedores y duelos: pendiente de `play.py` (`director.py` se quitó).
+3. **En seco:** `python jugar.py --ticks 3` para vendedores (el Regateador) y El Rastro (el Cambista). Duelos: pendiente (`director.py` se quitó).
 4. **En vivo** cuando el equipo haya dicho que sí.
 
 78 pruebas sin red, todas pasan. Nada de esto se ha lanzado contra el juego real: la forma en que el juego da los multiplicadores, el catálogo y los menús está sin comprobar. Si no la entiende, lo dice y sigue con los supuestos.

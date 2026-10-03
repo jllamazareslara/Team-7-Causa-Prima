@@ -1,7 +1,7 @@
 """El guardia: la última puerta antes de `accept`. Es la ÚNICA función que puede devolver "firma".
 
 No recibe texto: solo la oferta estructurada tal como la da el juego y nuestro estado.
-Cinco comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pasa las cinco, firma solo.
+Seis comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pasa las seis, firma solo.
 
     1. STOP                      alguien ha parado el sistema
     2. una firma por tick        por categoría: el juego deja una aceptación de tienda/El Rastro por tick Y, aparte,
@@ -11,6 +11,7 @@ Cinco comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pas
     4. la oferta no ha cambiado  el precio del juego es el que el agente miró
     5. buen negocio              mirando el valor de las cartas, sin romper nada: reserva de efectivo intacta,
                                  categoría no apagada, y dentro del tope por trato cuando la caja está justa
+    6. según el juego            el buen negocio repetido con el your_value del juego (/api/me, /api/me/value)
 
 Buen negocio (ajustes en parametros.json, decisión del equipo):
     comprando   neto ≥ guardia.margen_compra × valor de las cartas que recibimos   (0,10: pagar ≤ 90 % del valor)
@@ -18,6 +19,7 @@ Buen negocio (ajustes en parametros.json, decisión del equipo):
     protegida   solo sale si lo recibido, sin comisión, ≥ guardia.protegida_factor × lo que perdemos al darla (1,5)
 """
 from . import contable
+from . import valor as V
 
 BIENES_CONOCIDOS = {"cash", "assets", "cards", "types"}
 
@@ -40,6 +42,29 @@ def exigido_por_valor(ev, p):
     return p["guardia.margen_compra"] * ev["cartas_recibo"] + p["guardia.margen_venta"] * ev["cartas_entrego"]
 
 
+def segun_el_juego(propuesta, ev, p, sin_margen=False):
+    """6. El mismo buen negocio, pero con el your_value que cuenta el juego (/api/me, /api/me/value) en lugar del
+    calculado, cuando el juego nos lo ha dicho. Solo para una carta en un sentido. None = no hay pega.
+    sin_margen: basta con ganar algo (cartas de una página a completar)."""
+    rec, ent = propuesta.get("recibo", {}), propuesta.get("entrego", {})
+    rc, ec = rec.get("cartas") or [], ent.get("cartas") or []
+    if len(rc) == 1 and not ec and rc[0] in V.VALOR_RECIBIR:
+        juego = V.VALOR_RECIBIR[rc[0]]
+        neto = juego + (rec.get("primas") or 0) - (ent.get("primas") or 0) - ev["comision"]
+        exigido = p["guardia.margen_compra"] * juego
+    elif len(ec) == 1 and not rc and ec[0] in V.VALOR_DAR:
+        juego = V.VALOR_DAR[ec[0]]
+        neto = (rec.get("primas") or 0) - (ent.get("primas") or 0) - ev["comision"] - juego
+        exigido = p["guardia.margen_venta"] * juego
+    else:
+        return None
+    if sin_margen:
+        exigido = 0
+    if neto <= 0 or neto < exigido:
+        return f"según el juego no renta lo bastante ({neto:+.1f}, pide {exigido:+.1f}; your_value {juego})"
+    return None
+
+
 def revisar_duelo(ganancia, ya_firmado_este_tick=False, stop=False, forzar=None):
     """Un duelo no mueve efectivo ni cartas: solo importa quedar dentro de nuestro límite (ganancia ≥ 0)."""
     if stop:
@@ -54,7 +79,7 @@ def revisar_duelo(ganancia, ya_firmado_este_tick=False, stop=False, forzar=None)
 
 
 def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=False, stop=False, forzar=None,
-            tope_por_trato=None, ev=None, **_):
+            tope_por_trato=None, ev=None, para_completar=False, **_):
     """Devuelve (firma: bool, motivo, ficha, estado). estado = "firma" | "espera" | "bloqueo".
 
     propuesta      = lo que el agente cree que firma (para la calculadora)
@@ -62,6 +87,8 @@ def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=F
     forzar         = {categoría: "apagado"} (sale de hoy.json a través del plan del día)
     tope_por_trato = lo máximo que puede comprometer una compra cuando la caja está justa (None = sin tope)
     ev             = la ficha que ya hizo la Contable (contable.ficha); si no llega, se la pide aquí a la Contable
+    para_completar = compra de cartas de una página a completar (hoy.json): basta con que renta algo, sin el margen
+                     de buen negocio, porque el bono de página llega solo con la última (riesgo aceptado por el equipo)
     """
     if ev is None:
         ev = contable.ficha(propuesta, cuenta, efectivo, p)
@@ -89,9 +116,12 @@ def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=F
         return False, "; ".join(bloqueos), ev, "bloqueo"
     if ev["neto"] <= 0:
         return False, f"no renta ({ev['neto']:+.1f})", ev, "bloqueo"
-    exigido = exigido_por_valor(ev, p)
+    exigido = 0 if para_completar else exigido_por_valor(ev, p)
     if ev["neto"] < exigido:
         return False, f"no renta lo bastante ({ev['neto']:+.1f}, pide {exigido:+.1f})", ev, "bloqueo"
+    no_juego = segun_el_juego(propuesta, ev, p, sin_margen=para_completar)
+    if no_juego:
+        return False, no_juego, ev, "bloqueo"
     completa = any("PÁGINA COMPLETA" in a for a in ev["avisos"])
     if tope_por_trato is not None and ev["compromete"] > tope_por_trato and not completa:
         return False, f"caja justa: compromete {ev['compromete']:.0f} P, tope {tope_por_trato} P por trato", ev, "bloqueo"
