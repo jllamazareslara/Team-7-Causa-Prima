@@ -203,6 +203,47 @@ def precio_venta(base, suelo, tend, mom, esc=None, escaso=0.8, tope=1.3):
     return max(int(suelo), int(round(base * min(f, tope))))
 
 
+# ── para el Regateador (vendedores) ──────────────────────────────────────────────────────────────────────────
+
+def descanso(motivo, h=None, tick=None, until_tick=None, ticks_por_hora=120):
+    """Hasta cuándo no se vuelve a abrir con un vendedor que cerró. {"hasta_h": x} o {"hasta_tick": n}, o None.
+      persona_quota / sold_out  cupo de la hora agotado: hasta la hora de juego siguiente (los cupos son por hora)
+      cooloff                   enfadado: hasta su until_tick (o media hora de juego si no lo dice)
+    Sin hora de juego conocida, se cuenta en ticks (120 por hora a 30 s el tick)."""
+    if motivo in ("persona_quota", "sold_out"):
+        if isinstance(h, (int, float)):
+            return {"hasta_h": int(h) + 1.0}
+        return {"hasta_tick": (tick or 0) + ticks_por_hora} if isinstance(tick, (int, float)) else None
+    if motivo == "cooloff":
+        if isinstance(until_tick, (int, float)):
+            return {"hasta_tick": until_tick}
+        return {"hasta_tick": tick + ticks_por_hora // 2} if isinstance(tick, (int, float)) else None
+    return None
+
+
+def descansa(info, h=None, tick=None):
+    """¿Sigue descansando este vendedor? info = lo que devolvió descanso()."""
+    if not info:
+        return False
+    if "hasta_h" in info and isinstance(h, (int, float)):
+        return h < info["hasta_h"]
+    if "hasta_tick" in info and isinstance(tick, (int, float)):
+        return tick < info["hasta_tick"]
+    return False
+
+
+def senales_vendedor(hist, refs, ahora, esc=None, ventana=120, comision=0.05, por_carta=1):
+    """Para cada carta que vende un vendedor: {ref: {"rastro": lo que costaría hoy en El Rastro con la comisión
+    (o None), "escasa": True si está casi agotada}}. El Regateador ordena sus compras con esto."""
+    import math
+    out = {}
+    for ref in refs:
+        t = tendencia(hist, ref, ahora, ventana)
+        rastro = None if t["minimo"] is None else math.ceil(t["minimo"] * (1 + comision)) + por_carta
+        out[ref] = {"rastro": rastro, "escasa": (esc or {}).get(ref, 0) >= 0.8}
+    return out
+
+
 def compradores_probables(hist, ref, veces=2):
     """Equipos que probablemente quieren esta carta: [(maker, mejor precio ofrecido, veces)], de más a menos.
     Quien la pide varias veces seguramente completa página con ella: a ese se le puede ofrecer directamente
