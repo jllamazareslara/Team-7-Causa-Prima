@@ -7,7 +7,8 @@
  "mesa_permite_inyeccion_equipos": false,
  "solo_vender": true,
  "completar": [],
- "duelo": {},
+ "_duelo": "3/10 17:05: Duelos II (calendario del juego): 2 rondas, 16 ticks, decay 0,08 por ronda → queda 0,92.",
+ "duelo": {"descuento_ronda": 0.92},
  "enfados": {},
  "apagar": [],
  "ajustes": {
