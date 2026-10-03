@@ -11,6 +11,8 @@ python -m unittest discover -s tests -v     # 78 pruebas, todas pasan (3/10)
 python sim/informe.py                        # simulaciones con los ajustes actuales → resultados/resumen.json
 ```
 
+**La estructura en tres capas, sin Director (sábado mediodía): ver `ESTRUCTURA.md`.**
+
 ## Qué hay
 
 | Archivo | Agente | Qué hace |

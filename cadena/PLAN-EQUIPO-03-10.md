@@ -19,8 +19,8 @@ Règles d'or (on ne déroge pas) :
 |---|---|---|---|
 | 0.1 | **Duels I à 11:30 : agent allumé** (autre personne) | `bazaar-kit/duel_agent.py` | Un duel sans réponse = 0 pour les deux équipes |
 | 0.2 | **Lancer le vigía en lecture seule** | `python vigia.py --cada 60` | Il voit les news (niveaux, vendeurs, fièvre) et les alertes d'El Guion. Il ne dépense rien |
-| 0.3 | **Revue + premier passage à blanc du director** | `python revisar.py` puis `python director.py --ticks 3` | Vérifier les vrais formats de `affinity`, `catalog()`, `dealers()`. On corrige `director.leer()` si un champ diffère |
-| 0.4 | **Director en live avec des plafonds bas** | `director.py --live`, réserve de 60 P, `runs/STOP` prêt | Personne ne marque tant que rien ne tourne. Le journal (`runs/`) est aussi la matière pour le jury |
+| 0.3 | **Revue + premier passage à blanc du lanceur de la chaîne** | `python revisar.py` puis le lanceur à blanc (aujourd'hui `python director.py --ticks 3`, remplacé dans une autre session) | Vérifier les vrais formats de `affinity`, `catalog()`, `dealers()`. On corrige la lecture du lanceur si un champ diffère |
+| 0.4 | **Lanceur en live avec des plafonds bas** | aujourd'hui `director.py --live`, réserve de 60 P, `runs/STOP` prêt | Personne ne marque tant que rien ne tourne. Le journal (`runs/`) est aussi la matière pour le jury |
 | 0.5 | Tests + GitHub pour El Guion | `python -m unittest discover -s tests` → branche `infra/t7-sabado` | Pour que l'équipe ait le code |
 
 ## P1 — avant 12:45 : l'échelle des vendeurs (Négociation)
@@ -94,6 +94,14 @@ Règles d'or (on ne déroge pas) :
 
 ## Artefact
 À chaque étape terminée : republier l'artefact Team 7 (la version à jour, `team-7-completo.html`, lien PC7B89L761oU6yYUSCDyZ8). On le relit avant, puis on ajoute ce plan dans l'onglet Estrategia (version simple) et le détail dans Los agentes. Pas de nouvel onglet en double.
+
+## Fait depuis (samedi midi)
+- **Tests et GitHub** : 116 tests hors réseau OK ; tout est sur la branche `infra/t7-sabado` (rien sur `main`, aucune autre branche touchée).
+- **El Ojeador** (`t7/ojeador.py`) : le surveillant des prix — quand acheter et vendre (tendance, moment du jeu, rareté, qui veut quoi). Branché au Cambista et au Regateador.
+- **Blocage Salamanca** branché partout (vendeurs et Rastro) ; vendeurs en pause après quota/cooloff.
+- **Nouvelle structure sans Director**, en trois couches : 1) Ojos → Contable, Guion, Ojeador en parallèle ; 2) Cambista / Duelista / Regateador ; 3) Guardia seul signe. Détail : `ESTRUCTURA.md`. Le Guion et l'Ojeador vivent dans `t7/cadena.py`.
+- **Artefact Team 7** à jour (schéma, « Quién mira qué », 13 fiches).
+- Reste : `valor.ev_sobre()` pas encore utilisé pour décider ; signalements de mauvaise foi pas encore envoyés ; « qui veut quoi » calculé mais pas d'offres ciblées.
 
 ## Vérification
 1. `python -m unittest discover -s tests -v` (hors réseau) : tout passe, `test_guion.py` compris.
