@@ -4,7 +4,7 @@ Una rama por agente (`infra/t7-<agente>`) con su código y su ficha. Esta rama, 
 y todas las pruebas. Desde `cadena/`: `python -m unittest discover -s tests -v` (100 pruebas, sin red).
 
 Orden en cada tick: Escudo → Espía → Regateador / Duelista / Cambista → Contable → Guardia (una firma) → Portavoz → diario.
-El Vigía va aparte y solo lee. El Semáforo se quitó el 3/10; el Casamentero (`t7/broker.py`) no está encadenado:
+El Vigía va aparte y solo lee. El Casamentero (`t7/broker.py`) no está encadenado:
 no supera al puesto gratuito en el simulador.
 
 | Agente | Rama | Lugar en la cadena |
