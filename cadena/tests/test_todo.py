@@ -98,7 +98,7 @@ class Guardia(unittest.TestCase):
         self.assertTrue(ok, motivo)
 
     def test_rara_que_renta_se_firma_sola(self):
-        """Sin semáforo nadie aprueba: una rara que renta y respeta la reserva se firma; si rompe la reserva, no."""
+        """Nadie aprueba: una rara que renta y respeta la reserva se firma; si rompe la reserva, no."""
         prop = {"tipo": "equipo", "mercado": "rastro", "pagamos_comision": True,
                 "recibo": {"cartas": ["LAT-09"]}, "entrego": {"primas": 60}}
         ok, motivo, ev, _ = self.firma(prop)
@@ -130,6 +130,38 @@ class Guardia(unittest.TestCase):
                                            {"give": {"assets": [1]}, "want": {"cash": 12}}, self.c, 300, self.p)
         self.assertFalse(ok)
         self.assertIn("cambió", motivo)
+
+    def test_compra_con_margen(self):
+        """Comprando, buen negocio = pagar como mucho el 90 % de lo que nos vale (RET-01 nos vale 13 → 11,7)."""
+        ok, motivo, _, _ = self.firma({"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 11}})
+        self.assertTrue(ok, motivo)
+        ok, motivo, _, _ = self.firma({"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 12}})
+        self.assertFalse(ok)
+        self.assertIn("no renta lo bastante", motivo)
+
+    def test_venta_con_margen(self):
+        """Vendiendo, buen negocio = cobrar al menos el valor + 10 % (la segunda LAT-03 nos vale 4 → 4,4)."""
+        prop = lambda precio: {"tipo": "vendedor", "recibo": {"primas": precio}, "entrego": {"cartas": ["LAT-03"]}}
+        ok, motivo, _, _ = self.firma(prop(4.3))
+        self.assertFalse(ok)
+        self.assertIn("no renta lo bastante", motivo)
+        self.assertTrue(self.firma(prop(4.5))[0])
+
+    def test_margen_ajustable(self):
+        """Con los márgenes a 0 vuelve a firmar todo lo que renta."""
+        self.p["guardia.margen_compra"] = 0
+        self.assertTrue(self.firma({"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 12}})[0])
+
+    def test_protegida_solo_con_oferta_muy_buena(self):
+        """Una protegida solo sale si lo recibido, sin comisión, llega a 1,5 veces lo que perdemos al darla."""
+        prop = lambda precio: {"tipo": "vendedor", "recibo": {"primas": precio}, "entrego": {"cartas": ["LAT-08"]}}
+        _, _, ev, _ = self.firma(prop(1))
+        pide = 1.5 * ev["cartas_entrego"]
+        ok, motivo, _, _ = self.firma(prop(pide - 1))
+        self.assertFalse(ok)
+        self.assertIn("protegida", motivo)
+        ok, motivo, _, _ = self.firma(prop(pide))
+        self.assertTrue(ok, motivo)
 
     def test_una_por_tick_y_stop(self):
         prop = {"tipo": "vendedor", "recibo": {"cartas": ["RET-01"]}, "entrego": {"primas": 7}}
