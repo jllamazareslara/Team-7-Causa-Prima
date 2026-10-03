@@ -39,3 +39,15 @@ vienen a 0: enseña lo que haría y no manda nada hasta que el equipo lo enciend
 ## Pruebas
 
 Desde `cadena/`: `python -m unittest tests.test_todo.Cambista tests.test_todo.CambistaCompras -v`.
+
+## Hecho el sábado a mediodía (lo que faltaba)
+
+1. **Prueba en seco contra el juego real**: hecha (3 ticks, sin mandar nada). Ver `cadena/PRUEBA-EN-SECO-03-10.md`.
+   El Cambista preparó anuncios, lista de la compra, peticiones y cambios con las cartas reales.
+2. **Venta y compra encendidas**: `rastro.publicar` = 1 y `cambista.pedir` = 1 en `cadena/t7/hoy.json`. Solo publica
+   cuando se lanza en vivo.
+3. **Márgenes iguales**: `oportunidades(..., p=...)` solo propone lo que el Guardia firma (neto ≥ 10 % del valor).
+4. **Un solo programa acepta**: `cadena/t7/candado.py`. El lanzador lo toma en vivo; `play.py` debería tomarlo también.
+5. **Datos de prueba**: `cadena/datos/estado-actual.json`.
+
+Vendedores y duelos siguen dependiendo del programa que los juegue (`play.py`).

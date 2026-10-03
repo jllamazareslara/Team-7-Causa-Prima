@@ -50,9 +50,13 @@ def precio_anuncio(lista_vendedor, perdida, caducidades, p):
     return max(inicial - p["rastro.bajada_por_caducidad"] * caducidades, minimo)
 
 
-def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0):
+def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=None):
     """tablon = [{"id", "maker", "give": {...}, "want": {...}}] tal como lo da board("rastro").
-    Devuelve las ofertas que nos convendría ACEPTAR, de más a menos neto, con su ficha."""
+    Devuelve las ofertas que nos convendría ACEPTAR, de más a menos neto, con su ficha.
+    Con p (los ajustes), solo las que el Guardia firmaría: neto ≥ guardia.margen_compra × valor de lo que recibimos
+    + guardia.margen_venta × valor de lo que damos (el 10 % de "buen negocio"). Así no se proponen tratos que luego
+    el Guardia rechaza, y no se gasta la única aceptación del tick en ellos."""
+    from .guardia import exigido_por_valor
     out = []
     for o in tablon:
         give, want = o.get("give", {}), o.get("want", {})
@@ -64,7 +68,7 @@ def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0):
         if not recibo_cartas and not entrego_cartas:
             continue
         ev = V.evaluar(prop, cuenta, efectivo, mult, reserva)
-        if ev["renta"]:
+        if ev["renta"] and (p is None or ev["neto"] >= exigido_por_valor(ev, p)):
             out.append({"oferta": o["id"], "maker": o.get("maker"), "neto": ev["neto"], "ficha": ev, "propuesta": prop})
     return sorted(out, key=lambda x: -x["neto"])
 
