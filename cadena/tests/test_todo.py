@@ -252,6 +252,66 @@ class Duelo(unittest.TestCase):
         st = {"rol": "seller", "limite": 100, "rival": [95], "nuestras": [190], "ronda": 7, "rondas": 8, "limite_rival": 90}
         self.assertNotEqual(duelo.decidir(st, P)[0], "aceptar")
 
+    def test_silencio_del_rival_afloja_la_curva(self):
+        """Parche B: si llevamos ofertas sin que el rival responda con precio, la curva se vuelve más lineal.
+        Antes el agente se pegaba al ancla hasta la última ronda y perdía 9/9 duelos en vivo contra rival mudo."""
+        # Vendedor lim 62, rival callado, 16 rondas. Con la curva adaptativa, nuestra oferta en la ronda 8
+        # debe estar claramente por debajo de la primera, acercándonos al límite antes del deadline.
+        st = {"rol": "seller", "limite": 62, "rival": [], "nuestras": [], "ronda": 0, "rondas": 16}
+        for r in range(9):
+            st["ronda"] = r
+            _, pr, _ = duelo.decidir(st, P)
+            st["nuestras"].append(pr)
+        # La primera oferta parte de la apertura; la séptima debe haber bajado al menos 15 primas.
+        self.assertGreater(st["nuestras"][0] - st["nuestras"][7], 15,
+                           f"la curva no se afloja con rival callado: {st['nuestras']}")
+        # Y la secuencia debe ser monótona decreciente (sin oscilar entre ancla y suelo como en los duelos reales).
+        for i in range(1, len(st["nuestras"])):
+            self.assertLessEqual(st["nuestras"][i], st["nuestras"][i - 1],
+                                 f"la secuencia no es monótona: {st['nuestras']}")
+
+    def test_ultima_ronda_con_tarta_va_al_limite(self):
+        """Parche A: en la última ronda, si sabemos (memoria de escenario) que hay tarta positiva, ofrecemos al
+        límite en vez de dejar el 5 % de la tarta como suelo (que puede dejarnos por encima del rival real)."""
+        # Vendedor lim 100, rival con lim 150 (memoria), última ronda: queremos ir a nuestro límite (101 por el
+        # +1 de "no múltiplos de 5" si acaso).
+        st = {"rol": "seller", "limite": 100, "rival": [], "nuestras": [180] * 14, "ronda": 15, "rondas": 16,
+              "limite_rival": 150}
+        accion, precio, _ = duelo.decidir(st, P)
+        self.assertEqual(accion, "ofrecer")
+        self.assertLessEqual(precio, 102, f"última ronda con tarta debería ir al límite, no a {precio}")
+        # Sin memoria y sin precios del rival, el patch A no dispara (seguridad): no vamos al límite por imprudencia.
+        st2 = {"rol": "seller", "limite": 100, "rival": [], "nuestras": [180] * 14, "ronda": 15, "rondas": 16}
+        _, precio2, _ = duelo.decidir(st2, P)
+        self.assertGreater(precio2, 102, "sin señal de tarta no debería ir al límite")
+
+    def test_dia_sonda_inicial_cuando_hay_dias(self):
+        """Parche C: el día que llevan los duelos de dos temas sale como `pesos_dias` en el estado del duelo. Sin
+        información del rival, usar nuestro mejor día revela nuestra preferencia; sondamos con el día central para
+        que el rival nos muestre la suya."""
+        # mejor_dia con pesos definidos y sin pista: devuelve el pico (no es sonda; la sonda la hace el orquestador).
+        d, _ = duelo.mejor_dia({0: 1, 5: 5, 10: 10}, por_defecto=5)
+        self.assertEqual(d, 10)
+        # Con pista "pronto" y varios días que empatan dentro del 5 % del rango, elegir el más cercano a 0.
+        # Pesos {0: 10, 5: 10, 10: 1}: rango 9, umbral 0.45; empatan 0 y 5 → "pronto" elige el 0.
+        d, _ = duelo.mejor_dia({0: 10, 5: 10, 10: 1}, por_defecto=5, hacia="pronto")
+        self.assertEqual(d, 0)
+        d, _ = duelo.mejor_dia({0: 10, 5: 10, 10: 1}, por_defecto=5, hacia="tarde")
+        self.assertEqual(d, 5)
+        # Pesos ininteligibles: fallback al por defecto.
+        d, _ = duelo.mejor_dia("ni idea", por_defecto=5)
+        self.assertEqual(d, 5)
+        # paquetes_iguales: si al rival le vale 10 el día tardío, cada día más alto nos deja proponer un precio
+        # (ligeramente) menor para la misma utilidad. Como vendedor con lim 100 y margen 20:
+        pesos = {0: 0, 5: 5, 10: 10}
+        paqs = duelo.paquetes_iguales("seller", 100, pesos, 20, dias=sorted(pesos))
+        # Cada entrada es (precio, día). El día 0 nos da (120, 0); el día 10 nos da (110, 10). Ambos la misma
+        # utilidad para nosotros, pero el rival valorará uno más que otro: firmar un día que al rival le vale
+        # +10 primas a cambio de bajar 10 el precio es exactamente la tarta que crece en Duelos II/III.
+        por_dia = {dia: precio for precio, dia in paqs}
+        self.assertEqual(por_dia[0], 120)
+        self.assertEqual(por_dia[10], 110)
+
 
 class Palabras(unittest.TestCase):
     def test_defensa_detecta_trampas(self):
@@ -668,8 +728,15 @@ class Cadena(unittest.TestCase):
         self.assertEqual(duelo.mejor_dia(0.7)[0], 5)                       # un solo número: no sabemos leerlo
         self.assertEqual(duelo.mejor_dia(None)[0], 5)
         self.assertEqual(duelo.mejor_dia(["a", "b"])[0], 5)
+        # Primera oferta sin información del rival: sonda día central (5) para forzar al rival a mostrar su
+        # preferencia (Parche C). Sin esa sonda estaríamos revelando nuestro mejor día de entrada.
         base = {"id": 3, "rol": "seller", "limite": 100, "rival": [], "nuestras": [], "ronda": 0, "rondas": 8, "dias": True}
-        ac = cadena.tick({"tick": 1, "duelos": [dict(base, pesos_dias=[0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0])]}, cadena.Memoria(), P)
+        pesos = [0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0]
+        ac = cadena.tick({"tick": 1, "duelos": [dict(base, pesos_dias=pesos)]}, cadena.Memoria(), P)
+        self.assertEqual(ac["mensajes"][0]["dias"], 5)
+        # A partir de la segunda oferta (ya tenemos alguna nuestra), usamos nuestro mejor día (día 8 según los pesos).
+        ya = dict(base, nuestras=[160], ronda=1, pesos_dias=pesos)
+        ac = cadena.tick({"tick": 2, "duelos": [ya]}, cadena.Memoria(), P)
         self.assertEqual(ac["mensajes"][0]["dias"], 8)
 
     def test_dia_de_entrega_cede_lo_barato_segun_el_rival(self):

@@ -407,7 +407,15 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             if d.get("dias"):
                 paquetes_rival = d.get("rival_paquetes") or []
                 hacia = duelo.dia_preferido_rival(paquetes_rival) if len(paquetes_rival) >= 2 else None
-                m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
+                # Parche C (sonda inicial): en la primera oferta sin información del rival, mandamos el día central
+                # (DIA_POR_DEFECTO = 5) en vez de nuestro mejor día. Elegir nuestro mejor día desde el principio
+                # revela nuestra preferencia; el 5 fuerza al rival a mostrar la suya en su contrapropuesta y
+                # desbloquea `hacia` a partir de la ronda siguiente, cuando ya podemos ceder en el día que apenas
+                # nos cuesta a cambio de ganar en precio (la tarta crece ahí, según el PDF del juego).
+                if not nuestras and not paquetes_rival:
+                    m["dias"], por_dia = DIA_POR_DEFECTO, f"día {DIA_POR_DEFECTO}: sonda inicial para medir preferencia del rival"
+                else:
+                    m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
                 if not nuestras or hacia:
                     apunta("DUELISTA", f"{quien} · {por_dia}")
             quedan = d.get("ticks_restantes")
