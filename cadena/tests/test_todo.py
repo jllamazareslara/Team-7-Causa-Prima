@@ -446,7 +446,8 @@ class CambistaCompras(unittest.TestCase):
         self.assertTrue(b.canceladas)                                           # su petición viva se cancela
         self.assertEqual(est["pagado"]["rare"], [precio])                       # y se aprende el precio
         seco = Juego()
-        director.pedir(seco, me, {"hilos": {}}, {"p": P, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
+        apagado = dict(P, **{"cambista.pedir": 0})
+        director.pedir(seco, me, {"hilos": {}}, {"p": apagado, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
         self.assertEqual(seco.ofertas, [])                                      # con cambista.pedir = 0 no se publica nada
 
     def test_minutos_al_final(self):
@@ -792,8 +793,9 @@ class Director(unittest.TestCase):
         me = {"assets": [{"id": 1, "kind": "card", "ref": "LAT-03"}, {"id": 2, "kind": "card", "ref": "LAT-03"},
                          {"id": 3, "kind": "card", "ref": "LAT-08"}, {"id": 4, "kind": "pack", "ref": "sobre_barrio"}]}
         encendido = {"p": dict(P, **{"rastro.publicar": 1}), "forzar": {}}
+        apagado = {"p": dict(P, **{"rastro.publicar": 0}), "forzar": {}}
         est, b = {"hilos": {}}, Juego()
-        director.anunciar(b, me, est, {"p": dict(P), "forzar": {}}, 3, True, primero=True)     # apagado: enseña, no manda
+        director.anunciar(b, me, est, apagado, 3, True, primero=True)     # apagado: enseña, no manda
         director.anunciar(b, me, est, encendido, 3, False)                                       # en seco: tampoco
         self.assertEqual(b.anuncios, [])
         director.anunciar(b, me, est, encendido, 3, True)

@@ -295,11 +295,11 @@
   "por_que": "Anuncio de venta: múltiplo del precio de lista del vendedor. Era 0,9; la revisión del 3/10 dice que dejaba valor en la mesa. Con 1,3 una común sale a 13 P y una poco común a 33 P: quien tiene ese barrio a × 1,6 (le valen 16 y 40) todavía gana pagando la comisión. Con 1,4 ya no ganaría con la común. Baja 1 P cada vez que caduca."
  },
  "rastro.publicar": {
-  "valor": 0,
+  "valor": 1,
   "min": 0,
   "max": 1,
   "estado": "decisión",
-  "por_que": "1 = el director publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Viene apagado porque publicar anuncios no se ha probado contra el juego real: lo enciende el equipo tras verlo en seco."
+  "por_que": "1 = el director publica en vivo los anuncios de venta en El Rastro. Encendido el 3/10 tras estancarnos en el puesto 17/18 con ladder_points casi a cero: hay que dejar de ser puramente reactivos."
  },
  "rastro.bajada_por_caducidad": {
   "valor": 1,
@@ -309,11 +309,11 @@
   "por_que": "Primas que baja un anuncio cada vez que caduca sin venderse."
  },
  "cambista.pedir": {
-  "valor": 0,
+  "valor": 1,
   "min": 0,
   "max": 1,
   "estado": "decisión",
-  "por_que": "1 = el director publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Viene apagado: publicar peticiones no se ha probado contra el juego real."
+  "por_que": "1 = el director publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. Encendido el 3/10: RET a 8/10 (faltan RET-08 y RET-10) es la página más barata de cerrar, y la lista de la compra ya las prioriza por ser raras."
  },
  "cambista.apertura_peticion": {
   "valor": 0.45,
