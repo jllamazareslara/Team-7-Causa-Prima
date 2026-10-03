@@ -7,7 +7,9 @@ import unittest
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import guion, novedades  # noqa: E402
+from t7 import guion, novedades, params  # noqa: E402
+
+P = params.cargar()
 
 with open(os.path.join(RAIZ, "datos", "calendario-03-10.json"), encoding="utf-8") as _f:
     CAL = json.load(_f)
@@ -236,6 +238,30 @@ class Ojeador(unittest.TestCase):
         self.assertEqual(hecha, [])                    # escalera hecha: solo compraría lo que completa página
         s2 = {"LAT-03": {"rastro": None, "escasa": True}}
         self.assertEqual(cadena.cola_de_operaciones(cuenta, 300, menus, senales=s2)[0]["carta"], "LAT-03")
+
+    def test_todo_vive_en_la_cadena(self):
+        """Quien lance la cadena solo pasa lecturas crudas: calendario, catálogo, feed, cierres de vendedores."""
+        from t7 import cadena
+        mem = cadena.Memoria()
+        cat = {"sets": [{"id": "LAT", "cards": [{"id": "LAT-03", "print_run": 300, "minted": 290}]}]}
+        lectura = {"tick": 100, "t_hours": 10.0, "calendario": CAL, "catalogo": cat, "niveles": {"pilar": 3},
+                   "feed": {"events": [{"type": "settlement", "ref": "MAL-01", "price": 9}]},
+                   "vendedores": [{"vendedor": "abuela", "cerrado": "persona_quota", "suyas": [0], "nuestras": []}],
+                   "cuenta": {"SAL-01": 2}, "efectivo": 300}
+        cadena.ojear(lectura, mem)
+        self.assertEqual((lectura["hora"], mem.escasez["LAT-03"], mem.niveles), (10.0, 0.967, {"pilar": 3}))
+        self.assertEqual(mem.descansos["abuela"], {"hasta_h": 11.0})
+        self.assertIn("MAL-01", mem.historial)
+        menus = {"abuela": {"compra": {"SAL-01": 5}}, "pilar": {"compra": {"SAL-01": 12}}}
+        ops = cadena.operaciones({"SAL-01": 2}, 300, menus, mem, lectura)
+        self.assertEqual([(o["vendedor"], o["carta"]) for o in ops], [("pilar", "SAL-01")])   # abuela descansa; fiebre
+        sin_reloj = {"tick": 220, "tick_segundos": 30}                      # 120 ticks después, sin t_hours
+        self.assertAlmostEqual(cadena.hora_de_juego(mem, sin_reloj), CAL["now_hours"] + 1.0)
+        mem2 = cadena.Memoria.de_dict(mem.a_dict())
+        self.assertEqual((mem2.descansos, mem2.niveles), (mem.descansos, mem.niveles))
+        anuncios = cadena.anuncios({"SAL-01": 2, "MAL-02": 3}, P, mem, lectura)
+        self.assertNotIn("SAL-01", [a["carta"] for a in anuncios])                          # espera a la fiebre
+        self.assertTrue(anuncios and all(a["precio"] >= a["pierde"] + 1 for a in anuncios))
 
     def test_la_cadena_espera_si_el_ojeador_lo_dice(self):
         from t7 import cadena
