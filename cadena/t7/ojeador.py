@@ -304,7 +304,8 @@ def apuntar_mercado(mercado, tablon, demanda=None):
                nuestra petición pide 1 P más que él (mientras quepa en el tope)"""
     for o in tablon:
         give, want = o.get("give") or {}, o.get("want") or {}
-        cartas, pide = give.get("assets") or [], want.get("cards") or []
+        cartas = give.get("assets") or []
+        pide = [x.replace("card:", "") if isinstance(x, str) else x for x in want.get("cards") or want.get("types") or []]
         if len(cartas) == 1 and not give.get("cash") and not pide and isinstance(want.get("cash"), (int, float))                 and want["cash"] > 0:
             ref = cartas[0].get("ref") if isinstance(cartas[0], dict) else cartas[0]
             if isinstance(ref, str):

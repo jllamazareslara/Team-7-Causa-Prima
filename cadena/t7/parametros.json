@@ -15,14 +15,14 @@
   "por_que": "Efectivo que queremos tener. Por debajo, valor.liquidez() dice qué cartas pequeñas vender (repetidas y barrios flojos) sin perder valor."
  },
  "guardia.margen_compra": {
-  "valor": 0.10,
+  "valor": 0.1,
   "min": 0,
   "max": 0.5,
   "estado": "decisión",
   "por_que": "Buen negocio comprando: ganar al menos este tanto del valor de las cartas que recibimos. 0,10 = pagar como mucho el 90 % de lo que nos vale (LAT-09, 112 → 100 P)."
  },
  "guardia.margen_venta": {
-  "valor": 0.10,
+  "valor": 0.1,
   "min": 0,
   "max": 0.5,
   "estado": "decisión",
@@ -393,11 +393,11 @@
   "por_que": "Minutos antes del fin del juego (domingo 15:00, o \"fin_juego\" en hoy.json) en los que empieza el tramo final. 0 = nunca."
  },
  "cambista.trueques_max": {
-  "valor": 2,
+  "valor": 4,
   "min": 0,
   "max": 10,
   "estado": "decisión",
-  "por_que": "Cambios carta por carta vivos a la vez en El Rastro (damos repetidas por cartas que nos faltan, sin gastar efectivo). 0 = apagado. Se publican con cambista.pedir = 1."
+  "por_que": "Cambios carta por carta vivos a la vez en El Rastro (damos repetidas por cartas que nos faltan, sin gastar efectivo). 0 = apagado. Se publican con cambista.cambiar = 1 (o cambista.pedir = 1). Era 2; el 3/10 por la tarde un cambio rindió +5,9 y una venta suelta +1,8: las repetidas valen más cambiadas que vendidas."
  },
  "cambista.trueque_ratio": {
   "valor": 0.8,
@@ -405,6 +405,27 @@
   "max": 2.0,
   "estado": "supuesto",
   "por_que": "Lo que damos en un cambio tiene que sumar al menos esta parte de la base de lo que pedimos (una poco común, 25, pide 20 de base: una poco común o dos comunes). Por debajo, nadie lo aceptaría."
+ },
+ "cambista.cambiar": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = publica en vivo los cambios carta por carta aunque cambista.pedir = 0. No gastan efectivo y la Contable los pasa uno a uno. 0 = solo con cambista.pedir = 1, como antes."
+ },
+ "cambista.sin_demanda_vendedores": {
+  "valor": 2,
+  "min": 0,
+  "max": 20,
+  "estado": "decisión",
+  "por_que": "Una común o poco común no se anuncia si en El Rastro nadie la pide y ya la venden al menos estos equipos (Ojeador, últimos 120 ticks): bajaría al suelo sin venderse (3/10: LAT-04 5 venden / 0 piden). Se guarda para cambios. 0 = anunciar siempre."
+ },
+ "cambista.caza_veces": {
+  "valor": 2,
+  "min": 1,
+  "max": 10,
+  "estado": "supuesto",
+  "por_que": "Si un mismo equipo pide la misma carta al menos estas veces, probablemente le falta para completar página: nuestro anuncio de esa carta no baja de lo mejor que ha ofrecido por ella."
  },
  "ataque.inyeccion_equipos": {
   "valor": 0,

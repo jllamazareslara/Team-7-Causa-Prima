@@ -44,11 +44,34 @@ def vendibles(cuenta, mult=V.NUESTROS_MULT):
     return sorted(out, key=lambda x: x[1])
 
 
+SUELO_VENTA = 2          # P por encima de lo que nos vale la carta: cubre la comisión de El Rastro
+
+
 def precio_anuncio(lista_vendedor, perdida, caducidades, p):
-    """Precio de un anuncio de venta en El Rastro. El que acepta paga la comisión."""
+    """Precio de un anuncio de venta en El Rastro. Suelo = lo que nos vale + SUELO_VENTA: no está comprobado quién paga
+    la comisión (5 % + 1 P por carta = 2 P a estos precios), así que el suelo la cubre aunque la paguemos nosotros."""
     inicial = math.ceil(p["rastro.precio_inicial_lista"] * lista_vendedor)
-    minimo = math.ceil(perdida + 1)
+    minimo = math.ceil(perdida + SUELO_VENTA)
     return max(inicial - p["rastro.bajada_por_caducidad"] * caducidades, minimo)
+
+
+def pedidas(want):
+    """Las cartas que pide una oferta, tal como las escribe el juego: want.types = ["card:LAV-06"] (lo que manda de verdad),
+    want.cards = ["LAV-06"] o want.assets (una copia concreta). None si pide algo que no sabemos valorar: no se toca."""
+    refs = []
+    for r in want.get("cards") or []:
+        if not isinstance(r, str):
+            return None
+        refs.append(r)
+    for t in want.get("types") or []:
+        if not (isinstance(t, str) and t.startswith("card:")):
+            return None
+        refs.append(t.split(":", 1)[1])
+    for a in want.get("assets") or []:
+        if not (isinstance(a, dict) and isinstance(a.get("ref"), str)):
+            return None
+        refs.append(a["ref"])
+    return refs
 
 
 def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=None):
@@ -62,7 +85,9 @@ def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=N
     for o in tablon:
         give, want = o.get("give", {}), o.get("want", {})
         recibo_cartas = [a["ref"] if isinstance(a, dict) else a for a in give.get("assets", [])]
-        entrego_cartas = list(want.get("cards", []))
+        entrego_cartas = pedidas(want)                     # la carta que damos cuenta: sin esto un cambio parecía gratis
+        if entrego_cartas is None:
+            continue
         prop = {"tipo": "equipo", "mercado": "rastro", "pagamos_comision": True,
                 "recibo": {"cartas": recibo_cartas, "primas": give.get("cash", 0) or 0},
                 "entrego": {"cartas": entrego_cartas, "primas": want.get("cash", 0) or 0}}
