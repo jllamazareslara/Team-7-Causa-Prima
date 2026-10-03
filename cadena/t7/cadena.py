@@ -32,7 +32,7 @@ lectura = {
 import math
 import re
 
-from . import cambista, defensa, duelo, guardia, params, prioridad, sondas, tienda
+from . import cambista, defensa, duelo, guardia, ojeador, params, prioridad, sondas, tienda
 from . import valor as V
 from .portavoz import Portavoz
 
@@ -57,12 +57,13 @@ class Memoria:
         self.sondeadas = {}     # "vendedor|día" → conversaciones en las que el Espía ha preguntado
         self.mercado = {}       # carta → últimos precios a los que otros equipos la anuncian en El Rastro (Cambista)
         self.demanda = {}       # carta → últimos precios que otros equipos OFRECEN por ella en El Rastro (Cambista)
+        self.historial = {}     # carta → [[tick, precio, lado, quién]]: el mercado en el tiempo (Ojeador)
 
     def a_dict(self):
         return {"sondeadas": self.sondeadas, "sondas": self.sondas, "pistas": self.pistas, "escenarios": self.escenarios, "mala_fe": self.mala_fe,
                 "capturas": self.capturas, "avisos": self.escudo.cuenta, "frases": self.portavoz.usadas,
                 "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas,
-                "mercado": self.mercado, "demanda": self.demanda}
+                "mercado": self.mercado, "demanda": self.demanda, "historial": self.historial}
 
     @classmethod
     def de_dict(cls, d):
@@ -75,6 +76,7 @@ class Memoria:
         m.tonos, m.leen, m.preguntas = d.get("tonos", {}), d.get("leen", {}), d.get("preguntas", {})
         m.escudo.cuenta, m.portavoz.usadas = d.get("avisos", {}), d.get("frases", {})
         m.mercado, m.demanda = d.get("mercado", {}), d.get("demanda", {})
+        m.historial = d.get("historial", {})
         return m
 
 
@@ -273,12 +275,28 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     def paso_rastro(tablon):
         tablon = [o for o in tablon if isinstance(o, dict)]
         apuntar_mercado(mem.mercado, tablon, mem.demanda)
+        mom, esc = lectura.get("momento") or {}, lectura.get("escasez") or {}
+        pasado = {r: list(v) for r, v in mem.historial.items()}       # se compara con lo visto ANTES de este tick
+        ojeador.observar(mem.historial, tablon, t)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
+            prop = o["propuesta"]
+            compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
+            if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
+                ref = prop["recibo"]["cartas"][0]
+                ya, porque = ojeador.comprar_ahora(
+                    ref, prop["entrego"]["primas"], V.valor_recibir(cuenta, [ref]),
+                    ojeador.tendencia(pasado, ref, t if isinstance(t, (int, float)) else 0), mom,
+                    esc.get(ref), completa=V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref])
+                if not ya:
+                    apunta("OJEADOR", f"El Rastro · oferta {o['oferta']} ({ref} a {prop['entrego']['primas']}) · {porque}")
+                    continue
             apunta("CAMBISTA", f"El Rastro · oferta {o['oferta']} de {o['maker']} · neto {o['neto']:+.1f}")
             oferta = next((x for x in tablon if x.get("id") == o["oferta"]), None)
             cola.append({"tipo": "equipo", "destino": "rastro", "id": o["oferta"], "oferta_id": o["oferta"],
                          "neto": o["neto"], "propuesta": o["propuesta"], "oferta_juego": oferta})
 
+    if lectura.get("feed"):                              # tratos hechos del feed público: precios reales pagados
+        aislado(lambda f: ojeador.observar_feed(mem.historial, f, t), lectura["feed"], "feed")
     tablon = lectura.get("tablon")
     if tablon and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
         aislado(paso_rastro, tablon, "El Rastro")
