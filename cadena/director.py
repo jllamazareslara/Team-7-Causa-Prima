@@ -25,7 +25,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, ojeador, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -138,21 +138,30 @@ def leer(b, est, tick):
         if not est.get("crudo_duelo"):
             est["crudo_duelo"] = True
             _linea("crudo.jsonl", {"tipo": "duelo", "crudo": d})
-        if not isinstance(d, dict) or d.get("id") is None:
+        if not isinstance(d, dict):
+            continue
+        did = d.get("id", d.get("duel"))                         # el juego real lo llama "duel" (visto el 3/10)
+        if did is None or d.get("status", "live") not in ("live", "open", "active"):
             continue
         rol, limite = str(d.get("role", "")).lower(), d.get("your_limit")
         if rol not in ("seller", "buyer") or not isinstance(limite, (int, float)):
             continue                                             # no se juega lo que no se entiende
-        h = est["duelos"].setdefault(str(d["id"]), {"rival": [], "nuestras": []})
+        h = est["duelos"].setdefault(str(did), {"rival": [], "nuestras": []})
         rival = _precio(d.get("rival_offer"))
         if rival is not None and (not h["rival"] or h["rival"][-1] != rival):
             h["rival"].append(rival)
-        plazo = d.get("deadline")
+        nuestra = _precio(d.get("your_offer"))                   # lo que el juego dice que ofrecimos (sobrevive a reinicios)
+        if nuestra is not None and (not h["nuestras"] or h["nuestras"][-1] != nuestra):
+            h["nuestras"].append(nuestra)
+        plazo = d.get("deadline", d.get("deadline_tick"))
         esc = next((d[k] for k in ("scenario", "scenario_id", "scenario_ref", "case", "item")
                     if d.get(k) is not None and not isinstance(d[k], (dict, list))), None)
-        lectura["duelos"].append({"id": d["id"], "rol": rol, "limite": limite, "rival": list(h["rival"]),
+        suyos = [m for m in d.get("messages") or [] if isinstance(m, dict) and m.get("from") not in ("you", "me")]
+        lectura["duelos"].append({"id": did, "rol": rol, "limite": limite, "rival": list(h["rival"]),
                                   "nuestras": list(h["nuestras"]), "ronda": d.get("round", len(h["nuestras"])),
-                                  "rondas": d.get("max_rounds"), "texto": d.get("rival_text") or d.get("last_message") or "",
+                                  "rondas": d.get("max_rounds", d.get("rounds")),
+                                  "descuento": d.get("decay_per_round"),
+                                  "texto": d.get("rival_text") or d.get("last_message") or (suyos[-1].get("text") if suyos else "") or "",
                                   "ticks_restantes": plazo - tick if isinstance(plazo, (int, float)) else None,
                                   "escenario": esc, "dias": "days" in (d.get("issues") or []),
                                   "pesos_dias": d.get("your_days_weight")})
@@ -237,7 +246,8 @@ def vendedores_nuevos(b, est, menus):
     except Exception as e:
         _linea("errores.jsonl", {"vendedores": str(e)})
         return []
-    lista = res.get("dealers", res.get("in_play", [])) if isinstance(res, dict) else res
+    lista = (res.get("dealers") or res.get("in_play") or res.get("personas") or []) if isinstance(res, dict) else res
+    # el juego real responde {"personas": [...]} (visto el 3/10); los anunciados traen "status": "announced"
     nuevos = []
     for d in lista if isinstance(lista, list) else []:
         vid = d.get("id") if isinstance(d, dict) else None
@@ -535,6 +545,18 @@ def main():
     est = _json(os.path.join(RUNS, "director.json"), {"hilos": {}, "duelos": {}})
     mem = cadena.Memoria.de_dict(_json(os.path.join(RUNS, "memoria.json"), {}))
     print("EN VIVO" if a.live else "EN SECO: no se manda ni se acepta nada")
+    if a.live:                                                   # un solo programa acepta a la vez (t7/candado.py)
+        ok, motivo = candado.tomar(candado.RUTA, "director.py")
+        if not ok:
+            sys.exit("NO SE LANZA   " + motivo)
+    try:
+        _jugar(b, est, mem, a)
+    finally:
+        if a.live:
+            candado.soltar(candado.RUTA)
+
+
+def _jugar(b, est, mem, a):
     preparar(b)
     hechos, ultimo = 0, None
     while not a.ticks or hechos < a.ticks:
