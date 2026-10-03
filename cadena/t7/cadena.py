@@ -32,7 +32,7 @@ lectura = {
 import math
 import re
 
-from . import cambista, defensa, duelo, guardia, params, prioridad, sondas, tienda
+from . import cambista, defensa, duelo, guardia, ojeador, params, prioridad, sondas, tienda
 from . import valor as V
 from .portavoz import Portavoz
 
@@ -57,12 +57,13 @@ class Memoria:
         self.sondeadas = {}     # "vendedor|día" → conversaciones en las que el Espía ha preguntado
         self.mercado = {}       # carta → últimos precios a los que otros equipos la anuncian en El Rastro (Cambista)
         self.demanda = {}       # carta → últimos precios que otros equipos OFRECEN por ella en El Rastro (Cambista)
+        self.historial = {}     # carta → [[tick, precio, lado, quién]]: el mercado en el tiempo (Ojeador)
 
     def a_dict(self):
         return {"sondeadas": self.sondeadas, "sondas": self.sondas, "pistas": self.pistas, "escenarios": self.escenarios, "mala_fe": self.mala_fe,
                 "capturas": self.capturas, "avisos": self.escudo.cuenta, "frases": self.portavoz.usadas,
                 "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas,
-                "mercado": self.mercado, "demanda": self.demanda}
+                "mercado": self.mercado, "demanda": self.demanda, "historial": self.historial}
 
     @classmethod
     def de_dict(cls, d):
@@ -75,6 +76,7 @@ class Memoria:
         m.tonos, m.leen, m.preguntas = d.get("tonos", {}), d.get("leen", {}), d.get("preguntas", {})
         m.escudo.cuenta, m.portavoz.usadas = d.get("avisos", {}), d.get("frases", {})
         m.mercado, m.demanda = d.get("mercado", {}), d.get("demanda", {})
+        m.historial = d.get("historial", {})
         return m
 
 
@@ -273,12 +275,28 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     def paso_rastro(tablon):
         tablon = [o for o in tablon if isinstance(o, dict)]
         apuntar_mercado(mem.mercado, tablon, mem.demanda)
+        mom, esc = lectura.get("momento") or {}, lectura.get("escasez") or {}
+        pasado = {r: list(v) for r, v in mem.historial.items()}       # se compara con lo visto ANTES de este tick
+        ojeador.observar(mem.historial, tablon, t)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
+            prop = o["propuesta"]
+            compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
+            if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
+                ref = prop["recibo"]["cartas"][0]
+                ya, porque = ojeador.comprar_ahora(
+                    ref, prop["entrego"]["primas"], V.valor_recibir(cuenta, [ref]),
+                    ojeador.tendencia(pasado, ref, t if isinstance(t, (int, float)) else 0), mom,
+                    esc.get(ref), completa=V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref])
+                if not ya:
+                    apunta("OJEADOR", f"El Rastro · oferta {o['oferta']} ({ref} a {prop['entrego']['primas']}) · {porque}")
+                    continue
             apunta("CAMBISTA", f"El Rastro · oferta {o['oferta']} de {o['maker']} · neto {o['neto']:+.1f}")
             oferta = next((x for x in tablon if x.get("id") == o["oferta"]), None)
             cola.append({"tipo": "equipo", "destino": "rastro", "id": o["oferta"], "oferta_id": o["oferta"],
                          "neto": o["neto"], "propuesta": o["propuesta"], "oferta_juego": oferta})
 
+    if lectura.get("feed"):                              # tratos hechos del feed público: precios reales pagados
+        aislado(lambda f: ojeador.observar_feed(mem.historial, f, t), lectura["feed"], "feed")
     tablon = lectura.get("tablon")
     if tablon and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
         aislado(paso_rastro, tablon, "El Rastro")
@@ -398,7 +416,8 @@ def tratos_de_hoy(mem, dia):
     return {v: sum(1 for c in cs if c.get("dia") == dia) for v, cs in mem.capturas.items()}
 
 
-def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None):
+def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None,
+                        guardar=None, niveles=None, senales=None):
     """Qué operación abrir con cada vendedor que no tiene conversación: primero vender, luego comprar.
 
     menus = {vendedor: {"vende": {ref: precio de lista}, "compra": {ref: lo que ofrece de entrada}}}
@@ -406,8 +425,14 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     tratos, max_tratos = calidad antes que cantidad: con max_tratos tratos regateados hoy con un vendedor (solo cuentan
     los tres mejores), ya no se le abren compras salvo la carta que completa una página. Vender sigue: da efectivo.
     Una carta cuyo valor no conocemos (barrio o código nuevo) no se abre nunca.
+    guardar = {ref: vendedor al que sí se vende ahora, o None} (guion.reservadas): cartas que esperan una fiebre.
+    Durante la fiebre van primero al vendedor de la fiebre.
+    niveles = {vendedor: nivel}: los niveles altos pesan más en la escalera, así que sus operaciones van delante.
+    senales = {ref: {"rastro": precio hoy en El Rastro con comisión o None, "escasa": bool}} (ojeador.senales_vendedor):
+    una carta casi agotada se compra antes; con la escalera de ese vendedor ya hecha, no se le compra lo que
+    sale más barato en El Rastro (lo compra el Cambista).
     """
-    ordenes, tratos = ordenes or {}, tratos or {}
+    ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
     pendientes, usadas = [], set()
     for vendedor, menu in menus.items():
@@ -415,8 +440,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             continue
         ventas = [(ref, perdida) for ref, perdida in cambista.vendibles(cuenta)
                   if ref in (menu.get("compra") or {}) and ref not in usadas and V.conocida(ref)
+                  and (ref not in guardar or guardar[ref] == vendedor)
                   and V.rareza(ref) in ("common", "uncommon") and menu["compra"][ref] * 3 > perdida]
-        ventas.sort(key=lambda x: (x[0] not in urgentes, x[1]))
+        ventas.sort(key=lambda x: (x[0] not in guardar, x[0] not in urgentes, x[1]))
         if ventas:
             ref = ventas[0][0]
             usadas.add(ref)
@@ -435,9 +461,15 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
                 continue
             if ordenes.get("compras") == "escalera_y_pagina" and not completa and lista > (ordenes.get("tope_por_trato") or 0):
                 continue
-            compras.append((not completa, -(vale - lista), ref, lista))
+            s = (senales or {}).get(ref) or {}
+            rastro = s.get("rastro")
+            if cupo_lleno and rastro is not None and rastro < lista and not completa:
+                continue                                  # escalera hecha y en El Rastro sale más barata
+            compras.append((not completa, not s.get("escasa"), -(vale - lista), ref, lista))
         if compras:
-            _, _, ref, lista = min(compras)
+            _, _, _, ref, lista = min(compras)
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "compra", "carta": ref, "lista": lista})
+    nivel = {v: n for v, n in (niveles or {}).items() if isinstance(n, (int, float)) and not isinstance(n, bool)}
+    pendientes.sort(key=lambda o: -nivel.get(o["vendedor"], 0))        # estable: sin niveles, el orden de siempre
     return pendientes

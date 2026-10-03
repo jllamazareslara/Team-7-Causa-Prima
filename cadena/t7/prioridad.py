@@ -12,12 +12,14 @@ Orden en cada tick para la única aceptación: 1. duelo urgente  2. oferta final
 """
 
 
-def mejora_escalera(top3, captura_esperada):
-    """Lo que un trato nuevo con ese vendedor añade a su media de los tres mejores (0 si no entra)."""
+def mejora_escalera(top3, captura_esperada, nivel=1):
+    """Lo que un trato nuevo con ese vendedor añade a su media de los tres mejores (0 si no entra).
+    nivel: las reglas dicen que los niveles altos pesan más (sin decir cuánto); se supone proporcional al nivel."""
+    peso = nivel if isinstance(nivel, (int, float)) and nivel > 0 else 1
     t = sorted(top3, reverse=True)[:3]
     if len(t) < 3:
-        return (sum(t) + captura_esperada) / 3 - sum(t) / 3
-    return max(0.0, captura_esperada - t[-1]) / 3
+        return peso * ((sum(t) + captura_esperada) / 3 - sum(t) / 3)
+    return peso * max(0.0, captura_esperada - t[-1]) / 3
 
 
 def carta_para_escalera(candidatas, efectivo):
