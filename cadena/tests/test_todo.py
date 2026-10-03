@@ -1286,6 +1286,33 @@ class Jugar(unittest.TestCase):
         self.r.un_tick(b, est, cadena.Memoria(), 5, 30, vivo=True, stop=True)
         self.assertEqual(len(b.canceladas), 3)                              # una vez, no cada tick
 
+    def test_mercado_de_venta(self):
+        self.assertEqual(self.r.mercado_de_venta({})["venue"], "rastro")
+        m = self.r.mercado_de_venta({"vender_en": {"venue": "v1", "fee_bps": 150, "fee_por_carta": 0}})
+        self.assertEqual((m["venue"], m["pct"], m["por_carta"], m["solo_repetidas"]), ("v1", 0.015, 0, True))
+        m = self.r.mercado_de_venta({"vender_en": {"venue": "v1"}})              # sin comisión dicha: el tope de las reglas
+        self.assertEqual((m["pct"], m["por_carta"]), (0.10, 5))
+
+    def test_vende_repetidas_en_el_mercado_de_otro_equipo(self):
+        situacion.leer_hoy = lambda: {"vender_en": {"venue": "v1", "fee_bps": 150, "fee_por_carta": 0}}
+        b = self.Juego(cartas=self.cartas())
+        p = dict(P, **{"rastro.publicar": 1})
+        plan = {"p": p, "forzar": {}, "ordenes": {}}
+        est = {"hilos": {}}
+        self.r.anunciar(b, b.me(), est, plan, 3, True, {}, {})
+        self.assertTrue(b.ofertas)
+        cuenta = Counter(a["ref"] for a in b.me()["assets"])
+        por_ref = Counter()
+        for give, want, venue in b.ofertas:
+            self.assertEqual(venue, "v1")
+            ref = next(a["ref"] for a in b.me()["assets"] if a["id"] == give["assets"][0])
+            por_ref[ref] += 1
+            perdida = V.valor_entregar(cuenta, [ref])
+            self.assertGreaterEqual(want["cash"], V.suelo_venta_rastro(perdida, p["guardia.margen_venta"], 0.015, 0))
+        for ref, n in por_ref.items():
+            self.assertLess(n, cuenta[ref])                                  # nunca la última copia
+        self.assertTrue(all(x["venue"] == "v1" for x in est["anuncios"].values()))
+
     def test_solo_vender(self):
         """Con solo_vender: no se abre una compra a un vendedor ni se compra en El Rastro; vender sigue."""
         situacion.leer_hoy = lambda: {"solo_vender": True}

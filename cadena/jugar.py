@@ -290,6 +290,24 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
                       f"No se reintenta en {OCUPADO_TICKS} ticks. ¿Hay otro ordenador jugando?")
 
 
+RASTRO = {"venue": "rastro", "pct": 0.05, "por_carta": 1, "solo_repetidas": False}
+
+
+def mercado_de_venta(hoy=None):
+    """Dónde anuncia el Cambista sus ventas. Sin "vender_en" en t7/hoy.json, El Rastro (5 % + 1 P por carta).
+    Con "vender_en": {"venue": "<id del mercado>", "fee_bps": 150, "fee_por_carta": 0, "solo_repetidas": true},
+    en ese mercado (el de otro equipo, por ejemplo) con SU comisión en el suelo de precio. Si no se dice la comisión,
+    se supone el tope de las reglas (10 % y 5 P por carta): nunca vender por debajo de lo que nos cuesta."""
+    v = ((situacion.leer_hoy() if hoy is None else hoy) or {}).get("vender_en")
+    if not isinstance(v, dict) or not v.get("venue") or v.get("venue") == "rastro":
+        return dict(RASTRO, solo_repetidas=bool(isinstance(v, dict) and v.get("solo_repetidas")))
+    bps, por_carta = v.get("fee_bps"), v.get("fee_por_carta")
+    return {"venue": str(v["venue"]),
+            "pct": (bps if isinstance(bps, (int, float)) else 1000) / 10000,
+            "por_carta": por_carta if isinstance(por_carta, (int, float)) else 5,
+            "solo_repetidas": bool(v.get("solo_repetidas", True))}
+
+
 def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
     """El Cambista vende: anuncia en El Rastro lo que podemos dar sin perder valor (qué y a cuánto lo dice la cadena).
 
@@ -331,24 +349,33 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
                                  caducidades, maximo)
     else:
         nuevos = cadena.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
+    mercado = mercado_de_venta()
+    donde = "El Rastro" if mercado["venue"] == "rastro" else f"el mercado {mercado['venue']}"
+    margen = p.get("guardia.margen_venta", 0.10)
+    puestas = Counter()
     for n in nuevos:
+        if mercado["solo_repetidas"] and cuenta[n["carta"]] - activos[n["carta"]] - puestas[n["carta"]] < 2:
+            continue                                             # solo repetidas: la última copia no se vende
+        n["precio"] = max(n["precio"], V.suelo_venta_rastro(n["pierde"], margen, mercado["pct"], mercado["por_carta"]))
         libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos)
         if not libres:
             continue
         aid = libres[0]
+        puestas[n["carta"]] += 1
         mandar = vivo and publicar
-        print(f"ANUNCIO      {n['carta']} a {n['precio']} P en El Rastro (nos vale {n['pierde']})"
+        print(f"ANUNCIO      {n['carta']} a {n['precio']} P en {donde} (nos vale {n['pierde']})"
               + (f" · Ojeador {n['ojeador']}" if n.get("ojeador") else "")
               + ("" if mandar else " · no se publica: " + ("en seco" if publicar else "rastro.publicar = 0")))
         if not mandar:
             continue
         try:
-            r = b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue="rastro",
+            r = b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue=mercado["venue"],
                              expires_in_ticks=ANUNCIO_DURA)
             r = r if isinstance(r, dict) else {}
             ads[aid] = vivos[aid] = {"ref": n["carta"], "precio": n["precio"], "tick": tick,
                                      "caducidades": caducidades.get(n["carta"], 0),
-                                     "id": r.get("id", (r.get("offer") or {}).get("id"))}   # para poder cancelarlo
+                                     "id": r.get("id", (r.get("offer") or {}).get("id")),   # para poder cancelarlo
+                                     "venue": mercado["venue"], "pct": mercado["pct"], "por_carta": mercado["por_carta"]}
         except Exception as e:                                   # un anuncio que falla no para nada: se apunta
             _linea("errores.jsonl", {"anuncio": n, "error": str(e)})
     return nuevos
@@ -411,7 +438,7 @@ def revisar_publicadas(b, me, est, p, tick, vivo):
             continue
         ref = x["ref"]
         perdida = max(V.valor_entregar(cuenta, [ref]) or 0.0, V._your_value(cartas[aid]) or 0.0)
-        suelo = V.suelo_venta_rastro(perdida, margen)
+        suelo = V.suelo_venta_rastro(perdida, margen, x.get("pct", RASTRO["pct"]), x.get("por_carta", RASTRO["por_carta"]))
         if V.protegida(cuenta, ref) or x["precio"] < suelo:
             que = f"anuncio {ref} a {x['precio']} P: ahora nos quita {perdida:.1f} (suelo {suelo} P)"
             if _cancelar(b, x.get("id") or (_oferta_de_la_carta(b, aid, cache) if vivo else None), que, vivo):
