@@ -343,8 +343,8 @@ class CambistaCompras(unittest.TestCase):
         lista = cambista.lista_compra(self.latina(8), 300, P, mercado=mercado)
         f = next(x for x in lista if x["carta"] == "LAT-09")
         self.assertEqual(f["precio"], 55)                            # lo más barato visto en El Rastro
-        corta = cambista.lista_compra(self.latina(8), 60 + 100, P)  # 100 P sobre la reserva: cabe una rara
-        self.assertEqual([x["en_caja"] for x in corta[:2]], [True, False])
+        corta = {x["carta"]: x["en_caja"] for x in cambista.lista_compra(self.latina(8), 60 + 100, P)}
+        self.assertEqual((corta["LAT-09"], corta["LAT-10"]), (True, False))   # 100 P sobre la reserva: cabe una rara
 
     def test_peticiones_suben_sin_pasar_del_tope(self):
         c = self.latina(8)
@@ -371,6 +371,88 @@ class CambistaCompras(unittest.TestCase):
         mem = cadena.Memoria()
         mem.mercado = mercado
         self.assertEqual(cadena.Memoria.de_dict(json.loads(json.dumps(mem.a_dict()))).mercado, {"LAT-09": [70]})
+
+    def test_la_mochila_gana_mas_que_ir_por_orden(self):
+        filas = [{"carta": "A", "precio": 50, "gana": 21}, {"carta": "B", "precio": 25, "gana": 15},
+                 {"carta": "C", "precio": 25, "gana": 15}]
+        self.assertEqual(cambista._mochila(filas, 50), {1, 2})        # 30 con dos poco comunes, no 21 con la rara
+        self.assertEqual(cambista._mochila(filas, 0), set())
+
+    def test_compite_con_otra_peticion_y_tramo_final(self):
+        c = self.latina(8)
+        lista = cambista.lista_compra(c, 300, P)
+        pet = {x["carta"]: x for x in cambista.peticiones(lista, c, 300, P, demanda={"LAT-09": [40], "LAT-10": [200]})}
+        self.assertEqual(pet["LAT-09"]["precio"], 41)                 # otro ofrece 40: nosotros 41
+        self.assertEqual(pet["LAT-10"]["precio"], 31)                 # otro ofrece 200, más que nuestro tope: no le seguimos
+        fin = cambista.lista_compra(c, 300, P, final=True)
+        self.assertEqual(next(x for x in fin if x["carta"] == "LAT-09")["tope"], 109)    # 112 × 0,98
+        pf = {x["carta"]: x for x in cambista.peticiones(fin, c, 300, P, final=True)}
+        self.assertEqual(pf["LAT-09"]["precio"], 109)                 # al final, directamente al tope
+
+    def test_aprende_de_lo_que_ya_nos_vendieron(self):
+        lista = cambista.lista_compra(self.latina(8), 300, P, pagado={"rare": [40, 31]})
+        self.assertEqual(next(x for x in lista if x["carta"] == "LAT-09")["apertura"], 26)   # 85 % de 31
+
+    def test_cambio_carta_por_carta(self):
+        c = self.latina(8) + Counter({"MAL-06": 2, "SAL-01": 3})
+        lista = cambista.lista_compra(c, 300, P)
+        cambios = cambista.trueques(lista, c, P)
+        self.assertTrue(cambios)
+        primero = cambios[0]
+        self.assertTrue(set(primero["doy"]) <= {"MAL-06", "SAL-01"})          # solo lo que nos sobra
+        self.assertGreater(primero["gana"], 0)
+        self.assertLessEqual(len(cambios), P["cambista.trueques_max"])
+        self.assertNotIn("LAT-01", [r for x in cambios for r in x["doy"]])     # nunca una protegida
+        self.assertEqual(cambista.trueques(lista, c, P, activas={x["quiero"] for x in cambios}, vivos=0)[0]["quiero"]
+                         not in {x["quiero"] for x in cambios}, True)          # una carta ya intentada no se repite
+
+    def test_la_demanda_se_aprende_del_tablon(self):
+        mercado, demanda = {}, {}
+        cadena.apuntar_mercado(mercado, [{"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}}], demanda)
+        self.assertEqual((mercado, demanda), ({}, {"LAT-03": [9]}))
+
+    def test_director_pide_cambia_cancela_y_aprende(self):
+        import director
+        from datetime import datetime, timezone
+
+        class Juego:
+            def __init__(self):
+                self.ofertas, self.canceladas, self.n = [], [], 0
+
+            def list_offer(self, give, want, venue=None, expires_in_ticks=40):
+                self.n += 1
+                self.ofertas.append((give, want))
+                return {"id": self.n}
+
+            def cancel(self, oid):
+                self.canceladas.append(oid)
+
+        p = dict(P, **{"cambista.pedir": 1})
+        plan = {"p": p, "forzar": {}, "ordenes": {}}
+        cartas = [{"id": i, "kind": "card", "ref": "LAT-%02d" % i} for i in range(1, 9)]
+        cartas += [{"id": 20, "kind": "card", "ref": "MAL-06"}, {"id": 21, "kind": "card", "ref": "MAL-06"}]
+        me, est, mem, b = {"cash": 300, "assets": cartas}, {"hilos": {}}, cadena.Memoria(), Juego()
+        ahora = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
+        hecho = director.pedir(b, me, est, plan, 100, True, mem, ahora=ahora)
+        self.assertTrue(hecho)
+        pedidas = [w["cards"][0] for g, w in b.ofertas if "cash" in g]
+        self.assertIn("LAT-09", pedidas)
+        self.assertTrue(any("assets" in g for g, w in b.ofertas))              # y algún cambio carta por carta
+        self.assertEqual(len(set(pedidas)), len(pedidas))
+        me["assets"].append({"id": 30, "kind": "card", "ref": "LAT-09"})        # llega LAT-09
+        precio = est["peticiones"]["LAT-09"]["precio"]
+        director.pedir(b, me, est, plan, 101, True, mem, ahora=ahora)
+        self.assertNotIn("LAT-09", est["peticiones"])
+        self.assertTrue(b.canceladas)                                           # su petición viva se cancela
+        self.assertEqual(est["pagado"]["rare"], [precio])                       # y se aprende el precio
+        seco = Juego()
+        director.pedir(seco, me, {"hilos": {}}, {"p": P, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
+        self.assertEqual(seco.ofertas, [])                                      # con cambista.pedir = 0 no se publica nada
+
+    def test_minutos_al_final(self):
+        import director
+        from datetime import datetime, timezone
+        self.assertAlmostEqual(director.minutos_al_final(datetime(2026, 10, 4, 12, 30, tzinfo=timezone.utc)), 30)
 
 
 class Situacion(unittest.TestCase):

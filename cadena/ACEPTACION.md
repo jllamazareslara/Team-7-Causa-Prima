@@ -1,7 +1,7 @@
 # Team 7 · criterios de aceptación de los agentes encadenados
 
 Una rama por agente (`infra/t7-<agente>`) con su código y su ficha. Esta rama, `infra/t7`, tiene la cadena entera
-y todas las pruebas. Desde `cadena/`: `python -m unittest discover -s tests -v` (78 pruebas, sin red).
+y todas las pruebas. Desde `cadena/`: `python -m unittest discover -s tests -v` (100 pruebas, sin red).
 
 Orden en cada tick: Escudo → Espía → Regateador / Duelista / Cambista → Contable → Guardia (una firma) → Portavoz → diario.
 El Vigía va aparte y solo lee. El Semáforo se quitó el 3/10; el Casamentero (`t7/broker.py`) no está encadenado:
@@ -105,6 +105,11 @@ Pruebas:
 - [ ] Comprar: no entra una carta que esperamos pagar más de lo que nos vale.
 - [ ] Peticiones: abren a 0,45 × base, suben 0,10 × base por caducidad sin pasar del tope, una por carta, 4 a la vez, sin tocar la reserva; vienen apagadas (`cambista.pedir` = 0).
 - [ ] Aprende los precios: apunta lo que anuncian otros equipos (una carta por efectivo) y espera pagar lo más barato visto.
+- [ ] Caja: con la caja corta elige con una mochila exacta el conjunto de compras que más gana en total.
+- [ ] Cambios carta por carta: da repetidas (nunca protegidas ni ya anunciadas) por cartas que faltan, sin efectivo; como mucho 2 vivos; si caduca, le toca a una petición.
+- [ ] Competencia: si otro equipo pide la misma carta, ofrece 1 P más mientras quepa en el tope; si no, no le sigue.
+- [ ] Aprende: una petición que funcionó hace abrir la siguiente de esa rareza al 85 % de ese precio.
+- [ ] Tramo final (30 min antes del fin): tope al 98 % de lo que vale y peticiones directas al tope.
 
 Pruebas:
 

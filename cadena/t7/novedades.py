@@ -12,7 +12,7 @@ inventa: sale como "ha cambiado, mirar el crudo".
 """
 import json
 
-from . import params, situacion
+from . import guion, params, situacion
 from . import valor as V
 
 VOLATIL = ("in_", "eta", "remaining", "countdown", "status", "now", "minted", "activity", "volume", "trades", "count")
@@ -68,6 +68,8 @@ def foto(lecturas):
     for nombre in NOMBRE:
         res = lecturas.get(nombre)
         f[nombre] = None if res is None else {(f"{g}|{_clave(x)}" if g else _clave(x)): _estable(x) for g, x in _listas(res)}
+    cal = lecturas.get("schedule")
+    f["ahora_h"] = cal.get("now_hours") if isinstance(cal, dict) else None    # el calendario real va en horas de juego
     cat = lecturas.get("catalog")
     f["barrios"] = None if not isinstance(cat, dict) else {
         str(s.get("id")): str(s.get("name") or s.get("id")) for s in cat.get("sets") or [] if isinstance(s, dict) and s.get("id")}
@@ -153,6 +155,18 @@ def comparar(antes, ahora):
                 avisados.append(clave)
                 etiqueta = item.get("name") or item.get("title") or item.get("kind") or item.get("type") or clave
                 nov.append({"tipo": "pronto", "titulo": f"Empieza en {t - tick:.0f} ticks: {etiqueta}", "dato": item})
+    # el calendario real (/api/schedule) va en horas (at_hours / now_hours): cada jugada de guion.py dice con
+    # cuántas horas de antelación hay que prepararla (2 h una fiebre, 1,5 h el cierre de un vendedor, 30 min un duelo)
+    h = ahora.get("ahora_h")
+    if isinstance(h, (int, float)):
+        for clave, item in (ahora.get("schedule") or {}).items():
+            if not isinstance(item.get("at_hours"), (int, float)) or clave in avisados:
+                continue
+            j = guion.jugada(_evento(item))
+            falta = item["at_hours"] - h
+            if 0 < falta <= j["aviso_h"]:
+                avisados.append(clave)
+                nov.append({"tipo": "pronto", "titulo": f"Empieza en {falta * 60:.0f} min: {j['titulo']}", "dato": item})
     ahora["avisados"] = avisados
     return nov
 
@@ -161,7 +175,17 @@ def _texto(dato):
     return json.dumps(dato, ensure_ascii=False, default=str).lower()
 
 
+def _evento(item):
+    """Un elemento del calendario (ya resumido por _estable, sin params) en la forma que entiende guion.jugada."""
+    return {"h": item.get("at_hours") or 0, "accion": str(item.get("action") or ""), "nota": str(item.get("note") or ""),
+            "params": item.get("params") if isinstance(item.get("params"), dict) else {}, "wall": item.get("wall")}
+
+
 def _de_calendario(dato, ctx):
+    if isinstance(dato, dict) and dato.get("action"):
+        j = guion.jugada(_evento(dato))
+        if j["clave"] != "otro":
+            return j["antes"] + j["durante"]
     t = _texto(dato)
     if "duel" in t:
         out = ["Antes de la sesión: no abrir regateos nuevos con vendedores 2 o 3 ticks antes; los duelos se llevan la única aceptación del tick.",
@@ -216,7 +240,7 @@ _CONSEJOS = {
     "limites": lambda d, c: ["Revisar en director.py MAX_HILOS, MAX_ANUNCIOS_TICK y MAX_OFERTAS si han cambiado esos límites."],
     "calendario": _de_calendario,
     "pronto": _de_calendario,
-    "nivel": lambda d, c: ["Leer la frase \"how\" del nivel: dice cómo se usa. Si trae un vendedor, ver el aviso de vendedor."],
+    "nivel": lambda d, c: guion.sin_anunciar((d or {}).get("kind") or (d or {}).get("type") if isinstance(d, dict) else None)["antes"],
     "vendedor": _de_vendedor,
     "abierto": _de_vendedor,
     "mercado": lambda d, c: ["Otro mercado abierto. Si su comisión es menor que la de El Rastro (5 % + 1 P), nuestras ventas rinden más ahí.",
