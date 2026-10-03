@@ -2,7 +2,7 @@
 
 **Rama:** `infra/t7-guardia` · **Lugar en la cadena:** 6 · la única puerta antes de `accept`
 
-Es la única función que puede devolver «firma». No lee texto. Cinco comprobaciones y firma solo, sin aprobación humana (el Semáforo se quitó el 3/10).
+Es la única función que puede devolver «firma». No lee texto. Cinco comprobaciones y firma solo, sin aprobación humana.
 
 ## Aceptado cuando
 
