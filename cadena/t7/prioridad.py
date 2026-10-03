@@ -30,11 +30,15 @@ def carta_para_escalera(candidatas, efectivo):
     return min(compras, key=lambda c: c["lista"]) if compras else None
 
 
+RANGO = {"duelo": 0, "final_vendedor": 1, "equipo": 2, "vendedor": 3}
+
+
+def clave(o):
+    """El orden en que el Guardia revisa las propuestas de aceptar (la cadena las ordena con esta clave)."""
+    return (0 if o.get("urgente") else 1, RANGO.get(o["tipo"], 9), -o.get("mejora", 0), -o.get("neto", 0))
+
+
 def elegir_aceptacion(cola):
     """cola = [{"tipo": "duelo"|"final_vendedor"|"equipo"|"vendedor", "urgente": bool, "mejora": x, "neto": y, ...}]
     Devuelve la que se lleva la aceptación de este tick."""
-    rango = {"duelo": 0, "final_vendedor": 1, "equipo": 2, "vendedor": 3}
-
-    def clave(o):
-        return (0 if o.get("urgente") else 1, rango.get(o["tipo"], 9), -o.get("mejora", 0), -o.get("neto", 0))
     return min(cola, key=clave) if cola else None

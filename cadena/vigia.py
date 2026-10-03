@@ -4,7 +4,7 @@
     python vigia.py --cada 60     sin parar: una pasada cada 60 segundos, con un pitido cuando hay novedades
 
 Solo lee (siete lecturas por pasada). No abre conversaciones, no manda mensajes y no acepta nada: puede estar en marcha
-a la vez que el director. Novedades que vigila: ritmo y límites del juego, calendario (duelos, Market Test, barrios,
+a la vez que el programa que juega. Novedades que vigila: ritmo y límites del juego, calendario (duelos, Market Test, barrios,
 vendedores), niveles, vendedores, barrios nuevos, mercados abiertos, y lo nuestro (efectivo, nivel, sobres, puesto).
 
 Escribe en runs/: vigia.json (la última foto), novedades.jsonl (cada novedad con su propuesta) y vigia-crudo.json
@@ -56,7 +56,7 @@ def leer(b, pausa=0.3):
         except Exception as e:
             out[nombre] = None
             errores.append(f"{nombre}: {e}")
-        time.sleep(pausa)                    # despacio: la clave comparte el límite de peticiones con el director
+        time.sleep(pausa)                    # despacio: la clave comparte el límite de peticiones con el programa que juega
     return out, errores
 
 

@@ -28,6 +28,7 @@ ordena la lista; nunca se paga de más por una carta "porque luego vendrá la ot
 import math
 from collections import defaultdict
 
+from . import contable
 from . import valor as V
 
 
@@ -63,7 +64,7 @@ def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0):
                 "entrego": {"cartas": entrego_cartas, "primas": want.get("cash", 0) or 0}}
         if not recibo_cartas and not entrego_cartas:
             continue
-        ev = V.evaluar(prop, cuenta, efectivo, mult, reserva)
+        ev = contable.ficha(prop, cuenta, efectivo, mult=mult, reserva=reserva)     # las cuentas, de la Contable
         if ev["renta"]:
             out.append({"oferta": o["id"], "maker": o.get("maker"), "neto": ev["neto"], "ficha": ev, "propuesta": prop})
     return sorted(out, key=lambda x: -x["neto"])
@@ -243,9 +244,9 @@ def peticiones(lista, cuenta, efectivo, p, activas=None, caducidades=None, mult=
             precio = int(rival) + 1
         if precio < 1 or precio > libre:
             continue
-        ev = V.evaluar({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
-                        "recibo": {"cartas": [ref], "primas": 0}, "entrego": {"cartas": [], "primas": precio}},
-                       cuenta, efectivo - comprometido, mult, p["guardia.reserva_efectivo"])
+        ev = contable.ficha({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
+                             "recibo": {"cartas": [ref], "primas": 0}, "entrego": {"cartas": [], "primas": precio}},
+                            cuenta, efectivo - comprometido, mult=mult, reserva=p["guardia.reserva_efectivo"])
         if not ev["renta"]:
             continue
         out.append({"carta": ref, "precio": precio, "tope": f["tope"], "nos_vale": f["nos_vale"],
@@ -297,9 +298,9 @@ def trueques(lista, cuenta, p, ocupadas=(), activas=(), mult=None, vivos=None):
             suma += V.BASE[V.rareza(r)]
         if not doy or suma < objetivo:
             continue
-        ev = V.evaluar({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
-                        "recibo": {"cartas": [quiero], "primas": 0}, "entrego": {"cartas": doy, "primas": 0}},
-                       cuenta, 0, mult, 0)
+        ev = contable.ficha({"tipo": "equipo", "mercado": "rastro", "pagamos_comision": False,
+                             "recibo": {"cartas": [quiero], "primas": 0}, "entrego": {"cartas": doy, "primas": 0}},
+                            cuenta, 0, mult=mult, reserva=0)
         if not ev["renta"] or ev["neto"] < (1 - p["cambista.tope_pct_valor"]) * f["nos_vale"]:
             continue
         out.append({"quiero": quiero, "doy": doy, "pierdo": ev["entrego"], "nos_vale": f["nos_vale"],

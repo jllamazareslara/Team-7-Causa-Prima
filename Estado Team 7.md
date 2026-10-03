@@ -78,7 +78,7 @@ Con cada vendedor cuentan los tres mejores regateos, sea cual sea el barrio. Los
 - Regalar valor a un equipo amigo.
 - Ideas ambiciosas antes de que duelos y mercado funcionen.
 
-[La noche en 6 líneas](#g-noche) [Los consejos de hoy](#g-hoy) [El esquema](#g-esquema) [Quién interviene y cuándo](#g-flujo) [Las 12 fichas](#g-fichas) [El Vigía](#g-vigia) [GitHub y aceptación](#g-github) [Dónde ser extremos](#g-extremo) [La regla de caja](#g-caja) [Pruébalo tú](#g-prueba) [Control y STOP](#g-control) [Lo que no sabemos](#g-limites) [Decisiones pendientes](#g-decidir)
+[La noche en 6 líneas](#g-noche) [Los consejos de hoy](#g-hoy) [El esquema](#g-esquema) [Quién interviene y cuándo](#g-flujo) [Las 11 fichas](#g-fichas) [El Vigía](#g-vigia) [GitHub y aceptación](#g-github) [Dónde ser extremos](#g-extremo) [La regla de caja](#g-caja) [Pruébalo tú](#g-prueba) [Control y STOP](#g-control) [Lo que no sabemos](#g-limites) [Decisiones pendientes](#g-decidir)
 
 ## La noche en 6 líneas
 
@@ -126,9 +126,9 @@ Nota robusta = media de (media de los cuatro mundos simulados + el peor mundo) /
 ### Cómo se arranca, en este orden
 
 1. **`python revisar.py`** solo lee. Dice con OK, AVISO o FALTA si todo está listo: reloj, caja, valores leídos del juego, la calculadora comparada carta a carta con el juego, vendedores y menús. Con algún FALTA no se lanza en vivo.
-2. **Los menús.** La revisión deja un borrador en `menus.borrador.json`. Se mira y, si está bien, `python revisar.py --menus` añade a `menus.json` los vendedores que falten. Sin `menus.json` el director no abre conversaciones con vendedores.
-3. **`python director.py --ticks 3`** en seco: escribe lo que haría, sin mandar ni aceptar nada.
-4. **`python director.py --live`** cuando el equipo haya dicho que sí.
+2. **Los menús.** La revisión deja un borrador en `menus.borrador.json`. Se mira y, si está bien, `python revisar.py --menus` añade a `menus.json` los vendedores que falten. Sin `menus.json` no se abren conversaciones con vendedores.
+3. **En seco:** `python rastro.py --ticks 3` para El Rastro (el Cambista). Vendedores y duelos: pendiente de `play.py` (`director.py` se quitó).
+4. **En vivo** cuando el equipo haya dicho que sí.
 
 78 pruebas sin red, todas pasan. Nada de esto se ha lanzado contra el juego real: la forma en que el juego da los multiplicadores, el catálogo y los menús está sin comprobar. Si no la entiende, lo dice y sigue con los supuestos.
 
@@ -136,20 +136,21 @@ Nota robusta = media de (media de los cuatro mundos simulados + el peor mundo) /
 
 Flechas llenas: lo que pasa en cada tick. Punteadas: ayudas. El Escudo y el Portavoz manejan texto; ninguna pieza que decide lo lee.
 
-**Orden de cada tick:** Ojos → Contable → Regateador / Duelista / Cambista → Guardia → diario.
+**Orden de cada tick:** Ojos → Contable → Cambista / Duelista / Regateador → Guardia → diario. Guion y Ojeador van al lado.
 
-1. **Ojos:** cuentan qué pasa en el mercado y si hay novedades (Vigía + Observador + precios de El Rastro). Solo miran.
-2. **Contable:** hace las cuentas y se las pasa a los negociadores (tope o suelo, caja) y al Guardia (la ficha de cada trato).
-3. **Regateador, Duelista y Cambista:** hacen el trámite. Escudo, Espía y Portavoz ayudan al Regateador y a la Duelista.
-4. **Guardia:** confirma al final con la ficha de la Contable y firma una como mucho.
+1. **Ojos:** leen el juego y pasan los números a la Contable. Su ayudante es el **Escudo** (texto sospechoso).
+2. **Al lado:** el **Guion** anticipa lo que viene; el **Ojeador** vigila los precios y se los pasa al Regateador y al Cambista.
+3. **Contable:** ¿renta? ¿cuánto? Da los números a los negociadores y la ficha de cada trato al Guardia.
+4. **Cambista** (El Rastro, equipos · + Portavoz), **Duelista** (duelos · + Portavoz · Espía) y **Regateador** (vendedores · + Portavoz · Observador · Espía) hacen el trámite.
+5. **Guardia:** el único que firma; la firma vuelve al juego.
 
 ## Quién interviene, cuándo y cómo
 
 Elige una situación. Debajo sale la cadena en orden: quién entra, en qué momento, qué hace y a quién le pasa el resultado. Toca un nombre para abrir su ficha.
 
-Borde rojo: el único paso que compromete dinero o cartas. Borde discontinuo: una persona decide. Esta cadena ya existe en código: `t7/cadena.py` la recorre entera en cada tick y `director.py` es el único que habla con el juego. Está probada contra un juego de mentira, todavía no contra el real.
+Borde rojo: el único paso que compromete dinero o cartas. Borde discontinuo: una persona decide. Esta cadena ya existe en código: `t7/cadena.py` la recorre entera en cada tick; el programa que habla con el juego está pendiente (`play.py`). Está probada contra un juego de mentira, todavía no contra el real.
 
-## Las 12 fichas
+## Las 11 fichas
 
 Cada agente tiene una cara, una frase, su fórmula y sus ajustes. Los ajustes viven en `t7/parametros.json`: se cambian ahí, nunca fuera de su rango, y cada cambio se prueba en seco antes de jugar. La etiqueta dice de dónde sale cada número.
 
@@ -159,7 +160,7 @@ Cada ficha se lee de arriba abajo: qué hace, un ejemplo, de quién recibe y a q
 
 ### Miden, deciden y firman
 
-N.º 1 de 12 · Mide
+N.º 1 de 11 · Mide
 
 ### La Contable
 
@@ -215,7 +216,7 @@ Nunca
 
 Dice puntos del marcador: mide primas.
 
-N.º 2 de 12 · Firma
+N.º 2 de 11 · Firma
 
 ### El Guardia
 
@@ -265,7 +266,7 @@ Firma una oferta que cambió desde que el agente la miró.
 
 ### Negocian
 
-N.º 3 de 12 · El comprador
+N.º 3 de 11 · El comprador
 
 ### El Regateador
 
@@ -283,7 +284,7 @@ Abuela pide 25 P por una carta que nos vale 40. Abrimos en 2 P, el 10 %. Ella ba
 
 #### Recibe
 
-El turno, del Director. El perfil del vendedor, del Observador. Pistas, del Espía.
+Los números de la Contable: tope o suelo y lo que deja pagar la caja. El perfil del vendedor, del Observador. Pistas, del Espía.
 
 #### Entrega
 
@@ -317,7 +318,7 @@ Nunca
 
 Paga más de lo que vale la carta, ni repite precio. Aceptar en cuanto el vendedor se para: probado y descartado (pierde 0,04 a 0,17).
 
-N.º 4 de 12 · Negocia en duelos
+N.º 4 de 11 · Negocia en duelos
 
 ### La Duelista
 
@@ -335,7 +336,7 @@ Nos toca vender y nuestro coste es 100. Abrimos cerca de 200. Cada ronda encoge 
 
 #### Recibe
 
-El turno, del Director, con nuestro límite y el último precio del rival.
+Los números de la Contable, con nuestro límite y el último precio del rival.
 
 #### Entrega
 
@@ -373,7 +374,7 @@ Nunca
 
 Fuera de nuestro límite (probado en 4.000 duelos: cero pérdidas).
 
-N.º 5 de 12 · Negocia con equipos
+N.º 5 de 11 · Negocia con equipos
 
 ### El Cambista
 
@@ -425,7 +426,7 @@ Nunca
 
 Da una carta protegida, ni dice qué nos falta.
 
-N.º 6 de 12 · Empareja a otros
+N.º 6 de 11 · Empareja a otros
 
 ### El Casamentero
 
@@ -471,7 +472,7 @@ Toca nuestro dinero ni nuestras cartas.
 
 ### Ayudan a los que negocian
 
-N.º 7 de 12 · Saca información
+N.º 7 de 11 · Saca información
 
 ### El Espía
 
@@ -538,7 +539,7 @@ Nunca
 
 Hacerse pasar por el sistema o la organización ante otro equipo sin el sí de la mesa. Más de 2 preguntas por conversación: a la tercera, el vendedor corta. Ni tras un signo de molestia. Señalar mala fe lo decide el equipo.
 
-N.º 8 de 12 · Defiende
+N.º 8 de 11 · Defiende
 
 ### El Escudo
 
@@ -582,7 +583,7 @@ Nunca
 
 Cambia una decisión: solo apunta y endurece. Ni explica un rechazo.
 
-N.º 9 de 12 · Habla
+N.º 9 de 11 · Habla
 
 ### El Portavoz
 
@@ -626,7 +627,7 @@ Nunca
 
 Escribe otro número que el precio, ni la palabra límite, valor o coste (lo comprueba el Escudo).
 
-N.º 10 de 12 · Aprende
+N.º 10 de 11 · Aprende
 
 ### El Observador
 
@@ -644,11 +645,11 @@ Por un sobre, Abuela pidió 30 P, bajó a 26, a 25, y dio 24 como oferta final c
 
 #### Recibe
 
-Lo que pasó en cada conversación con un vendedor. Ahora es parte de los Ojos.
+Lo que pasó en cada conversación con un vendedor. Es ayudante del Regateador.
 
 #### Entrega
 
-El perfil y la paciencia estimada, al Regateador, dentro de la vista de los Ojos.
+El perfil y la paciencia estimada, al Regateador.
 
 #### Cuándo entra
 
@@ -666,63 +667,19 @@ Cuándo
 
 Primera conversación con cada vendedor nuevo, y al final de cada conversación.
 
-### Mueven la cadena
+### Leen el juego
 
-N.º 11 de 12 · Organiza
-
-### El Director
-
-El bucle de cada tick · `cadena.py` + `director.py`
-
-"Una sola aceptación por tick: se la doy a la que más suma."
-
-#### Qué hace
-
-Organiza cada tick. Da el turno a cada negociador y, como el juego solo deja aceptar una oferta por tick a todo el equipo, elige cuál pasa primero.
-
-#### Ejemplo
-
-En el mismo tick hay un duelo que se acaba y una oferta final de Abuela. Pasa primero el duelo; la oferta de Abuela espera al tick siguiente.
-
-#### Recibe
-
-Los números del juego, de los Ojos.
-
-#### Entrega
-
-El turno al Regateador, a la Duelista y al Cambista.
-
-#### Cuándo entra
-
-En cada tick: 30 segundos el sábado, 15 el domingo.
-
-Encadenado`cadena.py` pasa por los 12 en cada tick y firma una sola oferta. Probado sin red; falta la primera prueba en seco contra el juego.
-
-Fórmula, ajustes y lo que nunca hace
-
-Piensa así
-
-Duelo urgente → oferta final de vendedor que mejora el top 3 → trato con equipo de más neto → trato con vendedor que mejora el top 3. Un cuarto trato con un vendedor solo cuenta si supera al peor de los tres.
-
-Cómo se lanza
-
-Primero `python revisar.py`, que solo lee y dice qué falta. Luego `python director.py` mira y escribe lo que haría, sin mandar nada. `--live` juega. Se para creando `runs/STOP`. Ver [Los consejos de hoy](#g-hoy).
-
-Falta
-
-Comprobar en seco que los nombres de los campos del juego son los que espera. Lo que no entiende, lo salta.
-
-N.º 12 de 12 · Lee
+N.º 11 de 11 · Lee
 
 ### Los Ojos
 
-El primer paso de cada tick · `t7/ojos.py` (y el lector de `director.py` / `play.py`)
+El primer paso de cada tick · `t7/ojos.py` (y el lector de `play.py`)
 
-"Del juego solo me quedo con números, y cuento lo que ha cambiado."
+"Del juego solo me quedo con números."
 
 #### Qué hace
 
-Leen el juego una vez por tick y se quedan solo con los números. Cuentan qué pasa en el mercado y si hay novedades: juntan al Vigía (novedades del juego), al Observador (perfil de cada vendedor) y los precios de El Rastro. El texto de los mensajes nunca llega a quien decide: por eso nadie puede convencer a nuestros agentes con palabras.
+Leen el juego una vez por tick y se quedan solo con los números, que pasan a la Contable. Su ayudante, el Escudo, mira el texto sospechoso. El texto de los mensajes nunca llega a quien decide: por eso nadie puede convencer a nuestros agentes con palabras.
 
 #### Ejemplo
 
@@ -734,13 +691,13 @@ Todo lo que manda el juego: dinero, cartas, conversaciones, duelos, tablón.
 
 #### Entrega
 
-La vista (números, novedades, perfiles y precios) a la Contable y a los negociadores. El texto al Escudo.
+Los números a la Contable. El texto al Escudo.
 
 #### Cuándo entra
 
 Al empezar cada tick, antes que nadie.
 
-EncadenadoPrimer paso de `cadena.tick()` en la rama `infra/t7-estructura`. La lectura del juego sigue en `director.py` / `play.py`.
+EncadenadoPrimer paso de `cadena.tick()` en la rama `infra/t7-estructura`. La lectura del juego la hará `play.py`.
 
 Fórmula, ajustes y lo que nunca hace
 
@@ -754,7 +711,7 @@ Existe a medias en `play.py`; el lector tolerante de duelos está en "Para Ana".
 
 ## Nuevo: El Vigía
 
-Ahora es **parte de los Ojos**: sus novedades entran en la cadena por `lectura["novedades"]`. También puede ir aparte: **solo lee** el juego (siete lecturas por pasada), así que puede ir a la vez que el director sin gastar la firma del tick. Avisa de lo nuevo y propone qué hacer.
+Un ayudante fuera de la cadena: **solo lee** el juego (siete lecturas por pasada), así que puede ir a la vez que el programa que juega sin gastar la firma del tick. Avisa de lo nuevo y propone qué hacer.
 
 - **Qué vigila:** ritmo del tick y límites, calendario, niveles, vendedores nuevos, barrios nuevos (El Retiro, Chamberí), mercados y lo nuestro (efectivo, nivel, sobres, puesto).
 - **Cuándo avisa:** una vez por novedad, y una vez de lo que empieza en 20 ticks o menos. Sin cambios, calla.
@@ -764,29 +721,29 @@ Probado solo contra un juego de mentira: la forma real del calendario y de los n
 
 ## En GitHub: una rama por agente
 
-Todo está en el repositorio del equipo, en ramas nuevas que salen de `main`. **Nada se ha fusionado en `main`**: eso lo decide el equipo con un Pull Request. Cada rama trae el código del agente, lo que necesita para funcionar y su ficha `cadena/ACEPTACION.md`. La cadena entera, con el director, el vigía y las 78 pruebas, está en `infra/t7`.
+Todo está en el repositorio del equipo, en ramas nuevas que salen de `main`. **Nada se ha fusionado en `main`**: eso lo decide el equipo con un Pull Request. Cada rama trae el código del agente, lo que necesita para funcionar y su ficha `cadena/ACEPTACION.md`. La cadena entera, con el vigía y sus pruebas, está en `infra/t7`.
 
 | Agente | Rama | Lugar en la cadena |
 | --- | --- | --- |
-| La cadena y El Director | [`infra/t7`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7/cadena) | todo · `cadena.tick()` recorre a los agentes en orden; `director.py` es el único que habla con el juego |
+| La cadena | [`infra/t7`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7/cadena) | todo · `cadena.tick()` recorre a los agentes en orden; no habla con el juego |
 | La Contable | [`infra/t7-contable`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-contable/cadena) | 2 · hace las cuentas para los negociadores y la ficha del Guardia |
 | El Guardia | [`infra/t7-guardia`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-guardia/cadena) | 4 · confirma al final; la única puerta antes de `accept` |
 | El Regateador | [`infra/t7-regateador`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-regateador/cadena) | 3 · una decisión por conversación con un vendedor |
 | La Duelista | [`infra/t7-duelista`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-duelista/cadena) | 3 · una decisión por duelo |
-| El Cambista | [`infra/t7-cambista`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-cambista/cadena) | 3 · El Rastro (cuando el director trae el tablón) |
-| El Espía | [`infra/t7-espia`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-espia/cadena) | 3 · ayudante del Regateador y la Duelista: lee pistas del texto y solo las apunta |
-| El Escudo | [`infra/t7-escudo`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-escudo/cadena) | 3 · ayudante del Regateador y la Duelista: mira el texto que llega y el que sale |
-| El Portavoz | [`infra/t7-portavoz`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-portavoz/cadena) | 3 · ayudante del Regateador y la Duelista: escribe el mensaje de cada precio nuevo |
-| El Observador | [`infra/t7-observador`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-observador/cadena) | 1 · parte de los Ojos (perfil de cada vendedor) |
-| El Vigía | [`infra/t7-vigia`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-vigia/cadena) | 1 · parte de los Ojos (novedades); también va aparte, solo lee |
+| El Cambista | [`infra/t7-cambista`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-cambista/cadena) | 3 · El Rastro (cuando llega el tablón) |
+| El Espía | [`infra/t7-espia`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-espia/cadena) | 3 · ayudante de la Duelista y el Regateador: lee pistas del texto y solo las apunta |
+| El Escudo | [`infra/t7-escudo`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-escudo/cadena) | 1 · ayudante de los Ojos: texto sospechoso |
+| El Portavoz | [`infra/t7-portavoz`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-portavoz/cadena) | 3 · ayudante del Cambista, la Duelista y el Regateador: escribe el mensaje de cada precio nuevo |
+| El Observador | [`infra/t7-observador`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-observador/cadena) | 3 · ayudante del Regateador (perfil de cada vendedor) |
+| El Vigía | [`infra/t7-vigia`](https://github.com/jllamazareslara/Team-7-Causa-Prima/tree/infra/t7-vigia/cadena) | aparte · solo lee, puede ir a la vez que el programa que juega |
 
 ### Criterios de aceptación de cada agente encadenado
 
 Un agente está aceptado cuando cumple todas sus casillas. Cada criterio tiene una prueba sin red en `infra/t7` (desde `cadena/`: `python -m unittest discover -s tests -v`).
 
-**La cadena y El Director** · `infra/t7`
+**La cadena** · `infra/t7`
 
-- Un tick recorre en orden Ojos → Contable → Regateador / Duelista / Cambista → Guardia → diario.
+- Un tick recorre en orden Ojos → Contable → Cambista / Duelista / Regateador → Guardia → diario.
 - Una sola firma por tick, y el duelo urgente va primero.
 - Compra y venta completas contra un juego de mentira.
 - En seco (sin `--live`) no manda ni acepta nada.
@@ -795,7 +752,7 @@ Un agente está aceptado cuando cumple todas sus casillas. Cada criterio tiene u
 - `revisar.py` dice OK / AVISO / FALTA antes de lanzar; con un FALTA no se lanza en vivo.
 - La memoria se guarda en disco y se recupera.
 
-Pruebas: `Cadena`, `Director`, `Robustez`, `DirectorRobusto`, `test_revisar`
+Pruebas: `Cadena`, `Robustez`, `test_revisar`, `Estructura`
 
 **La Contable** · `infra/t7-contable`
 
@@ -845,7 +802,7 @@ Pruebas: `Duelo`, `Cadena.test_dia_de_entrega_segun_nuestros_pesos`
 - Anuncio: nunca por debajo de lo que nos vale + 1; lo que un vendedor aún puede comprarnos hoy no se anuncia.
 - Viene apagado (`rastro.publicar` = 0): enseña lo que anunciaría y no manda nada.
 
-Pruebas: `Cambista`, `Cadena.test_anuncios_de_el_rastro`, `DirectorRobusto.test_precios_de_venta`
+Pruebas: `Cambista`, `Cadena.test_anuncios_de_el_rastro`
 
 **El Espía** · `infra/t7-espia`
 
@@ -955,10 +912,10 @@ El vendedor de este simulador sigue nuestras hipótesis: cede k × nuestro paso,
 
 ## Control: cómo se para
 
-- **Parar todo:** crear el archivo `runs/STOP` (o Ctrl + C). En el tick siguiente el director no abre ni acepta nada más. Las conversaciones abiertas se quedan quietas; nada se pierde.
+- **Parar todo:** crear el archivo `runs/STOP` (o Ctrl + C). En el tick siguiente el Guardia no firma nada más. Las conversaciones abiertas se quedan quietas; nada se pierde.
 - **Parar una parte:** en `t7/hoy.json`, apagar una categoría (por ejemplo El Rastro). Se cambia ahí, sin tocar código.
 - **Ver qué pasa:** una línea por conversación en pantalla en cada tick, el diario en `runs/`, y la pestaña Estado cada 5 minutos.
-- **Antes de lanzar en vivo:** la revisión (`python revisar.py`) y luego en seco: `python director.py`, sin `--live`. Hace todo menos mandar y aceptar.
+- **Antes de lanzar en vivo:** la revisión (`python revisar.py`) y luego en seco con el programa que juegue la cadena (pendiente). Hace todo menos mandar y aceptar.
 
 ## Lo que no sabemos (y cómo lo sabremos)
 
@@ -979,7 +936,7 @@ El vendedor de este simulador sigue nuestras hipótesis: cede k × nuestro paso,
 - ¿El Espía con Abuela, 2 preguntas por conversación?
 - Preguntar en la mesa: ¿inyección contra agentes de otros equipos sí o no?
 - Todo está en GitHub en ramas `infra/t7-*` (sección «GitHub y aceptación»). ¿Quién abre el Pull Request a `main`, y cuándo?
-- ¿Quién lanza `director.py` en seco para comprobar los campos del juego, y cuándo?
+- ¿Quién conecta la cadena con `play.py` (ya no hay `director.py`), y cuándo se prueba en seco?
 
 Nada se lanza contra el juego hasta que los tres lo hayáis entendido y dicho que sí.
 
@@ -1049,7 +1006,7 @@ No sabemos todavía si las palabras mueven a los agentes rivales.
 ## Antes de cada sesión
 
 - Un solo ordenador juega con la clave del equipo. Se avisa en el grupo antes de lanzar.
-- Primero la revisión, `python revisar.py`, y luego en seco: `python director.py`, sin `--live`. Lee y decide, pero no manda ni acepta nada.
+- Primero la revisión, `python revisar.py`, y luego en seco con el programa que juegue la cadena (pendiente). Lee y decide, pero no manda ni acepta nada.
 - Abrir `runs/crudo.jsonl` y mirar el primer duelo tal como lo manda el juego: ¿el papel se llama `role` y vale `seller` o `buyer`? ¿el límite se llama `your_limit`? ¿`rival_offer` es un número o un objeto con `price`? ¿trae un identificador de escenario?
 - Si el juego dice cuántas rondas hay y cuánto encoge cada una, apuntarlo en `t7/hoy.json`: `"duelo": {"rondas": 8, "descuento_ronda": 0.94}`.
 - En vivo, con `--live`, solo cuando el equipo haya dicho que sí.
@@ -1112,7 +1069,7 @@ Añadido el sábado por la mañana. Dos cosas: cómo pasar a tu ordenador los 13
 
 Las dos cifras son una propuesta a partir de los 123 P del viernes. Se cambian en el archivo, sin tocar código. Los 270 P del mercado propio van aparte: solo si se decide abrirlo.
 
-| Modo de caja | Cuándo | Órdenes para el director |
+| Modo de caja | Cuándo | Órdenes para la cadena |
 | --- | --- | --- |
 | `holgado` | Efectivo de 100 P o más | Todo normal. |
 | `justo` | De 70 a 99 P | Ventas primero. Compras: solo escalera y la que completa página. Sin sobres. Tope por trato: (efectivo − 60) / 3. |

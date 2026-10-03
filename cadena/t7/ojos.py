@@ -1,70 +1,58 @@
-"""Los Ojos: lo primero de cada tick. Cuentan qué pasa en el mercado y si hay novedades. Solo miran: no deciden nada.
+"""Los Ojos: lo primero de cada tick. Leen el juego y pasan los números a la Contable. Solo miran: no deciden nada.
 
-Juntan a tres que antes iban sueltos:
-    Vigía       las novedades del juego. `vigia.py` las lee aparte (solo GET) y el director las pasa en lectura["novedades"].
-    Observador  el perfil de cada vendedor: con quién ser duro (`perfiles.py` y los ajustes tienda.<vendedor>.*).
-                Un vendedor sin perfil propio se trata como "desconocido" (prudente) y se avisa una vez.
-    Precios     lo que otros equipos piden y ofrecen en El Rastro (antes lo apuntaba el Cambista).
+Su ayudante es el Escudo (`defensa.py`): mira el texto que llega de vendedores y rivales de duelo, cuenta avisos por
+contraparte (con muchos, esa contraparte pasa a "modo firme") y apunta candidatos a mala fe (el texto dice un precio
+y la oferta pide otro). El texto nunca llega a quien decide: solo los números.
 
-Entregan la `vista` a la Contable y a los negociadores:
-    vista = {"novedades": [...], "perfiles": {vendedor: ajustes}, "nuevos": [vendedores sin perfil propio],
-             "mercado": {carta: [precios pedidos]}, "demanda": {carta: [precios ofrecidos]}}
+Entregan la `vista`:
+    vista = {"textos_nuevos": {hilo o "duelo-<id>" cuyo texto es nuevo en este tick}, "mala_fe": [...]}
+Los textos nuevos los usa el Espía (ayudante del Regateador y la Duelista) para no leer dos veces lo mismo.
 """
-from . import params
+from . import defensa
 
 
-def _titulo(n):
-    return n.get("titulo") or n.get("title") or str(n) if isinstance(n, dict) else str(n)
+def _nuevo(mem, clave, texto):
+    """True solo la primera vez que vemos este texto de esta contraparte."""
+    if not texto or mem.vistos.get(clave) == texto:
+        return False
+    mem.vistos[clave] = texto
+    return True
 
 
-def mirar(lectura, mem, p, apunta=None):
-    """Mira la lectura del tick y devuelve la vista. Tolera piezas rotas: lo que no se entiende se salta."""
+def mirar(lectura, mem, apunta=None):
+    """Lee la lectura del tick y devuelve la vista. Tolera piezas rotas: lo que no se entiende se salta."""
     apunta = apunta or (lambda *_: None)
-
-    novedades = [n for n in (lectura.get("novedades") or []) if n]
-    for n in novedades:
-        apunta("OJOS", f"novedad: {_titulo(n)}")
-
-    perfiles, nuevos = {}, []
-    for c in lectura.get("vendedores") or []:
-        quien = c.get("vendedor") if isinstance(c, dict) else None
-        if not isinstance(quien, str) or quien in perfiles:
-            continue
-        perfiles[quien] = params.perfil(p, quien)
-        if perfiles[quien]["perfil"] == "desconocido":
-            nuevos.append(quien)
-            if mem.vistos.get(f"ojos|{quien}") is None:
-                mem.vistos[f"ojos|{quien}"] = "desconocido"
-                apunta("OJOS", f"{quien}: vendedor sin perfil propio, se le trata con prudencia")
-
+    t = lectura.get("tick")
+    vendedores = [c for c in lectura.get("vendedores") or [] if isinstance(c, dict) and "id" in c]
+    duelos = [d for d in lectura.get("duelos") or [] if isinstance(d, dict) and "id" in d]
     tablon = lectura.get("tablon")
-    if tablon:
-        apuntar_mercado(mem.mercado, [o for o in tablon if isinstance(o, dict)], mem.demanda)
+    apunta("OJOS", f"efectivo {lectura.get('efectivo', 0)} · {len(vendedores)} conversaciones · {len(duelos)} duelos · "
+                   f"tablón {'sí' if tablon else 'no'}")
+    nuevos, mala_fe = set(), []
 
-    return {"novedades": novedades, "perfiles": perfiles, "nuevos": nuevos,
-            "mercado": mem.mercado, "demanda": mem.demanda}
+    # ---------- Escudo: el texto de los vendedores ----------
+    for c in vendedores:
+        hilo, quien, texto = str(c["id"]), c.get("vendedor"), c.get("texto") or ""
+        if not _nuevo(mem, hilo, texto):
+            continue
+        nuevos.add(hilo)
+        motivos, _ = mem.escudo.anotar(quien, texto)
+        if motivos:
+            apunta("ESCUDO", f"{quien}: {', '.join(motivos)}")
+        suyas = c.get("suyas") or []
+        motivo = defensa.incoherencia(texto, suyas[-1]) if suyas and not c.get("cerrado") else None
+        if motivo:
+            mala_fe.append({"hilo": c["id"], "vendedor": quien, "motivo": motivo, "tick": t})
+            apunta("ESCUDO", f"{quien} · candidato a mala fe: {motivo}. Lo decide el equipo.")
 
+    # ---------- Escudo: el texto de los rivales de duelo ----------
+    for d in duelos:
+        quien = f"duelo-{d['id']}"
+        if not _nuevo(mem, quien, d.get("texto") or ""):
+            continue
+        nuevos.add(quien)
+        motivos, _ = mem.escudo.anotar(quien, d["texto"])
+        if motivos:
+            apunta("ESCUDO", f"{quien}: {', '.join(motivos)}" + (" · modo firme" if mem.escudo.firme(quien) else ""))
 
-MERCADO_RECUERDA = 12      # precios vistos por carta que guardan los Ojos
-
-
-def _apunta(d, ref, precio):
-    vistos = d.setdefault(ref, [])
-    vistos.append(precio)
-    del vistos[:-MERCADO_RECUERDA]
-
-
-def apuntar_mercado(mercado, tablon, demanda=None):
-    """Los Ojos apuntan los precios del tablón de El Rastro (los últimos MERCADO_RECUERDA por carta):
-    mercado  ← anuncios que venden UNA carta por efectivo: la lista de la compra espera pagar lo más barato visto
-    demanda  ← peticiones que ofrecen efectivo por UNA carta: si otro equipo compite por una carta que queremos,
-               nuestra petición pide 1 P más que él (mientras quepa en el tope)"""
-    for o in tablon:
-        give, want = o.get("give") or {}, o.get("want") or {}
-        cartas, pide = give.get("assets") or [], want.get("cards") or []
-        if len(cartas) == 1 and not give.get("cash") and not pide and isinstance(want.get("cash"), (int, float))                 and want["cash"] > 0:
-            ref = cartas[0].get("ref") if isinstance(cartas[0], dict) else cartas[0]
-            if isinstance(ref, str):
-                _apunta(mercado, ref, want["cash"])
-        elif demanda is not None and len(pide) == 1 and not cartas and isinstance(give.get("cash"), (int, float))                 and give["cash"] > 0 and isinstance(pide[0], str):
-            _apunta(demanda, pide[0], give["cash"])
+    return {"textos_nuevos": nuevos, "mala_fe": mala_fe}

@@ -9,7 +9,7 @@ from collections import Counter
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import valor as V, cadena, contable, ojos, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
+from t7 import valor as V, cadena, contable, ojeador, ojos, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
 from sim import vendedores as SV, duelos as SD  # noqa: E402
 
 P = params.cargar()
@@ -443,50 +443,6 @@ class CambistaCompras(unittest.TestCase):
         cadena.apuntar_mercado(mercado, [{"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}}], demanda)
         self.assertEqual((mercado, demanda), ({}, {"LAT-03": [9]}))
 
-    def test_director_pide_cambia_cancela_y_aprende(self):
-        import director
-        from datetime import datetime, timezone
-
-        class Juego:
-            def __init__(self):
-                self.ofertas, self.canceladas, self.n = [], [], 0
-
-            def list_offer(self, give, want, venue=None, expires_in_ticks=40):
-                self.n += 1
-                self.ofertas.append((give, want))
-                return {"id": self.n}
-
-            def cancel(self, oid):
-                self.canceladas.append(oid)
-
-        p = dict(P, **{"cambista.pedir": 1})
-        plan = {"p": p, "forzar": {}, "ordenes": {}}
-        cartas = [{"id": i, "kind": "card", "ref": "LAT-%02d" % i} for i in range(1, 9)]
-        cartas += [{"id": 20, "kind": "card", "ref": "MAL-06"}, {"id": 21, "kind": "card", "ref": "MAL-06"}]
-        me, est, mem, b = {"cash": 300, "assets": cartas}, {"hilos": {}}, cadena.Memoria(), Juego()
-        ahora = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
-        hecho = director.pedir(b, me, est, plan, 100, True, mem, ahora=ahora)
-        self.assertTrue(hecho)
-        pedidas = [w["cards"][0] for g, w in b.ofertas if "cash" in g]
-        self.assertIn("LAT-09", pedidas)
-        self.assertTrue(any("assets" in g for g, w in b.ofertas))              # y algún cambio carta por carta
-        self.assertEqual(len(set(pedidas)), len(pedidas))
-        me["assets"].append({"id": 30, "kind": "card", "ref": "LAT-09"})        # llega LAT-09
-        precio = est["peticiones"]["LAT-09"]["precio"]
-        director.pedir(b, me, est, plan, 101, True, mem, ahora=ahora)
-        self.assertNotIn("LAT-09", est["peticiones"])
-        self.assertTrue(b.canceladas)                                           # su petición viva se cancela
-        self.assertEqual(est["pagado"]["rare"], [precio])                       # y se aprende el precio
-        seco = Juego()
-        director.pedir(seco, me, {"hilos": {}}, {"p": P, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
-        self.assertEqual(seco.ofertas, [])                                      # con cambista.pedir = 0 no se publica nada
-
-    def test_minutos_al_final(self):
-        import director
-        from datetime import datetime, timezone
-        self.assertAlmostEqual(director.minutos_al_final(datetime(2026, 10, 4, 12, 30, tzinfo=timezone.utc)), 30)
-
-
 class Situacion(unittest.TestCase):
     """El plan del día: con poco efectivo y con noticias nuevas, los ajustes cambian solos."""
     HOY = {"tick_segundos": 30}
@@ -554,7 +510,7 @@ class Cadena(unittest.TestCase):
             if ac["cerrar"] or not ac["mensajes"]:
                 break
             m = ac["mensajes"][0]
-            self.assertTrue(cadena._solo_el_precio(m["texto"], m["precio"]), m["texto"])
+            self.assertTrue(defensa.revisar_salida(m["texto"], m["precio"])[0], m["texto"])
             if precios:
                 self.assertNotEqual(m["precio"], precios[-1], "repite precio")
             precios.append(m["precio"])
@@ -723,127 +679,6 @@ class Cadena(unittest.TestCase):
         self.assertEqual(cadena.cola_de_operaciones(c, 300, menus, abiertas=("abuela", "chato")), [])
 
 
-class Director(unittest.TestCase):
-    """El director contra un juego de mentira (sin red): lee, llama a la cadena y aplica. Una firma por tick."""
-
-    def test_compra_completa_con_juego_falso(self):
-        import tempfile
-        import director
-        director.RUNS = tempfile.mkdtemp()
-        c, _ = coleccion()
-
-        class Juego:
-            def __init__(self, v):
-                self.v, self.oferta, self.final, self.estado = v, v.precio, False, "open"
-                self.mensajes, self.aceptadas, self.textos = [], [], [{"from": "abuela", "text": "Buenas, hija."}]
-
-            def me(self):
-                return {"name": "t07", "cash": 300, "assets": [{"id": i, "kind": "card", "ref": r}
-                                                              for i, r in enumerate(sorted(c.elements()))]}
-
-            def thread(self, hid):
-                return {"status": self.estado, "messages": self.textos,
-                        "standing_offers": [{"id": 70, "maker": "abuela", "status": "open",
-                                             "want": {"cash": self.oferta}, "final": self.final}]}
-
-            def duels(self):
-                return {"duels": []}
-
-            def board(self, venue):
-                return {"offers": []}
-
-            def say(self, hid, texto, price=None):
-                self.mensajes.append(price)
-                r, x = self.v.responde(price)
-                if r == "trato":
-                    self.estado = "deal"
-                elif r == "cerrado":
-                    self.estado = "cooloff"
-                else:
-                    self.oferta, self.final = x, r == "final"
-
-            def accept(self, oid):
-                self.aceptadas.append((oid, self.oferta))
-                self.estado = "deal"
-
-            def close_thread(self, hid):
-                self.estado = "walked"
-
-        tope = V.valor_recibir(c, ["RET-01"])
-        tratos = 0
-        for semilla in range(25):
-            v, _ = SV.mundo("abuela", "compra", 10, random.Random(semilla))
-            b = Juego(v)
-            est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "lista": 10,
-                                   "suyas": [], "nuestras": []}}, "duelos": {}}
-            mem = cadena.Memoria()
-            for t in range(1, 40):
-                lectura, _ = director.leer(b, est, t)
-                if not est["hilos"]:
-                    break
-                acciones = cadena.tick(lectura, mem, P)
-                director.aplicar(b, acciones, est, vivo=True)
-            self.assertLessEqual(len(b.aceptadas), 1)
-            self.assertEqual(len(set(b.mensajes)), len(b.mensajes), "repite precio")
-            self.assertTrue(all(m <= tope for m in b.mensajes))
-            if b.aceptadas:
-                self.assertLessEqual(b.aceptadas[0][1], tope)
-            tratos += b.estado == "deal"
-        self.assertGreater(tratos, 10)
-
-    def test_en_seco_no_toca_nada(self):
-        import tempfile
-        import director
-        director.RUNS = tempfile.mkdtemp()
-
-        class Mudo:
-            def __getattr__(self, nombre):
-                raise AssertionError(f"en seco se llamó a {nombre}")
-
-        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [12], "nuestras": []}},
-               "duelos": {}}
-        acciones = {"mensajes": [{"destino": "vendedor", "id": 7, "precio": 2, "texto": "2 P."},
-                                 {"destino": "duelo", "id": 3, "precio": 190, "texto": "190"}],
-                    "cerrar": [{"destino": "vendedor", "id": 7, "motivo": "x"}],
-                    "firma": {"destino": "vendedor", "id": 7, "oferta_id": 70, "precio": 9}}
-        director.aplicar(Mudo(), acciones, est, vivo=False)
-        self.assertEqual(est["hilos"]["7"]["nuestras"], [])
-
-    def test_anunciar_en_el_rastro(self):
-        import tempfile
-        import director
-        director.RUNS = tempfile.mkdtemp()
-
-        class Juego:
-            def __init__(self):
-                self.anuncios = []
-
-            def list_offer(self, give, want, venue=None, expires_in_ticks=40):
-                self.anuncios.append((give["assets"][0], want["cash"], venue))
-
-        me = {"assets": [{"id": 1, "kind": "card", "ref": "LAT-03"}, {"id": 2, "kind": "card", "ref": "LAT-03"},
-                         {"id": 3, "kind": "card", "ref": "LAT-08"}, {"id": 4, "kind": "pack", "ref": "sobre_barrio"}]}
-        encendido = {"p": dict(P, **{"rastro.publicar": 1}), "forzar": {}}
-        est, b = {"hilos": {}}, Juego()
-        director.anunciar(b, me, est, {"p": dict(P), "forzar": {}}, 3, True, primero=True)     # apagado: enseña, no manda
-        director.anunciar(b, me, est, encendido, 3, False)                                       # en seco: tampoco
-        self.assertEqual(b.anuncios, [])
-        director.anunciar(b, me, est, encendido, 3, True)
-        self.assertEqual(b.anuncios, [(1, 13, "rastro")])                  # una copia de la repetida; la protegida no
-        director.anunciar(b, me, est, encendido, 6, True)
-        self.assertEqual(len(b.anuncios), 1)                               # ya anunciada: no se repite
-        director.anunciar(b, me, est, encendido, 3 + director.ANUNCIO_DURA, True)
-        self.assertEqual(b.anuncios[-1], (1, 12, "rastro"))                # caducó: se vuelve a poner 1 P más barata
-        con_venta = {"hilos": {"9": {"vendedor": "abuela", "lado": "venta", "carta": "LAT-03"}}}
-        director.anunciar(b, me, con_venta, encendido, 3, True)
-        self.assertEqual(len(b.anuncios), 2)                               # con venta abierta a un vendedor: no se anuncia
-        guardada = {"abuela": {"vende": {}, "compra": {"LAT-03": 4}}}
-        director.anunciar(b, me, {"hilos": {}}, encendido, 3, True, menus=guardada, tratos={"abuela": 0})
-        self.assertEqual(len(b.anuncios), 2)                               # Abuela aún puede comprarla hoy: va primero a ella
-        director.anunciar(b, me, {"hilos": {}}, encendido, 3, True, menus=guardada, tratos={"abuela": 3})
-        self.assertEqual(len(b.anuncios), 3)                               # su escalera ya está hecha: a El Rastro
-
-
 class ValoresDelJuego(unittest.TestCase):
     """Conocer el valor antes de comprar: los multiplicadores y las rarezas se leen del juego; lo que no se sabe, no se opera."""
 
@@ -949,105 +784,6 @@ class Robustez(unittest.TestCase):
         json.dumps(mem.a_dict())                                                      # se puede guardar en disco
 
 
-class DirectorRobusto(unittest.TestCase):
-    """El director con un juego de mentira que falla, cambia de forma o trae caras nuevas."""
-
-    def setUp(self):
-        import tempfile
-        import director
-        self.d = director
-        director.RUNS = tempfile.mkdtemp()
-        self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
-
-    def tearDown(self):
-        V.NUESTROS_MULT.clear()
-        V.NUESTROS_MULT.update(self.mult)
-        V.RAREZAS.clear()
-        V.RAREZAS.update(self.rarezas)
-
-    class Juego:
-        """Lo mínimo que el director lee. Cada prueba cambia lo que necesita."""
-        def __init__(self):
-            self.abiertos, self.cerradas = [], []
-            self.activos = [{"id": 1, "kind": "card", "ref": "LAT-03", "rarity": "common"},
-                            {"id": 2, "kind": "pack", "ref": "sobre_barrio", "name": "Sobre de barrio"},
-                            {"id": 3, "kind": "card"}]                               # una carta sin código: se ignora
-
-        def me(self):
-            return {"name": "t07", "cash": 300, "assets": self.activos, "affinity": {"RET": 1.1}}
-
-        def catalog(self):
-            return {"sets": [{"id": "RET", "cards": [{"id": "RET-01", "book": 10}]}]}
-
-        def dealers(self):
-            return {"dealers": [{"id": "abuela"}, {"id": "boveda", "level": 3}, "basura"]}
-
-        def thread(self, hid):
-            return {"status": "open", "standing_offers": []}
-
-        def duels(self):
-            return {"duels": [{"id": 5}, "basura"]}
-
-        def board(self, venue):
-            return {"offers": []}
-
-        def open_pack(self, aid):
-            self.abiertos.append(aid)
-            return {"cards": []}
-
-        def close_thread(self, hid):
-            self.cerradas.append(hid)
-
-    def test_preparar_lee_los_valores_y_no_falla(self):
-        self.d.preparar(self.Juego())
-        self.assertEqual(V.NUESTROS_MULT["RET"], 1.1)
-        self.assertEqual(V.rareza("RET-01"), "common")
-
-        class Roto(self.Juego):
-            def catalog(self):
-                raise RuntimeError("sin red")
-        self.assertTrue(any("supuestos" in a for a in self.d.preparar(Roto())))
-
-    def test_caras_nuevas_se_avisan_una_vez(self):
-        est = {}
-        self.assertEqual(self.d.vendedores_nuevos(self.Juego(), est, {"abuela": {}}), ["abuela", "boveda"])
-        self.assertEqual(self.d.vendedores_nuevos(self.Juego(), est, {"abuela": {}}), [])
-
-    def test_sobres_antes_de_comprar(self):
-        b = self.Juego()
-        self.assertEqual(self.d.abrir_sobres(b, b.me(), vivo=False), 0)
-        self.assertEqual(b.abiertos, [])
-        self.assertEqual(self.d.abrir_sobres(b, b.me(), vivo=True), 1)
-        self.assertEqual(b.abiertos, [2])
-
-    def test_conversacion_muda_se_suelta(self):
-        b = self.Juego()
-        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}},
-               "duelos": {}}
-        for t in range(1, self.d.MUDO_MAX + 1):
-            lectura, _ = self.d.leer(b, est, t)
-        self.assertEqual(lectura["mudos"], ["7"])
-        self.assertEqual(lectura["duelos"], [])                                      # el duelo sin rol ni límite no se juega
-        self.d.soltar_mudos(b, est, lectura, vivo=True)
-        self.assertEqual((est["hilos"], b.cerradas), ({}, [7]))
-
-    def test_un_tick_entero_en_seco_y_un_tick_que_falla(self):
-        b = self.Juego()
-        est, mem = {"hilos": {}, "duelos": {}}, cadena.Memoria()
-        self.assertTrue(self.d.un_tick(b, est, mem, 20, 30, False, False, "2026-10-03", primero=True))
-        self.assertEqual((b.abiertos, b.cerradas), ([], []))                         # en seco no toca nada
-
-        class Caido(self.Juego):
-            def me(self):
-                raise RuntimeError("sin red")
-        self.assertFalse(self.d.un_tick(Caido(), est, mem, 21, 30, True, False, "2026-10-03"))
-
-    def test_precios_de_venta(self):
-        menus = {"a": {"compra": {"LAT-03": 4}}, "b": {"compra": {"LAT-03": 6, "MAL-01": "x"}}, "c": "basura"}
-        self.assertEqual(self.d.precios_de_venta(menus), {"LAT-03": 6})
-        self.assertEqual(self.d.precios_de_venta(None), {})
-
-
 class Vigia(unittest.TestCase):
     """El vigía: qué hay de nuevo en el juego y qué proponemos. Con un juego de mentira, sin red."""
 
@@ -1127,15 +863,17 @@ class Vigia(unittest.TestCase):
             self.assertNotIn("me", json.load(f))                           # nuestros datos y claves no se vuelcan
 
 class Estructura(unittest.TestCase):
-    """Ojos → Contable → Regateador / Duelista / Cambista → Guardia."""
+    """Ojos (+ Escudo) → Contable → Cambista / Duelista / Regateador → Guardia, con Guion y Ojeador al lado."""
+
+    CALENDARIO = {"now_hours": 4.8, "upcoming": [{"at_hours": 5.0, "action": "duels", "params": {"name": "Duels I"}}]}
 
     def lectura(self):
         c, _ = coleccion()
         return {"tick": 5, "efectivo": 300, "cuenta": c,
                 "vendedores": [{"id": 1, "vendedor": "abuela", "lado": "compra", "carta": "RET-01",
                                 "suyas": [12, 9, 8], "nuestras": [1, 3], "final": True, "oferta_id": 11}],
-                "tablon": [{"id": 3, "maker": "t03", "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 60}}],
-                "novedades": [{"titulo": "Llega El Retiro"}]}
+                "tablon": [{"id": 3, "maker": "t03", "give": {"assets": [{"ref": "RET-01"}]}, "want": {"cash": 60}}],
+                "calendario": self.CALENDARIO}
 
     def test_orden_ojos_contable_negociador_guardia(self):
         diario = cadena.tick(self.lectura(), cadena.Memoria(), P)["diario"]
@@ -1145,24 +883,39 @@ class Estructura(unittest.TestCase):
         self.assertLess(primera("OJOS"), primera("CONTABLE"))
         self.assertLess(primera("CONTABLE"), primera("TIENDA"))
         self.assertLess(primera("TIENDA"), primera("GUARDIA"))
-        self.assertTrue(any("Llega El Retiro" in linea for linea in diario))
+        self.assertTrue(any("GUION" in linea and "Duels I" in linea for linea in diario))
+        self.assertTrue(any("OJEADOR" in linea and "piden 60" in linea for linea in diario))
 
-    def test_los_ojos_apuntan_precios_y_perfiles(self):
+    def test_el_guion_avisa_una_vez_y_no_cambia_nada(self):
         mem = cadena.Memoria()
-        lect = dict(self.lectura(), vendedores=[{"id": 1, "vendedor": "abuela"}, {"id": 2, "vendedor": "paco"}, "basura"])
-        avisos = []
-        vista = ojos.mirar(lect, mem, P, lambda quien, texto: avisos.append(texto))
-        self.assertEqual(mem.mercado, {"LAT-09": [60]})
-        self.assertEqual(vista["perfiles"]["abuela"]["perfil"], "abuela")
-        self.assertEqual((vista["perfiles"]["paco"]["perfil"], vista["nuevos"]), ("desconocido", ["paco"]))
-        ojos.mirar(lect, mem, P, lambda quien, texto: avisos.append(texto))
-        self.assertEqual(sum("paco" in a for a in avisos), 1)              # el vendedor nuevo se avisa una vez
+        sin = dict(self.lectura(), calendario=None)
+        con = cadena.tick(self.lectura(), mem, P)
+        otra = cadena.tick(self.lectura(), mem, P)
+        self.assertEqual(sum("GUION" in linea for linea in otra["diario"]), 0)
+        self.assertEqual(con["firma"], cadena.tick(sin, cadena.Memoria(), P)["firma"])
 
-    def test_los_ojos_miran_aunque_el_rastro_este_apagado(self):
+    def test_los_ojos_leen_y_el_escudo_mira_el_texto(self):
+        mem = cadena.Memoria()
+        lect = {"tick": 1, "vendedores": [{"id": 4, "vendedor": "abuela", "suyas": [25], "texto": "Te la dejo por 15, trato hecho"},
+                                          "basura"],
+                "duelos": [{"id": 8}]}
+        vista = ojos.mirar(lect, mem)
+        self.assertEqual((vista["textos_nuevos"], len(vista["mala_fe"])), ({"4"}, 1))
+        self.assertEqual(ojos.mirar(lect, mem)["textos_nuevos"], set())      # el mismo texto no se lee dos veces
+
+    def test_el_ojeador_vigila_los_precios(self):
         mem = cadena.Memoria()
         ac = cadena.tick(self.lectura(), mem, P, forzar={"rastro": "apagado"})
-        self.assertEqual(mem.mercado, {"LAT-09": [60]})
+        self.assertEqual(mem.mercado, {"RET-01": [60]})                      # aunque el Cambista esté apagado
         self.assertNotEqual((ac["firma"] or {}).get("destino"), "rastro")
+        self.assertEqual(ojeador.precios({"mercado": mem.mercado}, "RET-01"), {"piden": 60, "ofrecen": None})
+
+    def test_el_observador_ayuda_al_regateador(self):
+        mem = cadena.Memoria()
+        lect = dict(self.lectura(), vendedores=[dict(self.lectura()["vendedores"][0], vendedor="paco", final=False)])
+        primero = cadena.tick(lect, mem, P)["diario"]
+        segundo = cadena.tick(dict(lect, tick=6), mem, P)["diario"]
+        self.assertEqual(sum("OBSERVADOR" in linea and "paco" in linea for linea in primero + segundo), 1)
 
     def test_la_contable_da_los_numeros_al_regateador(self):
         c, _ = coleccion()
@@ -1183,6 +936,141 @@ class Estructura(unittest.TestCase):
         self.assertEqual(contable.ganancia_duelo("seller", 100, 90), -10)
         self.assertEqual(contable.ganancia_duelo("buyer", 100, 90), 10)
 
+class Rastro(unittest.TestCase):
+    """rastro.py, el programa del Cambista en El Rastro, contra un juego de mentira (sin red)."""
 
-if __name__ == "__main__":
-    unittest.main()
+    def setUp(self):
+        import tempfile
+        import rastro
+        self.r = rastro
+        rastro.RUNS = tempfile.mkdtemp()
+        self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
+
+    def tearDown(self):
+        V.NUESTROS_MULT.clear()
+        V.NUESTROS_MULT.update(self.mult)
+        V.RAREZAS.clear()
+        V.RAREZAS.update(self.rarezas)
+
+    class Juego:
+        def __init__(self, tablon=None, cartas=None):
+            self.tablon, self.aceptadas, self.ofertas, self.canceladas, self.abiertos = tablon or [], [], [], [], []
+            self.activos = cartas if cartas is not None else []
+
+        def me(self):
+            return {"name": "t07", "cash": 300, "assets": self.activos}
+
+        def board(self, venue):
+            return {"offers": self.tablon}
+
+        def accept(self, oid, assets=None):
+            self.aceptadas.append((oid, assets))
+
+        def list_offer(self, give, want, venue=None, expires_in_ticks=40):
+            self.ofertas.append((give, want, venue))
+            return {"id": len(self.ofertas)}
+
+        def cancel(self, oid):
+            self.canceladas.append(oid)
+
+        def open_pack(self, aid):
+            self.abiertos.append(aid)
+            return {"cards": []}
+
+    def cartas(self):
+        c, _ = coleccion()
+        out, n = [], 0
+        for ref, copias in sorted(c.items()):
+            for _ in range(copias):
+                n += 1
+                out.append({"id": n, "kind": "card", "ref": ref})
+        return out
+
+    TABLON = [{"id": 1, "maker": "t03", "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 60}},
+              {"id": 2, "maker": "t05", "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}},
+              {"id": 9, "maker": "t07", "give": {"assets": [{"ref": "LAT-10"}]}, "want": {"cash": 1}}]   # nuestra: se ignora
+
+    def test_acepta_lo_que_firma_el_guardia(self):
+        b = self.Juego(self.TABLON, self.cartas())
+        self.assertTrue(self.r.un_tick(b, {}, cadena.Memoria(), 3, 30, vivo=True, stop=False))
+        self.assertEqual(b.aceptadas, [(1, None)])                    # una sola, la de más neto; no pide cartas
+
+    def test_en_seco_y_con_stop_no_acepta(self):
+        b = self.Juego(self.TABLON, self.cartas())
+        self.r.un_tick(b, {}, cadena.Memoria(), 3, 30, vivo=False, stop=False)
+        self.r.un_tick(b, {}, cadena.Memoria(), 6, 30, vivo=True, stop=True)
+        self.assertEqual((b.aceptadas, b.ofertas), ([], []))
+
+    def test_elige_la_copia_que_damos(self):
+        me = {"assets": self.cartas()}
+        lat03 = sorted(a["id"] for a in me["assets"] if a["ref"] == "LAT-03")
+        self.assertEqual(self.r.cartas_para({"want": {"cards": ["LAT-03"]}}, me, {}), [lat03[0]])
+        self.assertEqual(self.r.cartas_para({"want": {"types": ["card:LAT-03"]}}, me, {}), [lat03[0]])
+        anunciada = {"anuncios": {str(lat03[0]): {"ref": "LAT-03"}}}           # esa copia está anunciada: se da la otra
+        self.assertEqual(self.r.cartas_para({"want": {"cards": ["LAT-03"]}}, me, anunciada), [lat03[1]])
+        self.assertIsNone(self.r.cartas_para({"want": {"cards": ["ZZZ-01"]}}, me, {}))
+        self.assertEqual(self.r.cartas_para({"want": {"cash": 5}}, me, {}), [])
+
+    def test_aceptar_una_oferta_que_pide_nuestra_carta(self):
+        me = {"assets": self.cartas()}
+        b = self.Juego()
+        firma = {"destino": "rastro", "oferta_id": 2, "motivo": "prueba"}
+        dar = self.r.aceptar(b, firma, self.TABLON, me, {}, vivo=True)
+        self.assertEqual(b.aceptadas, [(2, dar)])
+        self.assertEqual([a["ref"] for a in me["assets"] if a["id"] in dar], ["LAT-03"])
+        self.assertIsNone(self.r.aceptar(b, dict(firma, oferta_id=99), self.TABLON, me, {}, vivo=True))   # ya no está
+        self.assertIsNone(self.r.aceptar(b, {"destino": "duelo", "id": 5}, self.TABLON, me, {}, vivo=True))
+
+    def test_anunciar_en_el_rastro(self):
+        me = {"assets": [{"id": 1, "kind": "card", "ref": "LAT-03"}, {"id": 2, "kind": "card", "ref": "LAT-03"},
+                         {"id": 3, "kind": "card", "ref": "LAT-08"}, {"id": 4, "kind": "pack", "ref": "sobre_barrio"}]}
+        encendido = {"p": dict(P, **{"rastro.publicar": 1}), "forzar": {}}
+        b = self.Juego()
+        self.r.anunciar(b, me, {}, {"p": dict(P), "forzar": {}}, 3, True, primero=True)      # apagado: enseña, no manda
+        self.r.anunciar(b, me, {}, encendido, 3, False)                                       # en seco: tampoco
+        self.assertEqual(b.ofertas, [])
+        est = {}
+        self.r.anunciar(b, me, est, encendido, 3, True)
+        self.assertEqual([(g["assets"][0], w["cash"], v) for g, w, v in b.ofertas], [(1, 13, "rastro")])   # la protegida no
+        self.r.anunciar(b, me, est, encendido, 6, True)
+        self.assertEqual(len(b.ofertas), 1)                                                   # ya anunciada: no se repite
+        self.r.anunciar(b, me, est, encendido, 3 + self.r.ANUNCIO_DURA, True)
+        self.assertEqual(b.ofertas[-1][1]["cash"], 12)                                        # caducó: 1 P más barata
+
+    def test_pide_cambia_cancela_y_aprende(self):
+        from datetime import datetime, timezone
+        p = dict(P, **{"cambista.pedir": 1})
+        plan = {"p": p, "forzar": {}, "ordenes": {}}
+        cartas = [{"id": i, "kind": "card", "ref": "LAT-%02d" % i} for i in range(1, 9)]
+        cartas += [{"id": 20, "kind": "card", "ref": "MAL-06"}, {"id": 21, "kind": "card", "ref": "MAL-06"}]
+        me, est, mem, b = {"cash": 300, "assets": cartas}, {}, cadena.Memoria(), self.Juego()
+        ahora = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
+        self.assertTrue(self.r.pedir(b, me, est, plan, 100, True, mem, ahora=ahora))
+        pedidas = [w["cards"][0] for g, w, v in b.ofertas if "cash" in g]
+        self.assertIn("LAT-09", pedidas)
+        self.assertTrue(any("assets" in g for g, w, v in b.ofertas))                         # y algún cambio carta por carta
+        me["assets"].append({"id": 30, "kind": "card", "ref": "LAT-09"})                       # llega LAT-09
+        precio = est["peticiones"]["LAT-09"]["precio"]
+        self.r.pedir(b, me, est, plan, 101, True, mem, ahora=ahora)
+        self.assertNotIn("LAT-09", est["peticiones"])
+        self.assertTrue(b.canceladas)                                                          # su petición viva se cancela
+        self.assertEqual(est["pagado"]["rare"], [precio])                                      # y se aprende el precio
+        seco = self.Juego()
+        self.r.pedir(seco, me, {}, {"p": P, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
+        self.assertEqual(seco.ofertas, [])                                                     # con cambista.pedir = 0, nada
+
+    def test_minutos_al_final(self):
+        from datetime import datetime, timezone
+        self.assertAlmostEqual(self.r.minutos_al_final(datetime(2026, 10, 4, 12, 30, tzinfo=timezone.utc)), 30)
+
+    def test_sobres_antes_de_comprar(self):
+        b = self.Juego(cartas=[{"id": 2, "kind": "pack", "ref": "sobre_barrio", "name": "Sobre de barrio"}])
+        self.assertEqual(self.r.abrir_sobres(b, b.me(), vivo=False), 0)
+        self.assertEqual(self.r.abrir_sobres(b, b.me(), vivo=True), 1)
+        self.assertEqual(b.abiertos, [2])
+
+    def test_precios_de_venta(self):
+        menus = {"a": {"compra": {"LAT-03": 4}}, "b": {"compra": {"LAT-03": 6, "MAL-01": "x"}}, "c": "basura"}
+        self.assertEqual(self.r.precios_de_venta(menus), {"LAT-03": 6})
+        self.assertEqual(self.r.precios_de_venta(None), {})
+

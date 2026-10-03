@@ -1,11 +1,11 @@
 """Los menús de los vendedores, sacados de lo que da el juego en dealers().
 
-El director solo abre conversaciones con lo que diga menus.json = {vendedor: {"vende": {ref: precio de lista},
+La cadena solo abre conversaciones con lo que diga menus.json = {vendedor: {"vende": {ref: precio de lista},
 "compra": {ref: lo que ofrece de entrada}}}. Escribirlo a mano con cada vendedor nuevo es lento; esto lo propone solo.
 
 No sabemos la forma exacta del menú del juego (nadie la ha visto todavía), así que se aceptan las formas razonables y
 TODO lo que no se entiende sale en `dudas`, sin adivinar. Lo que sale de aquí es un BORRADOR: lo mira una persona
-(revisar.py lo escribe en menus.borrador.json) antes de que el director lo use.
+(revisar.py lo escribe en menus.borrador.json) antes de usarlo.
 
 Sin red y sin azar.
 """
@@ -56,7 +56,7 @@ def _lado(x, lado, cuenta, dudas, quien):
             if k in ("cards", "rarities", "items") and isinstance(v, (dict, list)):
                 out.update(_lado(v, lado, cuenta, dudas, quien))
             elif k in ("packs", "pack"):
-                continue                                         # los sobres no van en el menú del director
+                continue                                         # los sobres no van en el menú
             else:
                 pon(k, k, None, _precio(v), {k: v})
     elif isinstance(x, list):

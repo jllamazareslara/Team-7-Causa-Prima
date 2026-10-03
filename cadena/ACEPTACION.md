@@ -3,61 +3,66 @@
 Una rama por agente (`infra/t7-<agente>`) con su código y su ficha. Esta rama, `infra/t7`, tiene la cadena entera
 y todas las pruebas. Desde `cadena/`: `python -m unittest discover -s tests -v` (100 pruebas, sin red).
 
-Orden en cada tick: Ojos → Contable → Regateador / Duelista / Cambista → Guardia (una firma) → diario.
+Orden en cada tick: Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario. Guion y Ojeador van al lado.
 
-1. **Ojos** (`t7/ojos.py`): cuentan qué pasa en el mercado y si hay novedades. Juntan al Vigía (novedades del juego),
-   al Observador (perfil de cada vendedor) y los precios de El Rastro. Solo miran.
-2. **Contable** (`t7/contable.py` con la calculadora `t7/valor.py`): hace las cuentas y se las pasa a los negociadores
-   y al Guardia. No decide.
-3. **Negociadores**: Regateador, Duelista y Cambista hacen el trámite. Escudo, Espía y Portavoz son sus ayudantes
-   (del Regateador y de la Duelista), no pasos propios.
-4. **Guardia**: confirma al final con la ficha de la Contable. Firma UNA como mucho.
+1. **Ojos** (`t7/ojos.py`): leen el juego y pasan los números a la Contable. Ayudante: **Escudo** (texto sospechoso).
+2. Al lado: **Guion** (`t7/guion.py`) anticipa lo que viene del calendario; **Ojeador** (`t7/ojeador.py`) vigila los
+   precios de El Rastro y se los pasa al Regateador y al Cambista.
+3. **Contable** (`t7/contable.py` con la calculadora `t7/valor.py`): ¿renta? ¿cuánto? Da los números a los
+   negociadores y la ficha de cada trato al Guardia. No decide.
+4. **Negociadores**, cada uno con sus ayudantes:
+   - **Cambista**: El Rastro y equipos · + Portavoz
+   - **Duelista**: duelos · + Portavoz · Espía
+   - **Regateador**: vendedores · + Portavoz · Observador · Espía
+5. **Guardia**: el único que firma, con la ficha de la Contable. UNA como mucho; la firma vuelve al juego.
 
-El Vigía también puede ir aparte (`vigia.py`, solo lee). El Casamentero (`t7/broker.py`) no está encadenado:
-no supera al puesto gratuito en el simulador.
+El Vigía va aparte (`vigia.py`, solo lee). El Casamentero (`t7/broker.py`) no está encadenado: no supera al
+puesto gratuito en el simulador.
 
 | Agente | Rama | Lugar en la cadena |
 |---|---|---|
-| Los Ojos | `infra/t7` (`t7/ojos.py`) | 1 · qué pasa en el mercado y qué hay de nuevo |
-| El Vigía | `infra/t7-vigia` | 1 · parte de los Ojos (novedades); `vigia.py` también va aparte, solo lee |
-| El Observador | `infra/t7-observador` | 1 · parte de los Ojos (perfil de cada vendedor) |
-| La Contable | `infra/t7-contable` | 2 · hace las cuentas para los negociadores y la ficha del Guardia |
-| El Regateador | `infra/t7-regateador` | 3 · una decisión por conversación con un vendedor |
-| La Duelista | `infra/t7-duelista` | 3 · una decisión por duelo |
-| El Cambista | `infra/t7-cambista` | 3 · El Rastro (cuando el director trae el tablón) |
-| El Escudo | `infra/t7-escudo` | 3 · ayudante del Regateador y la Duelista: mira el texto que llega y el que sale |
-| El Espía | `infra/t7-espia` | 3 · ayudante del Regateador y la Duelista: lee pistas del texto y solo las apunta |
-| El Portavoz | `infra/t7-portavoz` | 3 · ayudante del Regateador y la Duelista: escribe el mensaje de cada precio nuevo |
-| El Guardia | `infra/t7-guardia` | 4 · confirma al final; la única puerta antes de `accept` |
-| La cadena y El Director | `infra/t7` | todo · `cadena.tick()` recorre a los agentes en orden; `director.py` es el único que habla con el juego |
+| Los Ojos | `infra/t7` (`t7/ojos.py`) | 1 · leen el juego |
+| El Escudo | `infra/t7-escudo` | 1 · ayudante de los Ojos: texto sospechoso |
+| El Guion | `infra/t7` (`t7/guion.py`) | al lado · anticipa lo que viene |
+| El Ojeador | `infra/t7` (`t7/ojeador.py`) | al lado · vigila los precios para el Regateador y el Cambista |
+| La Contable | `infra/t7-contable` | 2 · ¿renta? ¿cuánto? para los negociadores y el Guardia |
+| El Cambista | `infra/t7-cambista` | 3 · El Rastro y equipos |
+| La Duelista | `infra/t7-duelista` | 3 · duelos |
+| El Regateador | `infra/t7-regateador` | 3 · vendedores |
+| El Portavoz | `infra/t7-portavoz` | 3 · ayudante del Cambista, la Duelista y el Regateador: escribe el mensaje de cada precio nuevo |
+| El Espía | `infra/t7-espia` | 3 · ayudante de la Duelista y el Regateador: lee pistas del texto y solo las apunta |
+| El Observador | `infra/t7-observador` | 3 · ayudante del Regateador: perfil de cada vendedor |
+| El Guardia | `infra/t7-guardia` | 4 · el único que firma; la única puerta antes de `accept` |
+| El Vigía | `infra/t7-vigia` | aparte · solo lee, puede ir a la vez que el programa que juega |
+| La cadena | `infra/t7` | todo · `cadena.tick()` recorre a los agentes en orden; no habla con el juego |
 
-## La cadena y El Director · `infra/t7`
+## La cadena · `infra/t7`
 
-- [ ] Un tick recorre en orden Ojos → Contable → Regateador / Duelista / Cambista → Guardia (una firma) → diario.
+**Quién juega la cadena:** `rastro.py` juega **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
+
+- [ ] Un tick recorre en orden Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario.
 - [ ] Una sola firma por tick, y el duelo urgente va primero.
-- [ ] Compra y venta completas contra un juego de mentira.
-- [ ] En seco (sin `--live`) no manda ni acepta nada.
 - [ ] Un fallo en una conversación, un duelo o una oferta se salta con `ERROR`; el resto del tick sigue.
-- [ ] Sobres antes de comprar; una conversación muda 4 ticks se suelta; un vendedor nuevo se avisa una vez.
-- [ ] `revisar.py` dice OK / AVISO / FALTA antes de lanzar; con un FALTA no se lanza en vivo.
+- [ ] `revisar.py` dice OK / AVISO / FALTA antes de jugar; con un FALTA no se juega en vivo.
 - [ ] La memoria se guarda en disco y se recupera.
 
 Pruebas:
 
 - `python -m unittest tests.test_todo.Cadena`
-- `python -m unittest tests.test_todo.Director`
 - `python -m unittest tests.test_todo.Robustez`
-- `python -m unittest tests.test_todo.DirectorRobusto`
 - `python -m unittest tests.test_revisar`
 - `python -m unittest tests.test_todo.Estructura`
 
-## Los Ojos · `t7/ojos.py`
+## Los Ojos · `t7/ojos.py` (con el Escudo)
 
 - [ ] Van primero en cada tick: antes de la Contable, de los negociadores y del Guardia.
-- [ ] Apuntan los precios de El Rastro aunque el Cambista esté apagado.
-- [ ] Dan el perfil de cada vendedor; uno sin perfil propio es «desconocido» y se avisa una sola vez.
-- [ ] Pasan al diario las novedades del Vigía que lleguen en `lectura["novedades"]`.
+- [ ] Su ayudante, el Escudo, lee cada texto nuevo una sola vez: avisos por contraparte y candidatos a mala fe.
 - [ ] Solo miran: no deciden nada y una pieza rota de la lectura no tira el tick.
+
+## El Guion y El Ojeador · al lado de la cadena
+
+- [ ] El Guion avisa en el diario de lo que viene (con `lectura["calendario"]`), cada evento una vez, sin cambiar ninguna decisión.
+- [ ] El Ojeador apunta los precios de El Rastro aunque el Cambista esté apagado, y se los pasa al Regateador y al Cambista.
 
 Pruebas:
 
@@ -136,13 +141,14 @@ Pruebas:
 - [ ] Competencia: si otro equipo pide la misma carta, ofrece 1 P más mientras quepa en el tope; si no, no le sigue.
 - [ ] Aprende: una petición que funcionó hace abrir la siguiente de esa rareza al 85 % de ese precio.
 - [ ] Tramo final (30 min antes del fin): tope al 98 % de lo que vale y peticiones directas al tope.
+- [ ] `rastro.py` acepta como mucho una oferta por tick (la que firma el Guardia); si pide una carta nuestra, da una copia libre (nunca una ya anunciada o comprometida); en seco o con `runs/STOP` no acepta ni publica nada.
 
 Pruebas:
 
 - `python -m unittest tests.test_todo.Cambista`
 - `python -m unittest tests.test_todo.CambistaCompras`
 - `python -m unittest tests.test_todo.Cadena.test_anuncios_de_el_rastro`
-- `python -m unittest tests.test_todo.DirectorRobusto.test_precios_de_venta`
+- `python -m unittest tests.test_todo.Rastro` (`rastro.py`: acepta, elige la copia, anuncia, pide, en seco y con STOP no toca nada)
 
 ## El Espía · `infra/t7-espia`
 
@@ -189,7 +195,7 @@ Pruebas:
 - `python -m unittest tests.test_todo.Cadena.test_chato_sin_preguntas_y_solo_numeros`
 - `python -m unittest tests.test_todo.Palabras.test_salida_sin_limites`
 
-## El Observador · `infra/t7-observador` · parte de los Ojos
+## El Observador · `infra/t7-observador` · ayudante del Regateador
 
 - [ ] Clasifica bien los perfiles conocidos: (0,8, 14 rondas, sin ofenderse) → abuela; (0,6, 7, ofendido) → chato.
 - [ ] Un vendedor que no se ha visto nunca se trata como desconocido (prudente).
@@ -198,7 +204,7 @@ Pruebas:
 
 - `python -m unittest tests.test_todo.Cambista.test_perfil_nuevo`
 
-## El Vigía · `infra/t7-vigia` · parte de los Ojos
+## El Vigía · `infra/t7-vigia` · aparte
 
 - [ ] Sin cambios en el juego, no avisa de nada.
 - [ ] Cada novedad sale una vez, con su propuesta en frases cortas; lo que empieza en 20 ticks o menos se avisa una vez.

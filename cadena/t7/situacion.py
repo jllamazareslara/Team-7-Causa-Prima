@@ -1,7 +1,7 @@
 """La situación del día: adapta los ajustes de todos los agentes a lo que hay hoy, sin tocar código.
 
 Entra:  el estado leído del juego (efectivo, cartas, segundos por tick) y hoy.json (las noticias del día).
-Sale:   un plan = modo de caja, ajustes cambiados con su motivo, categorías forzadas y órdenes para el director.
+Sale:   un plan = modo de caja, ajustes cambiados con su motivo, categorías forzadas y órdenes para la cadena.
 
 Sin red y sin azar: mismo estado y mismo hoy.json, mismo plan. Los agentes no cambian: reciben los ajustes del plan
 (plan["p"]) en vez de los de parametros.json, y el guardia recibe plan["forzar"] y el tope por trato.

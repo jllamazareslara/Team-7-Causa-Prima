@@ -1,4 +1,4 @@
-"""La revisión antes de jugar: comprueba, SOLO LEYENDO, que todo está listo para lanzar el director.
+"""La revisión antes de jugar: comprueba, SOLO LEYENDO, que todo está listo para jugar la cadena.
 
     python revisar.py             lee el juego, dice qué está bien y qué falta, y escribe menus.borrador.json
     python revisar.py --menus     además, añade a menus.json los vendedores del borrador que falten (lo ya escrito no se toca)
@@ -21,10 +21,21 @@ import os
 import sys
 from collections import Counter
 
-import director
-from t7 import menus as M
-from t7 import situacion
-from t7 import valor as V
+AQUI = os.path.dirname(os.path.abspath(__file__))
+RUNS = os.path.join(AQUI, "runs")
+sys.path.insert(0, AQUI)
+sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
+
+from t7 import menus as M  # noqa: E402
+from t7 import situacion  # noqa: E402
+from t7 import valor as V  # noqa: E402
+
+def _json(ruta, por_defecto):
+    if not os.path.exists(ruta):
+        return por_defecto
+    with open(ruta, encoding="utf-8") as f:
+        return json.load(f)
+
 
 TOLERANCIA = 0.06            # diferencia admitida entre nuestro valor de una carta y el del juego
 
@@ -65,7 +76,7 @@ def revisar(b, menus_actuales=None, stop=False):
             di("FALTA", f"plan del día: {type(e).__name__}: {e}")
         di("OK", f"cartas: {len(cartas)} · nivel {me.get('level')}")
         if sobres:
-            di("AVISO", f"{sobres} sobre(s) sin abrir: el director los abre antes de comprar")
+            di("AVISO", f"{sobres} sobre(s) sin abrir: hay que abrirlos antes de comprar")
 
         catalogo = lee("catálogo", b.catalog)
         avisos = V.configurar(me.get("affinity"), catalogo, cartas)
@@ -112,11 +123,11 @@ def revisar(b, menus_actuales=None, stop=False):
             di("AVISO", f"{v}: no está en menus.json; borrador con {len(borrador[v]['vende'])} cartas que vende y "
                         f"{len(borrador[v]['compra'])} que compra")
         else:
-            di("FALTA", f"{v}: no está en menus.json y su menú no se entiende: el director no le abrirá nada")
+            di("FALTA", f"{v}: no está en menus.json y su menú no se entiende: no se le abrirá nada")
     for d in dudas[:12]:
         di("AVISO", "menú · " + d)
     if not menus_actuales:
-        di("FALTA", "no hay menus.json: el director no abre conversaciones con vendedores (solo duelos y El Rastro)")
+        di("FALTA", "no hay menus.json: no se abren conversaciones con vendedores (solo duelos y El Rastro)")
 
     if stop:
         di("FALTA", "hay un archivo runs/STOP: el Guardia no firmará nada hasta que se borre")
@@ -132,19 +143,19 @@ def main():
     from bazaar_sdk import Bazaar
     if not os.environ.get("BAZAAR_KEY"):
         sys.exit("Falta la variable de entorno BAZAAR_KEY (la clave del equipo). No se escribe en ningún archivo.")
-    os.makedirs(director.RUNS, exist_ok=True)
+    os.makedirs(RUNS, exist_ok=True)
     b = Bazaar(os.environ.get("BAZAAR_URL", "https://bazaar.causaprima.ai"), os.environ["BAZAAR_KEY"], wait_on_tick=False)
-    ruta_menus = os.path.join(director.AQUI, "menus.json")
+    ruta_menus = os.path.join(AQUI, "menus.json")
     try:
-        actuales = director._json(ruta_menus, None)
+        actuales = _json(ruta_menus, None)
     except (OSError, ValueError) as e:
         actuales = None
         print(f"FALTA  menus.json no se puede leer: {e}")
-    r = revisar(b, actuales, stop=os.path.exists(os.path.join(director.RUNS, "STOP")))
+    r = revisar(b, actuales, stop=os.path.exists(os.path.join(RUNS, "STOP")))
     for nivel, texto in r["lineas"]:
         print(f"{nivel:<6} {texto}")
     if r["borrador"]:
-        ruta = os.path.join(director.AQUI, "menus.borrador.json")
+        ruta = os.path.join(AQUI, "menus.borrador.json")
         with open(ruta, "w", encoding="utf-8") as f:
             json.dump(r["borrador"], f, ensure_ascii=False, indent=1, sort_keys=True)
         print(f"\nBorrador de menús escrito en {ruta}. Míralo antes de usarlo.")
@@ -154,7 +165,7 @@ def main():
                 json.dump(dict(r["borrador"], **(actuales or {})), f, ensure_ascii=False, indent=1, sort_keys=True)
             print("menus.json: añadidos " + ", ".join(nuevos) + ". Vuelve a lanzar la revisión.")
     print(f"\n{'LISTO PARA EL SECO' if not r['faltas'] else 'NO LISTO'}: {r['faltas']} cosas que faltan, {r['avisos']} avisos.")
-    print("Siguiente paso: python director.py --ticks 3   (en seco: no manda ni acepta nada)")
+    print("Siguiente paso: jugar la cadena en seco (no manda ni acepta nada) con el programa que la conecte al juego")
     sys.exit(1 if r["faltas"] else 0)
 
 

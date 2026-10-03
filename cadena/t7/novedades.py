@@ -191,7 +191,7 @@ def _de_calendario(dato, ctx):
         out = ["Antes de la sesión: no abrir regateos nuevos con vendedores 2 o 3 ticks antes; los duelos se llevan la única aceptación del tick.",
                "Mirar el primer duelo en runs/crudo.jsonl: rondas y descuento reales van a hoy.json (\"duelo\")."]
         if "day" in t or "two" in t or "issue" in t:
-            out.append("Es con día de entrega: el director ya manda siempre un día. Comprobar en el crudo cómo llega your_days_weight.")
+            out.append("Es con día de entrega: la Duelista ya manda siempre un día. Comprobar en el crudo cómo llega your_days_weight.")
         return out
     if "bench" in t or "market" in t or "test" in t:
         return ["Market Test: lanzar el grabador antes de que empiece. Sin mercado propio puntúa el puesto gratuito."]
@@ -203,7 +203,7 @@ def _de_calendario(dato, ctx):
 
 
 def _de_vendedor(dato, ctx):
-    return ["Pegar su menú en menus.json: sin él, el director no le abre ninguna conversación.",
+    return ["Pegar su menú en menus.json: sin él, no se le abre ninguna conversación.",
             "Primera conversación = sondeo: apertura prudente (15 %), apuntar cuánto imita nuestros pasos y en qué ronda da la final.",
             "Bastan 3 tratos regateados con lo más barato: solo cuentan los tres mejores, y los vendedores de nivel alto pesan más.",
             "Sin preguntas del Espía hasta tener esos 3 tratos."]
@@ -233,11 +233,11 @@ def _de_dinero(dato, ctx):
 
 _CONSEJOS = {
     "inicio": lambda d, c: ["Es la foto de partida: a partir de ahora se avisa de cada cambio."],
-    "ritmo": lambda d, c: [f"El director lee el ritmo del juego solo. Con ticks de {d} s, vigilar la línea LENTO en su pantalla.",
+    "ritmo": lambda d, c: [f"El programa que juega lee el ritmo del juego. Con ticks de {d} s, vigilar la línea LENTO en su pantalla.",
                            "La espera de una persona se cuenta en segundos, no en ticks: no hay que tocar nada."],
     "pausa": lambda d, c: ["Con el juego en pausa no hay ticks: buen momento para ajustar hoy.json y menus.json."] if d else
-                          ["Comprobar que el director sigue en marcha y que hoy.json está al día."],
-    "limites": lambda d, c: ["Revisar en director.py MAX_HILOS, MAX_ANUNCIOS_TICK y MAX_OFERTAS si han cambiado esos límites."],
+                          ["Comprobar que el programa que juega sigue en marcha y que hoy.json está al día."],
+    "limites": lambda d, c: ["Revisar en el programa que juega los límites de conversaciones, anuncios por tick y ofertas abiertas."],
     "calendario": _de_calendario,
     "pronto": _de_calendario,
     "nivel": lambda d, c: guion.sin_anunciar((d or {}).get("kind") or (d or {}).get("type") if isinstance(d, dict) else None)["antes"],
@@ -248,9 +248,9 @@ _CONSEJOS = {
     "barrio": _de_barrio,
     "dinero": _de_dinero,
     "subimos": lambda d, c: ["Hay un vendedor más para nosotros: ver su aviso.", "Desde el nivel 2 se puede abrir mercado propio."],
-    "sobre": lambda d, c: ["Abrirlo antes de comprar, para no comprar una carta que venía dentro. El director lo hace al arrancar."],
+    "sobre": lambda d, c: ["Abrirlo antes de comprar, para no comprar una carta que venía dentro. Hay que hacerlo al arrancar."],
     "puesto": lambda d, c: ["El puesto depende también de los demás. Mirar qué bloque ha cambiado antes de tocar nada."],
-    "congelado": lambda d, c: ["Parar el director (runs/STOP) y preguntar en la mesa de organización."],
+    "congelado": lambda d, c: ["Parar la cadena (runs/STOP) y preguntar en la mesa de organización."],
 }
 
 

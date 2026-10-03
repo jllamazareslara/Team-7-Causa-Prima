@@ -1,6 +1,6 @@
 """La Contable en la cadena: hace las cuentas con la calculadora (`valor.py`) y se las pasa a quien las necesita.
 
-Va después de los Ojos y antes de los negociadores. No decide nada:
+¿Renta? ¿Cuánto? Va después de los Ojos y antes de los negociadores. No decide nada:
     para_vendedor(c, ...)   → los números del Regateador para una conversación: si conocemos la carta, cuánto nos vale,
                               nuestro tope (comprando) o suelo (vendiendo), si está protegida y cuánto deja pagar la caja
     ficha(propuesta, ...)   → la ficha que recibe el Guardia antes de cada firma (lo que entra, lo que sale, comisión, neto)
@@ -45,9 +45,11 @@ def para_vendedor(c, cuenta, efectivo, p, ordenes):
             "caja": caja_para_comprar(carta, cuenta, efectivo, p, ordenes) if lado == "compra" else None}
 
 
-def ficha(propuesta, cuenta, efectivo, p):
-    """La ficha de la calculadora para el Guardia."""
-    return V.evaluar(propuesta, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])
+def ficha(propuesta, cuenta, efectivo, p=None, mult=None, reserva=None):
+    """La ficha de la calculadora para el Guardia y para el Cambista. La reserva sale de `p` si no se da."""
+    if reserva is None:
+        reserva = p["guardia.reserva_efectivo"] if p else 0
+    return V.evaluar(propuesta, cuenta, efectivo, mult or V.NUESTROS_MULT, reserva)
 
 
 def ganancia_duelo(rol, limite, precio):

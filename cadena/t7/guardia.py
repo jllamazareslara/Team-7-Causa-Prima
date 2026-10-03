@@ -15,7 +15,7 @@ Buen negocio (ajustes en parametros.json, decisión del equipo):
     vendiendo   neto ≥ guardia.margen_venta × valor de las cartas que damos        (0,10: cobrar ≥ valor + 10 %)
     protegida   solo sale si lo recibido, sin comisión, ≥ guardia.protegida_factor × lo que perdemos al darla (1,5)
 """
-from .valor import evaluar
+from . import contable
 
 BIENES_CONOCIDOS = {"cash", "assets", "cards", "types"}
 
@@ -59,10 +59,10 @@ def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=F
     oferta_juego   = la oferta tal como está en el juego ahora mismo; se comprueba que coincide con la propuesta
     forzar         = {categoría: "apagado"} (sale de hoy.json a través del plan del día)
     tope_por_trato = lo máximo que puede comprometer una compra cuando la caja está justa (None = sin tope)
-    ev             = la ficha que ya hizo la Contable (contable.ficha); si no llega, se hace aquí con la misma calculadora
+    ev             = la ficha que ya hizo la Contable (contable.ficha); si no llega, se la pide aquí a la Contable
     """
     if ev is None:
-        ev = evaluar(propuesta, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])
+        ev = contable.ficha(propuesta, cuenta, efectivo, p)
     if stop:
         return False, "STOP activado", ev, "bloqueo"
     if ya_firmado_este_tick:
