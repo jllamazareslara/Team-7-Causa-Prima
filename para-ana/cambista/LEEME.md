@@ -5,7 +5,7 @@ Duelista y el Regateador. Recibe las cuentas de la Contable y los consejos del G
 (carpeta `../ojos-guion-ojeador/`). No firma: lo que quiere aceptar pasa por el Guardia.
 
 > El código está en [`cadena/t7/cambista.py`](../../cadena/t7/cambista.py): cualquier cambio se hace allí.
-> El programa que lo juega en El Rastro es [`cadena/rastro.py`](../../cadena/rastro.py) (`--ticks 3` en seco, `--live` en vivo).
+> El programa que lo juega (con los vendedores del Regateador) es [`cadena/jugar.py`](../../cadena/jugar.py) (`--ticks 3` en seco, `--live` en vivo).
 
 ## Por qué importa
 
@@ -48,7 +48,7 @@ Desde `cadena/`: `python -m unittest tests.test_todo.Cambista tests.test_todo.Ca
 2. **Venta y compra encendidas**: `rastro.publicar` = 1 y `cambista.pedir` = 1 en `cadena/t7/hoy.json`. Solo publica
    cuando se lanza en vivo.
 3. **Márgenes iguales**: `oportunidades(..., p=...)` solo propone lo que el Guardia firma (neto ≥ 10 % del valor).
-4. **Un solo programa acepta**: `cadena/t7/candado.py`. `rastro.py` lo toma en vivo; `play.py` debería tomarlo también.
+4. **Un solo programa acepta**: `cadena/t7/candado.py`. `jugar.py` lo toma en vivo; `play.py` debería tomarlo también.
 5. **Datos de prueba**: `cadena/datos/estado-actual.json`.
 
 Vendedores y duelos siguen dependiendo del programa que los juegue (`play.py`).

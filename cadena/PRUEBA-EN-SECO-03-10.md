@@ -1,8 +1,8 @@
 # Primera prueba en seco contra el juego real · sábado 3/10, mediodía
 
-> Después de esta prueba, `director.py` se quitó (el Director no es parte del flujo). La parte de El Rastro la juega
-> ahora `rastro.py` (`python rastro.py --ticks 3`). Las formas reales de duelos y vendedores de abajo quedan apuntadas
-> para el programa que juegue duelos y vendedores (`play.py`); su prueba está en `tests/test_cambista_listo.py`, saltada.
+> Después de esta prueba, `director.py` se quitó (el Director no es parte del flujo). Vendedores y El Rastro los juega
+> ahora `jugar.py` (`python jugar.py --ticks 3`), que ya entiende `{"personas": [...]}`. La forma real de los duelos
+> queda apuntada para el programa que los juegue; su prueba está en `tests/test_cambista_listo.py`, saltada.
 
 `python director.py --ticks 3`, sin `--live`: leyó el juego y escribió lo que haría. **No mandó ni aceptó nada.**
 

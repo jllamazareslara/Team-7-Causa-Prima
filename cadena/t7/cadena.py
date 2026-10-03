@@ -95,7 +95,7 @@ class Memoria:
 
 # ---------------------------------------------------------------- El Ojeador y El Guion dentro de la cadena
 #
-# Viven aquí y no en quien lanza la cadena (hoy rastro.py). Ese programa solo pone en la lectura
+# Viven aquí y no en quien lanza la cadena (hoy jugar.py). Ese programa solo pone en la lectura
 # lo que lee del juego, tal cual, cuando lo lee:
 #   lectura["calendario"]  /api/schedule        lectura["catalogo"]  /api/catalog     lectura["feed"]  /api/feed
 #   lectura["niveles"]     {vendedor: nivel}    lectura["t_hours"]   de /api/clock    lectura["tick_segundos"]

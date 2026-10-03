@@ -320,7 +320,7 @@
   "min": 0,
   "max": 1,
   "estado": "decisión",
-  "por_que": "1 = rastro.py publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Viene apagado porque publicar anuncios no se ha probado contra el juego real: lo enciende el equipo tras verlo en seco."
+  "por_que": "1 = jugar.py publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Viene apagado porque publicar anuncios no se ha probado contra el juego real: lo enciende el equipo tras verlo en seco."
  },
  "rastro.bajada_por_caducidad": {
   "valor": 1,
@@ -334,7 +334,7 @@
   "min": 0,
   "max": 1,
   "estado": "decisión",
-  "por_que": "1 = rastro.py publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Viene apagado: publicar peticiones no se ha probado contra el juego real."
+  "por_que": "1 = jugar.py publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Viene apagado: publicar peticiones no se ha probado contra el juego real."
  },
  "cambista.apertura_peticion": {
   "valor": 0.45,

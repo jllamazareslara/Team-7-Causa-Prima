@@ -19,7 +19,7 @@ Sin Director. Tres capas. El dibujo está en el artefact Team 7, pestaña «Los 
                        Diario y avisador
 
 El Ojeador pasa los precios al Cambista y al Regateador. Sin Director: las flechas con EL JUEGO las pone un
-programa que no es un agente (hoy `rastro.py`, solo para El Rastro).
+programa que no es un agente: `jugar.py` (vendedores y El Rastro).
 Fuera de la cadena: El Vigía (solo lee, enseña en pantalla lo que viene) · El Casamentero y El Grabador (Market Test)
 ```
 
@@ -49,7 +49,7 @@ El Guion y el Ojeador solo aconsejan: no mandan mensajes ni firman. Firma solo e
 ## Dónde vive cada cosa en el código
 
 Todo vive en `t7/` y se llama desde `t7/cadena.py`. `director.py` se quitó y no es parte del flujo. La conexión con el
-juego la hace un programa que no es un agente: hoy `rastro.py`, solo El Rastro (el Cambista). Vendedores y duelos: pendiente.
+juego la hace un programa que no es un agente: `jugar.py`, vendedores (el Regateador) y El Rastro (el Cambista). Duelos: pendiente.
 
 | Función | Cuándo | Qué hace |
 |---|---|---|

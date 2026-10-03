@@ -948,14 +948,14 @@ class Estructura(unittest.TestCase):
         self.assertEqual(contable.ganancia_duelo("seller", 100, 90), -10)
         self.assertEqual(contable.ganancia_duelo("buyer", 100, 90), 10)
 
-class Rastro(unittest.TestCase):
-    """rastro.py, el programa del Cambista en El Rastro, contra un juego de mentira (sin red)."""
+class Jugar(unittest.TestCase):
+    """jugar.py (vendedores + El Rastro) contra un juego de mentira (sin red)."""
 
     def setUp(self):
         import tempfile
-        import rastro
-        self.r = rastro
-        rastro.RUNS = tempfile.mkdtemp()
+        import jugar
+        self.r = jugar
+        jugar.RUNS = tempfile.mkdtemp()
         self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
 
     def tearDown(self):
@@ -968,6 +968,7 @@ class Rastro(unittest.TestCase):
         def __init__(self, tablon=None, cartas=None):
             self.tablon, self.aceptadas, self.ofertas, self.canceladas, self.abiertos = tablon or [], [], [], [], []
             self.activos = cartas if cartas is not None else []
+            self.hilo, self.dichos, self.cerrados, self.abiertas_ = None, [], [], []
 
         def me(self):
             return {"name": "t07", "cash": 300, "assets": self.activos}
@@ -988,6 +989,23 @@ class Rastro(unittest.TestCase):
         def open_pack(self, aid):
             self.abiertos.append(aid)
             return {"cards": []}
+
+        # vendedores: una conversación con su oferta vigente (forma de play.py, probada en vivo)
+        def thread(self, tid):
+            return self.hilo
+
+        def say(self, tid, text, price=None):
+            self.dichos.append((tid, price, text))
+
+        def close_thread(self, tid):
+            self.cerrados.append(tid)
+
+        def open_thread(self, with_, topic=None, venue=None):
+            self.abiertas_ = self.abiertas_ + [(with_, topic)]
+            return {"id": 70 + len(self.abiertas_)}
+
+        def my_threads(self, status=None):
+            return {"threads": [{"id": 99, "with": "chato", "status": "open"}, {"id": 7, "with": "abuela", "status": "open"}]}
 
     def cartas(self):
         c, _ = coleccion()
@@ -1032,6 +1050,69 @@ class Rastro(unittest.TestCase):
         self.assertEqual([a["ref"] for a in me["assets"] if a["id"] in dar], ["LAT-03"])
         self.assertIsNone(self.r.aceptar(b, dict(firma, oferta_id=99), self.TABLON, me, {}, vivo=True))   # ya no está
         self.assertIsNone(self.r.aceptar(b, {"destino": "duelo", "id": 5}, self.TABLON, me, {}, vivo=True))
+
+    def hilo_abuela(self, precio, final=False, oferta=55):
+        return {"status": "open", "standing_offers": [{"id": oferta, "maker": "abuela", "status": "open", "final": final,
+                                                       "want": {"cash": precio}}],
+                "messages": [{"from": "abuela", "text": f"Te lo dejo en {precio}"}]}
+
+    def test_regateador_manda_su_precio(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = self.hilo_abuela(20)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(len(b.dichos), 1)
+        tid, precio, texto = b.dichos[0]
+        self.assertEqual((tid, precio), (7, 2))                              # ancla al 10 % de su precio
+        self.assertEqual(est["hilos"]["7"]["nuestras"], [2])
+        self.assertTrue(defensa.revisar_salida(texto, precio)[0])           # el Portavoz: solo el número
+
+    def test_la_oferta_final_la_firma_el_guardia(self):
+        b = self.Juego(cartas=self.cartas())
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        b.hilo = self.hilo_abuela(11, final=True)                            # nos vale 13: 11 renta un 15 %
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(b.aceptadas, [(55, None)])
+        b2 = self.Juego(cartas=self.cartas())
+        b2.hilo = self.hilo_abuela(12, final=True)                           # 12 no llega al 10 %: el Guardia no firma
+        est2 = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        self.r.un_tick(b2, est2, cadena.Memoria(), 4, 30, vivo=True, stop=False)
+        self.assertEqual(b2.aceptadas, [])
+
+    def test_en_seco_no_manda_ni_acepta_a_vendedores(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = self.hilo_abuela(11, final=True)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [20], "nuestras": [2]}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=False, stop=False)
+        self.assertEqual((b.aceptadas, b.dichos, b.cerrados), ([], [], []))
+
+    def test_abre_una_conversacion_por_vendedor(self):
+        b = self.Juego(cartas=self.cartas())
+        menus = {"abuela": {"vende": {"RET-01": 12}, "compra": {}}, "chato": {"vende": {"RET-02": 12}, "compra": {}}}
+        plan = {"p": dict(P), "forzar": {}, "ordenes": {}}
+        est = {"hilos": {}}
+        self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 1})
+        self.assertEqual(sorted(v for v, _ in b.abiertas_), ["abuela", "chato"])   # todos a la vez, uno por vendedor
+        self.assertEqual(len(est["hilos"]), 2)
+        self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 2})
+        self.assertEqual(len(b.abiertas_), 2)                                 # ya tienen conversación: no se repite
+
+    def test_al_arrancar_cierra_conversaciones_sueltas(self):
+        b = self.Juego()
+        est = {"hilos": {"7": {}}}
+        self.r.limpiar_hilos(b, est, vivo=False)
+        self.assertEqual(b.cerrados, [])
+        self.r.limpiar_hilos(b, est, vivo=True)
+        self.assertEqual(b.cerrados, [99])                                    # la nuestra (7) se queda
+
+    def test_conversacion_muda_se_suelta(self):
+        b = self.Juego(cartas=self.cartas())
+        b.hilo = {"status": "open", "standing_offers": []}
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        for t in range(4, 4 + self.r.MUDO_MAX):
+            self.r.un_tick(b, est, cadena.Memoria(), t, 30, vivo=True, stop=False)
+        self.assertEqual(b.cerrados, [7])
+        self.assertNotIn("7", est["hilos"])
 
     def test_anunciar_en_el_rastro(self):
         me = {"assets": [{"id": 1, "kind": "card", "ref": "LAT-03"}, {"id": 2, "kind": "card", "ref": "LAT-03"},

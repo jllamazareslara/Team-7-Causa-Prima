@@ -38,7 +38,7 @@ puesto gratuito en el simulador.
 
 ## La cadena · `infra/t7`
 
-**Quién conecta la cadena con el juego** (no es un agente ni un paso del flujo: son las flechas con EL JUEGO): `rastro.py`, **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
+**Quién conecta la cadena con el juego** (no es un agente ni un paso del flujo: son las flechas con EL JUEGO): `jugar.py`, para **los vendedores (el Regateador) y El Rastro (el Cambista)** en un solo proceso: lee el juego, llama a `cadena.tick()`, manda los precios del Regateador (una conversación por vendedor, todos a la vez, según `menus.json` y `cadena.operaciones()`), aplica la única firma del Guardia (vendedor o El Rastro), abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. No abre mercado propio. Duelos: no los juega. En vivo toma el candado; no lanzar a la vez `dealers/smart_agent.py` ni `play.py`.
 
 - [ ] Un tick recorre en orden Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario.
 - [ ] Una sola firma por tick, y el duelo urgente va primero.
@@ -107,9 +107,12 @@ Pruebas:
 - [ ] No regatea por lo que la caja no paga (tope = lo que vale, lo que queda sobre la reserva, tope por trato).
 - [ ] En el simulador captura más rango que la regla actual del equipo (0,54 frente a 0,40 con Abuela).
 
+- [ ] En `jugar.py`: una conversación por vendedor, todos a la vez; manda el precio que decide; la oferta final solo se acepta si la firma el Guardia; en seco no manda, no cierra y no acepta; una conversación muda 4 ticks se suelta; al arrancar cierra las conversaciones que no recuerda.
+
 Pruebas:
 
 - `python -m unittest tests.test_todo.Tienda`
+- `python -m unittest tests.test_todo.Jugar` (vendedores)
 - `python -m unittest tests.test_todo.Robustez.test_calidad_antes_que_cantidad`
 - `python -m unittest tests.test_todo.Robustez.test_no_regatea_por_lo_que_la_caja_no_paga`
 
@@ -142,14 +145,14 @@ Pruebas:
 - [ ] Competencia: si otro equipo pide la misma carta, ofrece 1 P más mientras quepa en el tope; si no, no le sigue.
 - [ ] Aprende: una petición que funcionó hace abrir la siguiente de esa rareza al 85 % de ese precio.
 - [ ] Tramo final (30 min antes del fin): tope al 98 % de lo que vale y peticiones directas al tope.
-- [ ] `rastro.py` acepta como mucho una oferta por tick (la que firma el Guardia); si pide una carta nuestra, da una copia libre (nunca una ya anunciada o comprometida); en seco o con `runs/STOP` no acepta ni publica nada.
+- [ ] `jugar.py` acepta como mucho una oferta por tick (la que firma el Guardia); si pide una carta nuestra, da una copia libre (nunca una ya anunciada o comprometida); en seco o con `runs/STOP` no acepta ni publica nada.
 
 Pruebas:
 
 - `python -m unittest tests.test_todo.Cambista`
 - `python -m unittest tests.test_todo.CambistaCompras`
 - `python -m unittest tests.test_todo.Cadena.test_anuncios_de_el_rastro`
-- `python -m unittest tests.test_todo.Rastro` (`rastro.py`: acepta, elige la copia, anuncia, pide, en seco y con STOP no toca nada)
+- `python -m unittest tests.test_todo.Jugar` (`jugar.py`: acepta, elige la copia, anuncia, pide, en seco y con STOP no toca nada)
 
 ## El Espía · `infra/t7-espia`
 
