@@ -14,6 +14,27 @@
   "estado": "decisión",
   "por_que": "Efectivo que queremos tener. Por debajo, valor.liquidez() dice qué cartas pequeñas vender (repetidas y barrios flojos) sin perder valor."
  },
+ "guardia.margen_compra": {
+  "valor": 0.10,
+  "min": 0,
+  "max": 0.5,
+  "estado": "decisión",
+  "por_que": "Buen negocio comprando: ganar al menos este tanto del valor de las cartas que recibimos. 0,10 = pagar como mucho el 90 % de lo que nos vale (LAT-09, 112 → 100 P)."
+ },
+ "guardia.margen_venta": {
+  "valor": 0.10,
+  "min": 0,
+  "max": 0.5,
+  "estado": "decisión",
+  "por_que": "Buen negocio vendiendo: cobrar, después de comisión, al menos el valor de las cartas que damos más este tanto (carta de 40 → 44 P)."
+ },
+ "guardia.protegida_factor": {
+  "valor": 1.5,
+  "min": 1.0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "Una carta protegida solo sale si lo que recibimos, sin comisión, llega a este múltiplo de lo que perdemos al darla (LAV-01 que rompe página, 83,9 → 126 P)."
+ },
  "valor.bono_pagina": {
   "valor": 0.25,
   "min": 0.25,

@@ -59,13 +59,15 @@ Pruebas:
 - [ ] Con `runs/STOP` no firma nada.
 - [ ] Como mucho una firma por tick para todo el equipo.
 - [ ] Un campo desconocido en la oferta, o una oferta cuyo precio cambió desde que el agente la miró: no firma.
-- [ ] Nunca paga más de lo que vale la carta ni baja de la reserva de 60 P; las ventas que rentan pasan siempre.
+- [ ] Solo firma buen negocio mirando el valor de las cartas: comprando, paga como mucho el 90 % de lo que nos vale; vendiendo, cobra al menos el valor + 10 % (`guardia.margen_compra`, `guardia.margen_venta`).
+- [ ] Una carta protegida solo sale por 1,5 veces lo que perdemos al darla, o más (`guardia.protegida_factor`).
+- [ ] Una compra nunca baja de la reserva de 60 P; una venta no se bloquea nunca por la reserva.
 - [ ] Una categoría apagada en `hoy.json` no se firma; con caja justa respeta el tope por trato.
 - [ ] Un duelo solo se firma dentro de nuestro límite.
 
 Pruebas:
 
-- `python -m unittest tests.test_todo.Guardia`
+- `python -m unittest tests.test_todo.Guardia` (18 pruebas)
 
 ## El Regateador · `infra/t7-regateador`
 

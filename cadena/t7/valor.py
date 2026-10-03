@@ -224,9 +224,9 @@ def evaluar(propuesta, cuenta, efectivo, mult=NUESTROS_MULT, reserva=0):
             com = comision_rastro(precio, len(rc) + len(ec))
     neto = v_rec - v_ent - com
 
-    for r in ec:
-        if protegida(cuenta, r, mult):
-            bloqueos.append(f"{r} está protegida")
+    protegidas = [r for r in ec if protegida(cuenta, r, mult)]
+    for r in protegidas:
+        bloqueos.append(f"{r} está protegida")
     gasto = ep + com - rp
     if gasto > 0 and efectivo - gasto < reserva:      # una venta nunca rompe la reserva: la rellena
         bloqueos.append(f"rompe la reserva: quedarían {efectivo - gasto:.0f} P de {reserva}")
@@ -260,7 +260,8 @@ def evaluar(propuesta, cuenta, efectivo, mult=NUESTROS_MULT, reserva=0):
     return {
         "recibo": round(v_rec, 2), "entrego": round(v_ent, 2), "comision": com, "neto": round(neto, 2),
         "renta": neto > 0 and not bloqueos, "puntos": puntos, "captura": None if captura is None else round(captura, 3),
-        "compromete": ep + com, "avisos": avisos, "bloqueos": bloqueos,
+        "compromete": ep + com, "avisos": avisos, "bloqueos": bloqueos, "protegidas": protegidas,
+        "cartas_recibo": round(v_rec - rp, 2), "cartas_entrego": round(perdida, 2),
     }
 
 

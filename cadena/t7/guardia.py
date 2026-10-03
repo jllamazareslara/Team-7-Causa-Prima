@@ -7,8 +7,13 @@ Cinco comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pas
     2. una firma por tick        el juego solo deja aceptar una oferta por tick a todo el equipo
     3. estructura entendida      un campo desconocido en la oferta = no
     4. la oferta no ha cambiado  el precio del juego es el que el agente miró
-    5. renta sin romper nada     neto positivo, carta no protegida, reserva de efectivo intacta, categoría no apagada,
-                                 y dentro del tope por trato cuando la caja está justa
+    5. buen negocio              mirando el valor de las cartas, sin romper nada: reserva de efectivo intacta,
+                                 categoría no apagada, y dentro del tope por trato cuando la caja está justa
+
+Buen negocio (ajustes en parametros.json, decisión del equipo):
+    comprando   neto ≥ guardia.margen_compra × valor de las cartas que recibimos   (0,10: pagar ≤ 90 % del valor)
+    vendiendo   neto ≥ guardia.margen_venta × valor de las cartas que damos        (0,10: cobrar ≥ valor + 10 %)
+    protegida   solo sale si lo recibido, sin comisión, ≥ guardia.protegida_factor × lo que perdemos al darla (1,5)
 """
 from .valor import evaluar
 
@@ -26,6 +31,11 @@ def estructura_valida(oferta):
         if "cash" in d and (not isinstance(d["cash"], (int, float)) or d["cash"] < 0):
             return False
     return True
+
+
+def exigido_por_valor(ev, p):
+    """Lo mínimo que tiene que ganar un trato para ser buen negocio, según el valor de las cartas que se mueven."""
+    return p["guardia.margen_compra"] * ev["cartas_recibo"] + p["guardia.margen_venta"] * ev["cartas_entrego"]
 
 
 def revisar_duelo(ganancia, ya_firmado_este_tick=False, stop=False, forzar=None):
@@ -65,10 +75,19 @@ def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=F
     cat = propuesta.get("categoria", propuesta.get("tipo", ""))
     if (forzar or {}).get(cat) == "apagado":
         return False, f"categoría {cat} apagada", ev, "bloqueo"
-    if ev["bloqueos"]:
-        return False, "; ".join(ev["bloqueos"]), ev, "bloqueo"
-    if not ev["renta"]:
+    protegidas = ev.get("protegidas", [])
+    bloqueos = [b for b in ev["bloqueos"] if b not in {f"{r} está protegida" for r in protegidas}]
+    if protegidas:
+        pide = p["guardia.protegida_factor"] * ev["cartas_entrego"]
+        if ev["recibo"] - ev["comision"] < pide:
+            bloqueos.insert(0, f"{', '.join(protegidas)} protegida: solo sale por {pide:.0f} P o más")
+    if bloqueos:
+        return False, "; ".join(bloqueos), ev, "bloqueo"
+    if ev["neto"] <= 0:
         return False, f"no renta ({ev['neto']:+.1f})", ev, "bloqueo"
+    exigido = exigido_por_valor(ev, p)
+    if ev["neto"] < exigido:
+        return False, f"no renta lo bastante ({ev['neto']:+.1f}, pide {exigido:+.1f})", ev, "bloqueo"
     completa = any("PÁGINA COMPLETA" in a for a in ev["avisos"])
     if tope_por_trato is not None and ev["compromete"] > tope_por_trato and not completa:
         return False, f"caja justa: compromete {ev['compromete']:.0f} P, tope {tope_por_trato} P por trato", ev, "bloqueo"
