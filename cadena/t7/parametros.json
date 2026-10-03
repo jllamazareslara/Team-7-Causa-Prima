@@ -309,18 +309,18 @@
   "por_que": "Reglas: cuentan los tres mejores tratos por nivel y ronda. Un cuarto solo sirve si supera al peor de los tres."
  },
  "duelo.apertura_vendedor": {
-  "valor": 2.0,
+  "valor": 1.6,
   "min": 1.1,
   "max": 2.5,
-  "estado": "simulado",
-  "por_que": "Vendiendo, primera cifra = coste × esto. 2,0 gana a 1,6 en el simulador (2,3 aún más, pero los bots nunca se van; un rival real puede romper)."
+  "estado": "medido",
+  "por_que": "Vendiendo, primera cifra = coste × esto. Era 2,0 porque gana a 1,6 en el simulador, pero el propio comentario ya avisaba: los bots de bench/sims.py nunca se van y un rival real sí. En vivo el 3/10 (runs/juan/duel.jsonl, Duelos I) 23 de 38 duelos acabaron sin trato, y en varios el rival no contestó nunca a una apertura al doble de nuestro coste (duelo 2466 límite 112 abriendo 181, duelo 2468 límite 108 abriendo 173: rival_offers vacío hasta el final). Un duelo sin trato vale cero para los dos. 1,6 sigue siendo agresivo pero contestable."
  },
  "duelo.apertura_comprador": {
-  "valor": 0.45,
+  "valor": 0.6,
   "min": 0.3,
   "max": 0.95,
-  "estado": "simulado",
-  "por_que": "Comprando, primera cifra = valor × esto. Misma prudencia que arriba."
+  "estado": "medido",
+  "por_que": "Comprando, primera cifra = valor × esto. Misma corrección que arriba y por los mismos duelos en vivo."
  },
  "duelo.descuento_ronda": {
   "valor": 0.94,
