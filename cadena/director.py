@@ -144,21 +144,26 @@ def leer(b, est, tick):
         if not est.get("crudo_duelo"):
             est["crudo_duelo"] = True
             _linea("crudo.jsonl", {"tipo": "duelo", "crudo": d})
-        if not isinstance(d, dict) or d.get("id") is None:
+        did = d.get("duel", d.get("id")) if isinstance(d, dict) else None   # el servidor real usa "duel", no "id"
+        if did is None:
             continue
         rol, limite = str(d.get("role", "")).lower(), d.get("your_limit")
         if rol not in ("seller", "buyer") or not isinstance(limite, (int, float)):
             continue                                             # no se juega lo que no se entiende
-        h = est["duelos"].setdefault(str(d["id"]), {"rival": [], "nuestras": []})
+        h = est["duelos"].setdefault(str(did), {"rival": [], "nuestras": []})
         rival = _precio(d.get("rival_offer"))
         if rival is not None and (not h["rival"] or h["rival"][-1] != rival):
             h["rival"].append(rival)
-        plazo = d.get("deadline")
+        plazo = d.get("deadline_tick", d.get("deadline"))         # el servidor real usa "deadline_tick"
         esc = next((d[k] for k in ("scenario", "scenario_id", "scenario_ref", "case", "item")
                     if d.get(k) is not None and not isinstance(d[k], (dict, list))), None)
-        lectura["duelos"].append({"id": d["id"], "rol": rol, "limite": limite, "rival": list(h["rival"]),
+        mensajes = d.get("messages") if isinstance(d.get("messages"), list) else []
+        rival_texto = next((m.get("text") for m in reversed(mensajes)
+                            if isinstance(m, dict) and m.get("from") not in ("you", None)), "")
+        lectura["duelos"].append({"id": did, "rol": rol, "limite": limite, "rival": list(h["rival"]),
                                   "nuestras": list(h["nuestras"]), "ronda": d.get("round", len(h["nuestras"])),
-                                  "rondas": d.get("max_rounds"), "texto": d.get("rival_text") or d.get("last_message") or "",
+                                  "rondas": d.get("max_rounds", d.get("rounds")),
+                                  "texto": d.get("rival_text") or d.get("last_message") or rival_texto or "",
                                   "ticks_restantes": plazo - tick if isinstance(plazo, (int, float)) else None,
                                   "escenario": esc, "dias": "days" in (d.get("issues") or []),
                                   "pesos_dias": d.get("your_days_weight")})
