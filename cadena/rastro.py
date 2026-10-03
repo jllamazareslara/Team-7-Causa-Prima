@@ -31,7 +31,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, situacion  # noqa: E402
+from t7 import cadena, cambista, ojeador, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -40,6 +40,7 @@ for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) n
 
 RUNS = os.path.join(AQUI, "runs")
 RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peticiones al juego
+CALENDARIO_CADA = 20     # calendario y catálogo (El Guion y El Ojeador) cada 20 ticks
 ANUNCIO_DURA = 40        # ticks que vive un anuncio nuestro en El Rastro
 MAX_ANUNCIOS_TICK, MAX_OFERTAS = 12, 30   # límites del juego: anuncios nuevos por tick y ofertas abiertas a la vez
 
@@ -111,7 +112,7 @@ def precios_de_venta(menus):
     return precios
 
 
-def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False):
+def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
     """El Cambista vende: anuncia en El Rastro lo que podemos dar sin perder valor (qué y a cuánto lo dice la cadena).
 
     Solo publica en vivo y con rastro.publicar = 1. Con 0 (como viene), enseña una vez lo que anunciaría y no manda nada.
@@ -144,9 +145,14 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
     ocupadas = [h["carta"] for h in (est.get("hilos") or {}).values() if h.get("lado") == "venta"]
     ocupadas += [r for x in (est.get("trueques") or {}).values()                 # ya ofrecidas en un cambio
                  if tick - x["tick"] < p.get("cambista.peticion_dura_ticks", 10) for r in x["doy"]]
-    nuevos = cadena.anuncios_rastro(Counter(a["ref"] for a in ids.values()), p, Counter(x["ref"] for x in vivos.values()),
-                                    ocupadas, guardadas, listas, caducidades,
-                                    maximo=max(0, min(MAX_ANUNCIOS_TICK, MAX_OFERTAS - len(vivos))))
+    cuenta = Counter(a["ref"] for a in ids.values())
+    maximo = max(0, min(MAX_ANUNCIOS_TICK, MAX_OFERTAS - len(vivos)))
+    activos = Counter(x["ref"] for x in vivos.values())
+    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
+        nuevos = cadena.anuncios(cuenta, p, mem, lectura or {"tick": tick}, activos, ocupadas, guardadas, listas,
+                                 caducidades, maximo)
+    else:
+        nuevos = cadena.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
     for n in nuevos:
         libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos)
         if not libres:
@@ -154,6 +160,7 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         aid = libres[0]
         mandar = vivo and publicar
         print(f"ANUNCIO      {n['carta']} a {n['precio']} P en El Rastro (nos vale {n['pierde']})"
+              + (f" · Ojeador {n['ojeador']}" if n.get("ojeador") else "")
               + ("" if mandar else " · no se publica: " + ("en seco" if publicar else "rastro.publicar = 0")))
         if not mandar:
             continue
@@ -292,8 +299,23 @@ def _cartas(me):
             if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref") and a.get("id") is not None}
 
 
-def leer(b, tick, con_tablon=True):
-    """La lectura que necesita la cadena para El Rastro: efectivo, cartas y el tablón sin nuestras propias ofertas."""
+def leer_calendario(b, est):
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y El Ojeador (t7/cadena.py, ojear)."""
+    try:
+        cal = b.schedule()
+        if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
+            est["calendario_nuevo"] = cal
+    except Exception as e:
+        _linea("errores.jsonl", {"calendario": str(e)})
+    try:
+        est["catalogo_nuevo"] = b.catalog()
+    except Exception as e:
+        _linea("errores.jsonl", {"catalogo": str(e)})
+
+
+def leer(b, tick, con_tablon=True, est=None):
+    """La lectura que necesita la cadena para El Rastro: efectivo, cartas y el tablón sin nuestras propias ofertas;
+    y, cuando toca, el feed público, el calendario y el catálogo para El Guion y El Ojeador."""
     me = b.me()
     nosotros = me.get("name")
     cartas = list(_cartas(me).values())
@@ -308,6 +330,14 @@ def leer(b, tick, con_tablon=True):
             _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
         except Exception as e:
             _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})
+        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para el Ojeador
+            try:
+                lectura["feed"] = b.feed(limit=100)
+            except Exception as e:
+                _linea("errores.jsonl", {"tick": tick, "feed": str(e)})
+    est = est if est is not None else {}
+    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para la cadena (El Guion y El Ojeador)
+    lectura["catalogo"] = est.pop("catalogo_nuevo", None)
     return lectura, me
 
 
@@ -351,13 +381,16 @@ def aceptar(b, firma, tablon, me, est, vivo):
     return dar
 
 
-def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False):
+def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas=None):
     """Un tick de El Rastro. Un fallo aquí no tira el programa: se apunta y se espera al tick siguiente.
     Devuelve True si el tick se completó."""
     try:
         menus = _json(os.path.join(AQUI, "menus.json"), None)
         toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
-        lectura, me = leer(b, tick, con_tablon=toca)
+        if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
+            leer_calendario(b, est)
+        lectura, me = leer(b, tick, con_tablon=toca, est=est)
+        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para El Ojeador
         plan = situacion.plan({"efectivo": lectura["efectivo"], "cuenta": lectura["cuenta"],
                                "tick_segundos": tick_segundos}, precios_venta=precios_de_venta(menus) or None)
         if primero:
@@ -368,8 +401,15 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False):
             _linea("diario.jsonl", {"linea": linea, "vivo": vivo})
         aceptar(b, acciones["firma"], lectura["tablon"], me, est, vivo)
         if toca and not stop and not abrir_sobres(b, me, vivo):  # tras abrir un sobre las cartas cambian: al tick siguiente
-            anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, time.strftime("%Y-%m-%d")), primero)
+            anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, time.strftime("%Y-%m-%d")), primero,
+                     mem=mem, lectura=lectura)
             pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
+        if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
+            mom = lectura.get("momento") or {}
+            if mom.get("fase", "normal") != "normal":
+                print(f"MOMENTO      {mom['fase']}: {mom.get('motivo', '')}")
+            for linea in ojeador.informe(mem.historial, tick if isinstance(tick, int) else 0):
+                print(linea)
         return True
     except Exception as e:
         print("ERROR       ", f"{type(e).__name__}: {e}")
@@ -405,7 +445,7 @@ def main():
             continue
         ultimo, hechos = tick, hechos + 1
         un_tick(b, est, mem, tick, reloj.get("tick_seconds"), a.live, os.path.exists(os.path.join(RUNS, "STOP")),
-                primero=hechos == 1)
+                primero=hechos == 1, t_horas=reloj.get("t_hours"))
         try:
             _guardar(os.path.join(RUNS, "rastro.json"), est)
             _guardar(os.path.join(RUNS, "memoria.json"), mem.a_dict())

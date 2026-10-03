@@ -38,7 +38,7 @@ puesto gratuito en el simulador.
 
 ## La cadena · `infra/t7`
 
-**Quién juega la cadena:** `rastro.py` juega **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
+**Quién conecta la cadena con el juego** (no es un agente ni un paso del flujo: son las flechas con EL JUEGO): `rastro.py`, **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
 
 - [ ] Un tick recorre en orden Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario.
 - [ ] Una sola firma por tick, y el duelo urgente va primero.

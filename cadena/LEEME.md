@@ -1,23 +1,29 @@
-# Noche del 3 de octubre · Team 7
+# La cadena · Team 7
 
-Piezas de cálculo para el sistema de negociación. **Nada de aquí llama al juego, lee la clave ni acepta ofertas.**
+Piezas de cálculo para el sistema de negociación, y `rastro.py`, el programa que juega la cadena en El Rastro.
 La explicación completa, con dibujos, está en la pestaña **Los agentes** del artefacto Team 7.
 
-## Probarlo en 2 minutos (sin red)
+## Probarlo (sin red)
 
 ```
-cd noche-03-10
-python -m unittest discover -s tests -v     # 78 pruebas, todas pasan (3/10)
+cd cadena
+python -m unittest discover -s tests -v     # con estado-actual.json un nivel por encima
 python sim/informe.py                        # simulaciones con los ajustes actuales → resultados/resumen.json
 ```
 
+## La estructura
+
+Ver [`ESTRUCTURA.md`](ESTRUCTURA.md). En cada tick: **Ojos** (+ Escudo) → **Contable** → **Cambista / Duelista /
+Regateador** → **Guardia**, el único que firma. **El Guion** (el futuro: calendario) y **El Ojeador** (precios en el
+tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
+
 ## Qué hay
 
-| Archivo | Agente | Qué hace |
+| Archivo | Quién | Qué hace |
 |---|---|---|
-| `t7/cadena.py` | **La cadena** | Encadena a todos en un tick: `tick(lectura, memoria)` devuelve los mensajes, UNA firma como mucho, los cierres y el diario. Sin red. `cola_de_operaciones()` dice qué abrir con cada vendedor libre (primero vender) |
+| `t7/cadena.py` | **La cadena** | Encadena a todos en un tick: `tick(lectura, memoria)` devuelve los mensajes, UNA firma como mucho, los cierres y el diario. Sin red. `cola_de_operaciones()` dice qué abrir con cada vendedor libre (primero vender) · `ojear()` al empezar cada tick (Guion y Ojeador); `operaciones()` (Regateador) y `anuncios()` (Cambista) con sus consejos |
 | `vigia.py` | El Vigía | Va aparte. Avisa de lo nuevo en el juego y propone qué hacer. Solo lee (siete lecturas por pasada), así que puede ir a la vez que el programa que juega. `python vigia.py` una pasada; `python vigia.py --cada 60` sin parar, con pitido. Vigila ritmo y límites, calendario, niveles, vendedores, barrios nuevos, mercados y lo nuestro (efectivo, nivel, sobres, puesto), y avisa una vez de lo que empieza en 20 ticks o menos. Escribe `runs/novedades.jsonl`. Las reglas están en `t7/novedades.py`. **Probado solo contra un juego de mentira: la forma real del calendario y de los niveles no se ha visto** |
-| `t7/guion.py` | El Guion | Al lado de la cadena: con `lectura["calendario"]` avisa en el diario de lo que viene. Lo que va a pasar y la jugada preparada para cada evento del calendario, antes de que llegue (duelos, Market Test, vendedor que abre, fiebre de un barrio, cierre de vendedores, cierre del día, congelación). `bloqueadas()` guarda las cartas de un barrio con fiebre próxima; `venta_fiebre()` dice qué copias vender en la fiebre. El Vigía lo usa para avisar con antelación. `python -m t7.guion datos/calendario-03-10.json --hora 10:10`, sin red. Plan del día: `PLAN-SABADO-03-10.md` |
+| `t7/guion.py` | El Guion | El futuro del juego: lee el calendario y tiene la jugada preparada para cada evento antes de que llegue (duelos, vendedores que abren, fiebre de un barrio, cierres). Guarda las cartas que esperan una fiebre (`reservadas()`) y comprueba rumores contra el calendario (`rumor()`) · En la cadena avisa en el diario de lo que viene, una vez por evento |
 | `rastro.py` | — (programa, no es un agente) | Juega la cadena solo en El Rastro: lee el tablón, acepta lo que firma el Guardia, abre sobres y publica anuncios, peticiones y cambios (si sus interruptores están a 1). En seco por defecto; `--live` para jugar. **Nadie lo ha lanzado contra el juego real** |
 | `revisar.py` | La revisión | Antes de jugar: lee el juego (solo lee) y dice con OK, AVISO o FALTA si todo está listo: reloj, caja, multiplicadores y rarezas leídos del juego, la calculadora comparada carta a carta con el valor del juego, vendedores nuevos y menús. Escribe `menus.borrador.json`. **Probada solo contra un juego de mentira** |
 | `t7/menus.py` | — | Saca del juego (`dealers()`) un borrador de `menus.json`: qué vende y qué compra cada vendedor. Acepta menús por carta o por rareza; lo que no entiende lo dice y no lo adivina |
@@ -25,7 +31,7 @@ python sim/informe.py                        # simulaciones con los ajustes actu
 | `t7/hoy.json` | — | Las noticias del día: duración del tick, lo visto en un duelo real, vendedores que se enfadan, categorías que se apagan, decisiones del equipo. Se cambia aquí, sin tocar código |
 | `t7/situacion.py` | El plan del día | Con el efectivo del juego y `hoy.json` saca el modo de caja (holgado, justo, seco) y los ajustes de todos los agentes. `plan(estado)` devuelve los ajustes (`["p"]`) y lo forzado (`["forzar"]`) que se pasan a los agentes y al guardia; `resumen()` lo escribe para la pantalla. |
 | `t7/ojos.py` | Los Ojos | Primer paso de cada tick: leen el juego y pasan los números a la Contable. Su ayudante, el Escudo, mira el texto sospechoso. Solo miran |
-| `t7/ojeador.py` | El Ojeador | Al lado de la cadena: vigila los precios de El Rastro y se los pasa al Regateador y al Cambista |
+| `t7/ojeador.py` | El Ojeador | El vigilante de precios: historial en el tiempo (El Rastro y feed), tendencia, momento del juego, escasez, compradores probables. Dice cuándo comprar y vender; vendedores que descansan tras cupo agotado o enfado · Al lado de la cadena: pasa los precios al Regateador y al Cambista (`vigilar`, `precios`) |
 | `t7/contable.py` | La Contable | Segundo paso, ¿renta? ¿cuánto?: con la calculadora hace las cuentas para el Regateador (tope o suelo, caja) y la ficha del Guardia (y la ganancia de cada duelo). No decide |
 | `t7/valor.py` | La Contable | Calculadora. Coincide con el juego al céntimo (679,12 frente a 679,1; cada carta). `liquidez()` dice qué cartas pequeñas vender cuando el efectivo baja del colchón |
 | `t7/guardia.py` | El Guardia | Única puerta antes de `accept`. Último paso: confirma con la ficha de la Contable. Cinco comprobaciones y firma solo, sin aprobación humana |
@@ -39,6 +45,9 @@ python sim/informe.py                        # simulaciones con los ajustes actu
 | `t7/portavoz.py` | El Portavoz | Mensajes con tácticas; nunca otro número que el precio |
 | `t7/perfiles.py` | El Observador | Ayudante del Regateador. Con quién ser duro; clasificar vendedores nuevos |
 | `sim/` | — | Vendedores, duelos y Market Test simulados, y los torneos |
+| `grabador.py` | El Grabador | Market Test: guarda los libros (solo lee) y `--rejugar` compara el automático con El Casamentero sin red |
+| `datos/calendario-03-10.json` | — | El calendario real del sábado, para las pruebas |
+| `PLAN-EQUIPO-03-10.md`, `PLAN-SABADO-03-10.md` | — | El plan del día, de lo más urgente a lo menos |
 
 ## Cómo está encadenado
 
@@ -81,7 +90,7 @@ La revisión primero, y otra vez cada vez que se anuncie un vendedor nuevo. Con 
 `menus.borrador.json` los menús que entiende del juego: se miran y, si están bien, `python revisar.py --menus` añade a
 `menus.json` los vendedores que falten (lo ya escrito no se toca).
 
-**Quién juega la cadena:** `rastro.py` juega **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
+**Quién conecta la cadena con el juego** (no es un agente ni un paso del flujo: son las flechas con EL JUEGO): `rastro.py`, **solo El Rastro** (el Cambista): lee el tablón, llama a `cadena.tick()`, acepta lo que firme el Guardia eligiendo qué copia nuestra se da, abre sobres antes de comprar y publica anuncios, peticiones y cambios si `rastro.publicar` / `cambista.pedir` = 1. Vendedores y duelos siguen sin programa (`director.py` se quitó): lo tiene que hacer `play.py`. Un solo programa que acepte con la clave del equipo.
 
 Un solo proceso con la clave del equipo.
 

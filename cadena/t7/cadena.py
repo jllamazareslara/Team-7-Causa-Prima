@@ -63,12 +63,18 @@ class Memoria:
         self.sondeadas = {}     # "vendedor|día" → conversaciones en las que el Espía ha preguntado
         self.mercado = {}       # carta → últimos precios a los que otros equipos la anuncian en El Rastro (Cambista)
         self.demanda = {}       # carta → últimos precios que otros equipos OFRECEN por ella en El Rastro (Cambista)
+        self.historial = {}     # carta → [[tick, precio, lado, quién]]: el mercado en el tiempo (Ojeador)
+        self.calendario = {}    # último /api/schedule leído + el tick en que se leyó (Guion y Ojeador)
+        self.escasez = {}       # carta → acuñadas / tirada, del catálogo (Ojeador)
+        self.descansos = {}     # vendedor → hasta cuándo no se le abre nada (Ojeador)
+        self.niveles = {}       # vendedor → nivel: la escalera pesa más en los niveles altos
 
     def a_dict(self):
         return {"sondeadas": self.sondeadas, "sondas": self.sondas, "pistas": self.pistas, "escenarios": self.escenarios, "mala_fe": self.mala_fe,
                 "capturas": self.capturas, "avisos": self.escudo.cuenta, "frases": self.portavoz.usadas,
                 "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas,
-                "mercado": self.mercado, "demanda": self.demanda}
+                "mercado": self.mercado, "demanda": self.demanda, "historial": self.historial,
+                "calendario": self.calendario, "escasez": self.escasez, "descansos": self.descansos, "niveles": self.niveles}
 
     @classmethod
     def de_dict(cls, d):
@@ -81,7 +87,95 @@ class Memoria:
         m.tonos, m.leen, m.preguntas = d.get("tonos", {}), d.get("leen", {}), d.get("preguntas", {})
         m.escudo.cuenta, m.portavoz.usadas = d.get("avisos", {}), d.get("frases", {})
         m.mercado, m.demanda = d.get("mercado", {}), d.get("demanda", {})
+        m.historial = d.get("historial", {})
+        m.calendario, m.escasez = d.get("calendario", {}), d.get("escasez", {})
+        m.descansos, m.niveles = d.get("descansos", {}), d.get("niveles", {})
         return m
+
+
+# ---------------------------------------------------------------- El Ojeador y El Guion dentro de la cadena
+#
+# Viven aquí y no en quien lanza la cadena (hoy rastro.py). Ese programa solo pone en la lectura
+# lo que lee del juego, tal cual, cuando lo lee:
+#   lectura["calendario"]  /api/schedule        lectura["catalogo"]  /api/catalog     lectura["feed"]  /api/feed
+#   lectura["niveles"]     {vendedor: nivel}    lectura["t_hours"]   de /api/clock    lectura["tick_segundos"]
+#   y en cada vendedor cerrado: "cerrado" (closed_reason) y "until_tick"
+# ojear() lo guarda en la memoria y deja en la lectura "hora", "momento" y "escasez" para el resto de la cadena.
+
+def hora_de_juego(mem, lectura):
+    """La hora de juego: la del reloj si viene; si no, la del último calendario más los ticks pasados desde entonces."""
+    if isinstance(lectura.get("t_hours"), (int, float)):
+        return lectura["t_hours"]
+    cal, t = mem.calendario, lectura.get("tick")
+    if not cal or not isinstance(cal.get("now_hours"), (int, float)):
+        return None
+    if isinstance(t, (int, float)) and isinstance(cal.get("tick"), (int, float)):
+        return cal["now_hours"] + (t - cal["tick"]) * (lectura.get("tick_segundos") or 30) / 3600
+    return cal["now_hours"]
+
+
+def ojear(lectura, mem):
+    """Paso del Ojeador al empezar el tick: guarda lo que llegó del juego y calcula hora, momento y escasez."""
+    t = lectura.get("tick")
+    cal = lectura.get("calendario")
+    if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
+        mem.calendario = {"now_hours": cal["now_hours"], "upcoming": cal.get("upcoming") or [], "tick": t}
+    if lectura.get("catalogo"):
+        esc = ojeador.escasez(lectura["catalogo"])
+        if esc:
+            mem.escasez = esc
+    if isinstance(lectura.get("niveles"), dict):
+        mem.niveles.update(lectura["niveles"])
+    if lectura.get("feed"):                              # tratos hechos del feed público: precios reales pagados
+        ojeador.observar_feed(mem.historial, lectura["feed"], t)
+    h = hora_de_juego(mem, lectura)
+    for c in lectura.get("vendedores") or []:            # cupo agotado o enfado: ese vendedor descansa
+        if isinstance(c, dict) and c.get("cerrado") and c.get("vendedor"):
+            desc = ojeador.descanso(c["cerrado"], h, t, c.get("until_tick"))
+            if desc:
+                mem.descansos[c["vendedor"]] = desc
+    lectura["hora"] = h
+    if mem.calendario and h is not None:
+        lectura["momento"] = ojeador.momento(guion.eventos(mem.calendario), h)
+    else:
+        lectura.setdefault("momento", {"fase": "normal", "vender": 1.0, "comprar": "normal", "motivo": ""})
+    lectura["escasez"] = mem.escasez
+    return lectura
+
+
+def _reservadas(cuenta, mem, lectura):
+    h = lectura.get("hora")
+    if not mem.calendario or h is None:
+        return {}
+    return guion.reservadas(dict(cuenta), guion.eventos(mem.calendario), h)
+
+
+def operaciones(cuenta, efectivo, menus, mem, lectura, ordenes=None, abiertas=(), tratos=None, max_tratos=None):
+    """El Regateador con sus consejeros: cola_de_operaciones() + El Guion (cartas que esperan una fiebre) +
+    El Ojeador (vendedores que descansan, El Rastro más barato, cartas que se agotan) + niveles de la escalera.
+    Es lo que llama quien lanza la cadena para abrir conversaciones con vendedores."""
+    t = lectura.get("tick")
+    quietos = {v for v, d in mem.descansos.items() if ojeador.descansa(d, lectura.get("hora"), t)}
+    refs = {r for m in (menus or {}).values() if isinstance(m, dict) for r in (m.get("vende") or {})}
+    senales = ojeador.senales_vendedor(mem.historial, refs, t if isinstance(t, (int, float)) else 0, mem.escasez)
+    return cola_de_operaciones(cuenta, efectivo, menus, ordenes, set(abiertas) | quietos, tratos, max_tratos,
+                               guardar=_reservadas(cuenta, mem, lectura), niveles=mem.niveles, senales=senales)
+
+
+def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), listas=None, caducidades=None, maximo=12):
+    """El Cambista vende con sus consejeros: anuncios_rastro() sin las cartas que esperan una fiebre (Guion) y con el
+    precio ajustado al mercado y al momento (Ojeador), nunca por debajo de lo que nos vale + 1."""
+    excluidas = set(excluidas) | set(_reservadas(cuenta, mem, lectura))
+    out = anuncios_rastro(cuenta, p, activos, ocupadas, excluidas, listas, caducidades, maximo)
+    t = lectura.get("tick") if isinstance(lectura.get("tick"), (int, float)) else 0
+    mom = lectura.get("momento") or {"fase": "normal", "vender": 1.0}
+    for n in out:
+        antes = n["precio"]
+        n["precio"] = ojeador.precio_venta(antes, math.ceil(n["pierde"] + 1), ojeador.tendencia(mem.historial, n["carta"], t),
+                                           mom, mem.escasez.get(n["carta"]))
+        if n["precio"] != antes:
+            n["ojeador"] = f"{antes} → {n['precio']} ({mom.get('fase', 'normal')})"
+    return out
 
 
 def _propuesta_vendedor(c, precio):
@@ -97,6 +191,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     t = lectura.get("tick")
     cuenta, efectivo = lectura.get("cuenta", {}), lectura.get("efectivo", 0)
     mensajes, cerrar, cola, diario, mala_fe = [], [], [], [], []
+    try:                                                 # el Ojeador primero: hora, momento, escasez, descansos
+        ojear(lectura, mem)
+    except Exception as e:
+        diario.append(f"tick {t}  {'ERROR':<10} Ojeador: {type(e).__name__}: {e} · se sigue sin él")
 
     def apunta(quien, texto):
         diario.append(f"tick {t}  {quien:<10} {texto}")
@@ -115,19 +213,18 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     mala_fe.extend(vista["mala_fe"])
 
     # ---------- al lado: Guion (lo que viene) y Ojeador (los precios) ----------
-    def paso_guion(cal):
-        evs = guion.eventos(cal)
-        h = lectura.get("hora") if lectura.get("hora") is not None else guion.ahora_h(cal)
+    def paso_guion(cal):                                 # el calendario y la hora ya los guardó ojear()
+        h = lectura.get("hora")
         if h is None:
             return
-        for e, j, falta in guion.ahora(evs, h)["preparar"]:
+        for e, j, falta in guion.ahora(guion.eventos(cal), h)["preparar"]:
             clave = f"guion|{j['clave']}|{e['h']}"
             if mem.vistos.get(clave) is None:                # cada evento se avisa una vez
                 mem.vistos[clave] = j["titulo"]
                 apunta("GUION", f"{j['titulo']} en {falta:.1f} h" + (f" · {j['antes'][0]}" if j["antes"] else ""))
 
-    if lectura.get("calendario"):
-        aislado(paso_guion, lectura["calendario"], "guion")
+    if mem.calendario:
+        aislado(paso_guion, mem.calendario, "guion")
     precios = ojeador.vigilar(lectura, mem)
 
     # ---------- vendedores: Contable → Regateador (con Portavoz, Observador y Espía) ----------
@@ -276,7 +373,21 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     # ---------- El Rastro: Contable → Cambista (con los precios del Ojeador y el Portavoz) ----------
     def paso_rastro(tablon):
         tablon = [o for o in tablon if isinstance(o, dict)]
+        mom, esc = lectura.get("momento") or {}, lectura.get("escasez") or {}
+        pasado = {r: list(v) for r, v in mem.historial.items()}       # se compara con lo visto ANTES de este tick
+        ojeador.observar(mem.historial, tablon, t)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
+            prop = o["propuesta"]
+            compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
+            if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
+                ref = prop["recibo"]["cartas"][0]
+                ya, porque = ojeador.comprar_ahora(
+                    ref, prop["entrego"]["primas"], V.valor_recibir(cuenta, [ref]),
+                    ojeador.tendencia(pasado, ref, t if isinstance(t, (int, float)) else 0), mom,
+                    esc.get(ref), completa=V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref])
+                if not ya:
+                    apunta("OJEADOR", f"El Rastro · oferta {o['oferta']} ({ref} a {prop['entrego']['primas']}) · {porque}")
+                    continue
             apunta("CAMBISTA", f"El Rastro · oferta {o['oferta']} de {o['maker']} · neto {o['neto']:+.1f}")
             oferta = next((x for x in tablon if x.get("id") == o["oferta"]), None)
             cola.append({"tipo": "equipo", "destino": "rastro", "id": o["oferta"], "oferta_id": o["oferta"],
@@ -367,7 +478,8 @@ def tratos_de_hoy(mem, dia):
     return {v: sum(1 for c in cs if c.get("dia") == dia) for v, cs in mem.capturas.items()}
 
 
-def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None):
+def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None,
+                        guardar=None, niveles=None, senales=None):
     """Qué operación abrir con cada vendedor que no tiene conversación: primero vender, luego comprar.
 
     menus = {vendedor: {"vende": {ref: precio de lista}, "compra": {ref: lo que ofrece de entrada}}}
@@ -375,8 +487,14 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     tratos, max_tratos = calidad antes que cantidad: con max_tratos tratos regateados hoy con un vendedor (solo cuentan
     los tres mejores), ya no se le abren compras salvo la carta que completa una página. Vender sigue: da efectivo.
     Una carta cuyo valor no conocemos (barrio o código nuevo) no se abre nunca.
+    guardar = {ref: vendedor al que sí se vende ahora, o None} (guion.reservadas): cartas que esperan una fiebre.
+    Durante la fiebre van primero al vendedor de la fiebre.
+    niveles = {vendedor: nivel}: los niveles altos pesan más en la escalera, así que sus operaciones van delante.
+    senales = {ref: {"rastro": precio hoy en El Rastro con comisión o None, "escasa": bool}} (ojeador.senales_vendedor):
+    una carta casi agotada se compra antes; con la escalera de ese vendedor ya hecha, no se le compra lo que
+    sale más barato en El Rastro (lo compra el Cambista).
     """
-    ordenes, tratos = ordenes or {}, tratos or {}
+    ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
     pendientes, usadas = [], set()
     for vendedor, menu in menus.items():
@@ -384,8 +502,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             continue
         ventas = [(ref, perdida) for ref, perdida in cambista.vendibles(cuenta)
                   if ref in (menu.get("compra") or {}) and ref not in usadas and V.conocida(ref)
+                  and (ref not in guardar or guardar[ref] == vendedor)
                   and V.rareza(ref) in ("common", "uncommon") and menu["compra"][ref] * 3 > perdida]
-        ventas.sort(key=lambda x: (x[0] not in urgentes, x[1]))
+        ventas.sort(key=lambda x: (x[0] not in guardar, x[0] not in urgentes, x[1]))
         if ventas:
             ref = ventas[0][0]
             usadas.add(ref)
@@ -404,9 +523,15 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
                 continue
             if ordenes.get("compras") == "escalera_y_pagina" and not completa and lista > (ordenes.get("tope_por_trato") or 0):
                 continue
-            compras.append((not completa, -(vale - lista), ref, lista))
+            s = (senales or {}).get(ref) or {}
+            rastro = s.get("rastro")
+            if cupo_lleno and rastro is not None and rastro < lista and not completa:
+                continue                                  # escalera hecha y en El Rastro sale más barata
+            compras.append((not completa, not s.get("escasa"), -(vale - lista), ref, lista))
         if compras:
-            _, _, ref, lista = min(compras)
+            _, _, _, ref, lista = min(compras)
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "compra", "carta": ref, "lista": lista})
+    nivel = {v: n for v, n in (niveles or {}).items() if isinstance(n, (int, float)) and not isinstance(n, bool)}
+    pendientes.sort(key=lambda o: -nivel.get(o["vendedor"], 0))        # estable: sin niveles, el orden de siempre
     return pendientes

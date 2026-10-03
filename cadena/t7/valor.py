@@ -308,3 +308,36 @@ def ficha(ev, titulo):
         lineas.append("ÁLBUM        " + " | ".join(ev["avisos"]))
     lineas.append("BLOQUEOS     " + (" | ".join(ev["bloqueos"]) if ev["bloqueos"] else "ninguno"))
     return "\n".join(lineas)
+
+
+def _de_rareza(b, r):
+    """Las cartas de rareza r del barrio b: las del catálogo si se ha leído, si no por el número."""
+    del_juego = sorted(x for x, y in RAREZAS.items() if barrio(x) == b and y == r)
+    return del_juego or [f"{b}-{i:02d}" for i in range(1, 13) if rareza(f"{b}-{i:02d}") == r]
+
+
+def ev_sobre(sobre, cuenta, precio=None, barrios=None, mult=NUESTROS_MULT):
+    """Lo que vale para NOSOTROS un sobre, de media, antes de abrirlo. La suerte no puntúa: un sobre solo conviene
+    si su valor medio a nuestros multiplicadores supera lo que pagamos.
+
+    sobre   = un elemento de catalog()["packs"]: {"id", "slots": [{"common": 0.75, "uncommon": 0.25}, ...], "expected_book"}
+    barrios = los barrios de los que puede salir (sobre de barrio: el elegido; si no, los ya publicados)
+    Cada hueco se valora con la colección de ahora (aproximación: no suma lo que traen los otros huecos del mismo sobre).
+    Devuelve {"id", "ev", "libro", "precio", "conviene", "detalle"}."""
+    barrios = [b for b in (barrios or list(mult)) if b in mult]
+    detalle, ev = [], 0.0
+    for hueco in (sobre or {}).get("slots") or []:
+        v_hueco = 0.0
+        for r, prob in hueco.items():
+            if r not in BASE or not isinstance(prob, (int, float)):
+                continue
+            medias = []
+            for b in barrios:
+                cartas = _de_rareza(b, r)
+                if cartas:
+                    medias.append(sum(valor_recibir(cuenta, [c], mult) for c in cartas) / len(cartas))
+            v_hueco += prob * (sum(medias) / len(medias) if medias else 0.0)
+        detalle.append(round(v_hueco, 1))
+        ev += v_hueco
+    return {"id": (sobre or {}).get("id"), "ev": round(ev, 1), "libro": (sobre or {}).get("expected_book"),
+            "precio": precio, "conviene": None if precio is None else ev > precio, "detalle": detalle}

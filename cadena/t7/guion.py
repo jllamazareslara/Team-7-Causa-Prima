@@ -226,6 +226,43 @@ def bloqueadas(cuenta, evs, h, horizonte=6.0):
     return sorted(r for r, n in cuenta.items() if n > 0 and V.barrio(r) in barrios)
 
 
+def reservadas(cuenta, evs, h, horizonte=6.0):
+    """{ref: vendedor al que SÍ se puede vender ahora, o None = a nadie}. Antes de la fiebre las cartas del barrio no
+    se venden a nadie (ni siquiera al vendedor de la fiebre, que todavía paga el precio normal); durante la fiebre,
+    solo a él. Lo usan cadena.cola_de_operaciones (vendedores) y cadena.anuncios (El Rastro)."""
+    out = {}
+    for f in fiebres(evs):
+        if not f["barrio"] or h < f["desde_h"] - horizonte or (f["hasta_h"] is not None and h >= f["hasta_h"]):
+            continue
+        activa = h >= f["desde_h"]
+        for r, n in cuenta.items():
+            if n > 0 and V.barrio(r) == f["barrio"]:
+                out[r] = f["vendedor"] if activa else None
+    return out
+
+
+def rumor(texto, evs, h=None):
+    """Radio Rastro / El Tablón mezclan verdad y rumor. Un rumor se cree solo si el calendario oficial lo confirma.
+    Devuelve ("confirmado", evento) si una palabra clave del rumor (vendedor, barrio, fiebre, duelo, Market Test)
+    coincide con un evento futuro del calendario; ("sin_confirmar", None) si no. Nunca cambia un precio."""
+    t = (texto or "").lower()
+    claves = [g for g in RUMOR_GRUPOS if any(k in t for k in g)]
+    if not claves:                                    # un nombre suelto no basta: tiene que decir QUÉ pasa
+        return "sin_confirmar", None
+    nombres = [n for n in list(BARRIOS) + ["pilar", "chato", "abuela"] if n in t]
+    for e in evs:
+        if h is not None and e["h"] < h:
+            continue
+        n = (e["nota"] + " " + json.dumps(e["params"], ensure_ascii=False)).lower()
+        if any(k in n for g in claves for k in g) and (not nombres or any(x in n for x in nombres)):
+            return "confirmado", e
+    return "sin_confirmar", None
+
+
+RUMOR_GRUPOS = (("fever", "fiebre"), ("duel", "duelo"), ("market test", "bench"), ("release", "sale el barrio"),
+                ("opens", "abre"), ("close", "cierra"), ("allowance", "primas"), ("freeze", "congela"))
+
+
 def venta_fiebre(cuenta, fiebre, mult=None):
     """Qué copias venderle al vendedor de la fiebre: [{ref, precio_fiebre, nos_vale, margen}], de más a menos
     margen. Se va quitando copia a copia (la segunda copia vale menos que la primera). Nunca una protegida
