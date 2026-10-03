@@ -25,7 +25,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, situacion  # noqa: E402
+from t7 import cadena, cambista, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -364,6 +364,60 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
     return nuevos
 
 
+def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False):
+    """El Cambista compra: publica en El Rastro peticiones ("pago X por esta carta") siguiendo la lista de la compra.
+
+    Solo publica en vivo y con cambista.pedir = 1. Con 0 (como viene), enseña una vez la lista y lo que pediría.
+    est["peticiones"] = {carta: {"precio", "tick", "caducidades", "id"}}: a los cambista.peticion_dura_ticks se da por
+    caducada y se vuelve a pedir un poco más cara, sin pasar del tope. Si la carta ya es nuestra (la vendió alguien o
+    llegó por otro lado), la petición que siga viva se cancela: una segunda copia vale solo el 25 %.
+    Devuelve lo que ha pedido (o pediría)."""
+    p, forzar, ordenes = plan["p"], plan["forzar"], plan.get("ordenes") or {}
+    publicar = bool(p.get("cambista.pedir"))
+    if not isinstance(tick, int) or "apagado" in (forzar.get("rastro"), forzar.get("equipo")) or not (publicar or primero):
+        return []
+    cuenta = Counter(a["ref"] for a in me.get("assets") or []
+                     if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref"))
+    efectivo = me.get("cash") or 0
+    dura = int(p["cambista.peticion_dura_ticks"])
+    pets = est.setdefault("peticiones", {})
+    for ref in [r for r, x in pets.items() if cuenta.get(r, 0) > 0]:      # ya la tenemos: fuera la petición
+        x = pets.pop(ref)
+        if vivo and publicar and x.get("id") is not None and tick - x["tick"] < dura:
+            try:
+                b.cancel(x["id"])
+            except Exception as e:
+                _linea("errores.jsonl", {"cancelar_peticion": ref, "error": str(e)})
+    vivas = {r: x for r, x in pets.items() if tick - x["tick"] < dura}
+    caducidades = {r: x["caducidades"] + 1 for r, x in pets.items() if r not in vivas}
+    listas = {}
+    for menu in (menus or {}).values():
+        if isinstance(menu, dict):
+            listas.update({r: x for r, x in (menu.get("vende") or {}).items() if isinstance(x, (int, float))})
+    lista = cadena.lista_compra(cuenta, efectivo, p, getattr(mem, "mercado", None), listas)
+    if primero:
+        for linea in cambista.resumen_compras(lista):
+            print(linea)
+    if ordenes.get("compras") == "ninguna":                     # caja seca: se enseña la lista, no se pide nada
+        return []
+    nuevas = cadena.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades)
+    for n in nuevas:
+        mandar = vivo and publicar
+        print(f"PETICIÓN     {n['carta']} a {n['precio']} P en El Rastro (nos vale {n['nos_vale']}, tope {n['tope']}) · {n['motivo']}"
+              + ("" if mandar else " · no se publica: " + ("en seco" if publicar else "cambista.pedir = 0")))
+        if not mandar:
+            continue
+        try:
+            r = b.list_offer(give={"cash": n["precio"]}, want={"cards": [n["carta"]]}, venue="rastro",
+                             expires_in_ticks=dura)
+            r = r if isinstance(r, dict) else {}
+            oid = r.get("id", (r.get("offer") or {}).get("id"))
+            pets[n["carta"]] = {"precio": n["precio"], "tick": tick, "caducidades": caducidades.get(n["carta"], 0), "id": oid}
+        except Exception as e:                                   # una petición que falla no para nada: se apunta
+            _linea("errores.jsonl", {"peticion": n, "error": str(e)})
+    return nuevas
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--live", action="store_true", help="jugar de verdad (sin esto, solo mira)")
@@ -428,6 +482,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
             abrir(b, me, est, plan, vivo, menus, cadena.tratos_de_hoy(mem, dia))
             if primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0):
                 anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, dia), primero)
+                pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
         return True
     except Exception as e:
         print("ERROR       ", f"{type(e).__name__}: {e}")

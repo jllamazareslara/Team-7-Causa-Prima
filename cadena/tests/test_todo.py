@@ -296,6 +296,83 @@ class Cambista(unittest.TestCase):
         self.assertEqual(perfiles.clasificar(0.6, 7, True), "chato")
 
 
+class CambistaCompras(unittest.TestCase):
+    """La estrategia de páginas: qué comprar primero, a cuánto como mucho y qué pedir en El Rastro."""
+    MULT = {"LAT": 1.6, "RET": 1.3, "LAV": 1.1, "CHA": 0.9, "SAL": 0.7, "MAL": 0.5}
+
+    def setUp(self):
+        self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
+        V.NUESTROS_MULT.clear()
+        V.NUESTROS_MULT.update(self.MULT)
+        V.RAREZAS.clear()
+
+    def tearDown(self):
+        V.NUESTROS_MULT.clear()
+        V.NUESTROS_MULT.update(self.mult)
+        V.RAREZAS.clear()
+        V.RAREZAS.update(self.rarezas)
+
+    @staticmethod
+    def latina(hasta):
+        return Counter({"LAT-%02d" % i: 1 for i in range(1, hasta + 1)})
+
+    def test_la_pagina_casi_completa_va_primero(self):
+        lista = cambista.lista_compra(self.latina(8), 300, P)
+        self.assertEqual({f["carta"] for f in lista[:2]}, {"LAT-09", "LAT-10"})
+        primera = lista[0]
+        self.assertFalse(primera["completa"])                       # faltan dos: ninguna completa sola
+        self.assertEqual(primera["nos_vale"], 112)                   # hoy vale lo suyo...
+        self.assertEqual(primera["estrategico"], 165)                # ...y sube con la mitad del bono (106 / 2)
+        self.assertEqual(primera["tope"], 95)                        # pero el tope es lo que vale hoy × 0,85
+
+    def test_la_ultima_carta_lleva_el_bono_en_el_tope(self):
+        f = cambista.lista_compra(self.latina(9), 300, P)[0]
+        self.assertEqual((f["carta"], f["completa"]), ("LAT-10", True))
+        self.assertEqual(f["nos_vale"], 218)                         # 112 + 106 de bono de página
+        self.assertEqual(f["tope"], 185)
+        self.assertIn("completa la página", f["motivo"])
+
+    def test_no_compra_lo_que_vale_menos_que_su_precio(self):
+        refs = [f["carta"] for f in cambista.lista_compra(Counter(), 300, P)]
+        self.assertNotIn("MAL-01", refs)                             # común de Malasaña: nos vale 5, cuesta 10
+        self.assertIn("RET-09", refs)                                # rara de El Retiro: nos vale 91, cuesta 70
+        self.assertTrue(all(f["estrategico"] > f["precio"] for f in cambista.lista_compra(Counter(), 300, P)))
+
+    def test_precio_visto_y_caja(self):
+        mercado = {"LAT-09": [80, 55, 60]}
+        lista = cambista.lista_compra(self.latina(8), 300, P, mercado=mercado)
+        f = next(x for x in lista if x["carta"] == "LAT-09")
+        self.assertEqual(f["precio"], 55)                            # lo más barato visto en El Rastro
+        corta = cambista.lista_compra(self.latina(8), 60 + 100, P)  # 100 P sobre la reserva: cabe una rara
+        self.assertEqual([x["en_caja"] for x in corta[:2]], [True, False])
+
+    def test_peticiones_suben_sin_pasar_del_tope(self):
+        c = self.latina(8)
+        lista = cambista.lista_compra(c, 300, P)
+        pet = cambista.peticiones(lista, c, 300, P)
+        self.assertEqual(pet[0]["precio"], 31)                       # rara: 0,45 × 70
+        self.assertEqual(len({x["carta"] for x in pet}), len(pet))   # una por carta
+        self.assertLessEqual(len(pet), P["cambista.peticiones_max"])
+        dos = cambista.peticiones(lista, c, 300, P, caducidades={pet[0]["carta"]: 2})
+        self.assertEqual(next(x for x in dos if x["carta"] == pet[0]["carta"])["precio"], 45)   # + 7 por caducidad
+        muchas = cambista.peticiones(lista, c, 300, P, caducidades={pet[0]["carta"]: 50})
+        self.assertEqual(next(x for x in muchas if x["carta"] == pet[0]["carta"])["precio"], 95)  # el tope
+        ya = cambista.peticiones(lista, c, 300, P, activas={"LAT-09": 31, "LAT-10": 31})
+        self.assertFalse({"LAT-09", "LAT-10"} & {x["carta"] for x in ya})
+        self.assertEqual(cambista.peticiones(lista, c, 60, P), [])   # sin caja sobre la reserva, nada
+
+    def test_el_mercado_se_aprende_del_tablon(self):
+        mercado = {}
+        cadena.apuntar_mercado(mercado, [
+            {"id": 1, "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 70}},
+            {"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}},                   # una petición: no es precio de venta
+            {"id": 3, "give": {"assets": [{"ref": "MAL-01"}, {"ref": "MAL-02"}]}, "want": {"cash": 12}}])   # lote: no
+        self.assertEqual(mercado, {"LAT-09": [70]})
+        mem = cadena.Memoria()
+        mem.mercado = mercado
+        self.assertEqual(cadena.Memoria.de_dict(json.loads(json.dumps(mem.a_dict()))).mercado, {"LAT-09": [70]})
+
+
 class Situacion(unittest.TestCase):
     """El plan del día: con poco efectivo y con noticias nuevas, los ajustes cambian solos."""
     HOY = {"tick_segundos": 30}

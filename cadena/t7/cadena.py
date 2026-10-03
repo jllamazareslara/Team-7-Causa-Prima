@@ -55,11 +55,13 @@ class Memoria:
         self.leen = {}          # duelo → ¿el agente rival lee el texto? (lo dice el canario)
         self.preguntas = {}     # duelo → preguntas directas ya hechas
         self.sondeadas = {}     # "vendedor|día" → conversaciones en las que el Espía ha preguntado
+        self.mercado = {}       # carta → últimos precios a los que otros equipos la anuncian en El Rastro (Cambista)
 
     def a_dict(self):
         return {"sondeadas": self.sondeadas, "sondas": self.sondas, "pistas": self.pistas, "escenarios": self.escenarios, "mala_fe": self.mala_fe,
                 "capturas": self.capturas, "avisos": self.escudo.cuenta, "frases": self.portavoz.usadas,
-                "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas}
+                "vistos": self.vistos, "tonos": self.tonos, "leen": self.leen, "preguntas": self.preguntas,
+                "mercado": self.mercado}
 
     @classmethod
     def de_dict(cls, d):
@@ -71,6 +73,7 @@ class Memoria:
         m.capturas, m.vistos = d.get("capturas", {}), d.get("vistos", {})
         m.tonos, m.leen, m.preguntas = d.get("tonos", {}), d.get("leen", {}), d.get("preguntas", {})
         m.escudo.cuenta, m.portavoz.usadas = d.get("avisos", {}), d.get("frases", {})
+        m.mercado = d.get("mercado", {})
         return m
 
 
@@ -268,6 +271,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     # ---------- El Rastro: Cambista ----------
     def paso_rastro(tablon):
         tablon = [o for o in tablon if isinstance(o, dict)]
+        apuntar_mercado(mem.mercado, tablon)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"])[:3]:
             apunta("CAMBISTA", f"El Rastro · oferta {o['oferta']} de {o['maker']} · neto {o['neto']:+.1f}")
             oferta = next((x for x in tablon if x.get("id") == o["oferta"]), None)
@@ -307,6 +311,35 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
 
     mem.mala_fe.extend(mala_fe)
     return {"mensajes": mensajes, "firma": firma, "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe}
+
+
+MERCADO_RECUERDA = 12      # precios vistos por carta que guarda el Cambista
+
+
+def apuntar_mercado(mercado, tablon):
+    """El Cambista aprende los precios: cada anuncio de El Rastro que vende UNA carta por efectivo se apunta
+    (los últimos MERCADO_RECUERDA por carta). La lista de la compra espera pagar lo más barato visto."""
+    for o in tablon:
+        give, want = o.get("give") or {}, o.get("want") or {}
+        cartas = give.get("assets") or []
+        precio = want.get("cash")
+        if len(cartas) != 1 or give.get("cash") or want.get("cards") or not isinstance(precio, (int, float)) or precio <= 0:
+            continue
+        ref = cartas[0].get("ref") if isinstance(cartas[0], dict) else cartas[0]
+        if isinstance(ref, str):
+            vistos = mercado.setdefault(ref, [])
+            vistos.append(precio)
+            del vistos[:-MERCADO_RECUERDA]
+
+
+def lista_compra(cuenta, efectivo, p, mercado=None, listas=None):
+    """El Cambista compra: la lista de la compra (ver cambista.lista_compra)."""
+    return cambista.lista_compra(cuenta, efectivo, p, mercado=mercado, listas=listas)
+
+
+def peticiones_rastro(lista, cuenta, efectivo, p, activas=None, caducidades=None):
+    """El Cambista compra: qué peticiones publicar en El Rastro ahora (ver cambista.peticiones)."""
+    return cambista.peticiones(lista, cuenta, efectivo, p, activas, caducidades)
 
 
 def _caja_para_comprar(carta, cuenta, efectivo, p, ordenes):
