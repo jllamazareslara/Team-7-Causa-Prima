@@ -398,7 +398,8 @@ def tratos_de_hoy(mem, dia):
     return {v: sum(1 for c in cs if c.get("dia") == dia) for v, cs in mem.capturas.items()}
 
 
-def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None):
+def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), tratos=None, max_tratos=None,
+                        guardar=None, niveles=None):
     """Qué operación abrir con cada vendedor que no tiene conversación: primero vender, luego comprar.
 
     menus = {vendedor: {"vende": {ref: precio de lista}, "compra": {ref: lo que ofrece de entrada}}}
@@ -406,8 +407,11 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     tratos, max_tratos = calidad antes que cantidad: con max_tratos tratos regateados hoy con un vendedor (solo cuentan
     los tres mejores), ya no se le abren compras salvo la carta que completa una página. Vender sigue: da efectivo.
     Una carta cuyo valor no conocemos (barrio o código nuevo) no se abre nunca.
+    guardar = {ref: vendedor al que sí se vende ahora, o None} (guion.reservadas): cartas que esperan una fiebre.
+    Durante la fiebre van primero al vendedor de la fiebre.
+    niveles = {vendedor: nivel}: los niveles altos pesan más en la escalera, así que sus operaciones van delante.
     """
-    ordenes, tratos = ordenes or {}, tratos or {}
+    ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
     pendientes, usadas = [], set()
     for vendedor, menu in menus.items():
@@ -415,8 +419,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             continue
         ventas = [(ref, perdida) for ref, perdida in cambista.vendibles(cuenta)
                   if ref in (menu.get("compra") or {}) and ref not in usadas and V.conocida(ref)
+                  and (ref not in guardar or guardar[ref] == vendedor)
                   and V.rareza(ref) in ("common", "uncommon") and menu["compra"][ref] * 3 > perdida]
-        ventas.sort(key=lambda x: (x[0] not in urgentes, x[1]))
+        ventas.sort(key=lambda x: (x[0] not in guardar, x[0] not in urgentes, x[1]))
         if ventas:
             ref = ventas[0][0]
             usadas.add(ref)
@@ -440,4 +445,6 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             _, _, ref, lista = min(compras)
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "compra", "carta": ref, "lista": lista})
+    nivel = {v: n for v, n in (niveles or {}).items() if isinstance(n, (int, float)) and not isinstance(n, bool)}
+    pendientes.sort(key=lambda o: -nivel.get(o["vendedor"], 0))        # estable: sin niveles, el orden de siempre
     return pendientes

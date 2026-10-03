@@ -82,5 +82,60 @@ class Guion(unittest.TestCase):
         self.assertEqual([n for n in novedades.comparar(ahora, novedades.foto(lect(7.6))) if "Fiebre" in n["titulo"]], [])
 
 
+class Plan(unittest.TestCase):
+    """Lo añadido con el plan del sábado: reservas para la fiebre, niveles, rumores, valor de sobres, grabador."""
+
+    def test_reservadas_antes_nadie_durante_solo_pilar(self):
+        cuenta = {"SAL-01": 2, "LAT-02": 1}
+        self.assertEqual(guion.reservadas(cuenta, EVS, 5.0), {"SAL-01": None})
+        self.assertEqual(guion.reservadas(cuenta, EVS, 9.5), {"SAL-01": "pilar"})
+        self.assertEqual(guion.reservadas(cuenta, EVS, 11.5), {})
+
+    def test_cola_respeta_fiebre_y_niveles(self):
+        from t7 import cadena
+        cuenta = {"SAL-01": 3, "MAL-02": 3}
+        menus = {"abuela": {"compra": {"SAL-01": 6, "MAL-02": 4}}, "pilar": {"compra": {"SAL-01": 12}}}
+        antes = cadena.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": None})
+        self.assertNotIn("SAL-01", [o["carta"] for o in antes])                     # a nadie antes de la fiebre
+        durante = cadena.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": "pilar"},
+                                             niveles={"abuela": 1, "pilar": 3})
+        self.assertEqual(durante[0], {"vendedor": "pilar", "lado": "venta", "carta": "SAL-01", "lista": 12})
+        self.assertEqual(next(o for o in durante if o["vendedor"] == "abuela")["carta"], "MAL-02")
+
+    def test_rumores(self):
+        self.assertEqual(guion.rumor("Dicen que Pilar tendrá fiebre por Salamanca", EVS, 3.8)[0], "confirmado")
+        self.assertEqual(guion.rumor("El Chato regala sobres de oro esta noche", EVS, 3.8)[0], "sin_confirmar")
+
+    def test_peso_del_nivel_en_la_escalera(self):
+        from t7 import prioridad
+        self.assertAlmostEqual(prioridad.mejora_escalera([0.5], 0.6, nivel=3), 3 * prioridad.mejora_escalera([0.5], 0.6))
+
+    def test_ev_sobre_a_nuestros_valores(self):
+        from t7 import valor as V
+        barrio = {"id": "sobre_barrio", "slots": [{"common": 1.0}, {"common": 1.0}, {"common": 0.75, "uncommon": 0.25}],
+                  "expected_book": 33.8}
+        lat = V.ev_sobre(barrio, {}, precio=30, barrios=["LAT"], mult=MULT)
+        mal = V.ev_sobre(barrio, {}, precio=30, barrios=["MAL"], mult=MULT)
+        self.assertAlmostEqual(lat["ev"], 33.75 * 1.6, delta=0.2)                   # colección vacía: libro × multiplicador
+        self.assertTrue(lat["conviene"])
+        self.assertFalse(mal["conviene"])
+
+    def test_grabador_normaliza_y_rejuega(self):
+        import tempfile
+        import grabador
+        crudas = [{"id": "b1-1", "side": "buy", "price": 30}, {"id": "b1-2", "side": "sell", "price": 20},
+                  {"id": "b1-3", "give": {"cash": 25}, "want": {"cards": ["X"]}}, {"id": "b1-4", "want": {"cash": 22}},
+                  {"id": "raro"}]
+        norm = grabador.normalizar(crudas)
+        self.assertEqual([(o["id"], o["lado"], o["precio"]) for o in norm],
+                         [("b1-1", "compra", 30), ("b1-2", "venta", 20), ("b1-3", "compra", 25), ("b1-4", "venta", 22)])
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "100.jsonl"), "w", encoding="utf-8") as f:
+                for t in range(4):
+                    f.write(json.dumps({"tick": 100 + t, "ordenes": norm}) + "\n")
+            tabla = grabador.rejugar(d)
+        self.assertEqual(tabla[0][1]["automatico"], 13)                             # (30−20) + (25−22)
+
+
 if __name__ == "__main__":
     unittest.main()
