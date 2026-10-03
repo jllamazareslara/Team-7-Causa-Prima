@@ -329,6 +329,83 @@
   "estado": "supuesto",
   "por_que": "Primas que baja un anuncio cada vez que caduca sin venderse."
  },
+ "cambista.pedir": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = el director publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Viene apagado: publicar peticiones no se ha probado contra el juego real."
+ },
+ "cambista.apertura_peticion": {
+  "valor": 0.45,
+  "min": 0.2,
+  "max": 1.0,
+  "estado": "supuesto",
+  "por_que": "Primera oferta de una petición: fracción de la base de la rareza (común 10, poco común 25, rara 70). Con 0,45 una rara se pide a 31 P: a un equipo que la tiene repetida le vale 7 a 28, así que vender le renta, y a nosotros (La Latina ×1,6) nos vale 112. Si nadie contesta, sube sola en cada caducidad."
+ },
+ "cambista.subida_por_caducidad": {
+  "valor": 0.1,
+  "min": 0.0,
+  "max": 0.5,
+  "estado": "supuesto",
+  "por_que": "Cuánto sube una petición cada vez que caduca sin respuesta: fracción de la base de la rareza (una rara sube 7 P, una común 1 P). Nunca pasa del tope."
+ },
+ "cambista.tope_pct_valor": {
+  "valor": 0.85,
+  "min": 0.5,
+  "max": 1.0,
+  "estado": "decisión",
+  "por_que": "Lo máximo que pagamos por una carta, como parte de lo que nos vale HOY (con el bono si es la última de su página). 0,85 deja siempre al menos un 15 % de ganancia, que es lo que puntúa con los equipos."
+ },
+ "cambista.peticiones_max": {
+  "valor": 4,
+  "min": 0,
+  "max": 12,
+  "estado": "decisión",
+  "por_que": "Peticiones nuestras vivas a la vez en El Rastro. Pocas: cada una enseña qué nos falta y compromete efectivo hasta que caduca."
+ },
+ "cambista.peticion_dura_ticks": {
+  "valor": 10,
+  "min": 2,
+  "max": 40,
+  "estado": "supuesto",
+  "por_que": "Ticks que vive una petición antes de caducar y volver a publicarse más cara: 5 minutos a 30 s por tick, 2,5 minutos el domingo."
+ },
+ "cambista.bono_si_faltan": {
+  "valor": 2,
+  "min": 0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "A una página a la que le faltan como mucho estas cartas, cada carta que falta sube en la lista con su parte del bono de página. Solo ordena: el tope de cada compra sigue siendo lo que esa carta nos vale hoy."
+ },
+ "cambista.tope_pct_final": {
+  "valor": 0.98,
+  "min": 0.5,
+  "max": 1.0,
+  "estado": "decisión",
+  "por_que": "En el tramo final del juego el efectivo ya no puntúa: se paga hasta el 98 % de lo que vale una carta y las peticiones salen directamente al tope. Cada carta que entra sigue sumando valor."
+ },
+ "cambista.minutos_final": {
+  "valor": 30,
+  "min": 0,
+  "max": 240,
+  "estado": "decisión",
+  "por_que": "Minutos antes del fin del juego (domingo 15:00, o \"fin_juego\" en hoy.json) en los que empieza el tramo final. 0 = nunca."
+ },
+ "cambista.trueques_max": {
+  "valor": 2,
+  "min": 0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "Cambios carta por carta vivos a la vez en El Rastro (damos repetidas por cartas que nos faltan, sin gastar efectivo). 0 = apagado. Se publican con cambista.pedir = 1."
+ },
+ "cambista.trueque_ratio": {
+  "valor": 0.8,
+  "min": 0.3,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Lo que damos en un cambio tiene que sumar al menos esta parte de la base de lo que pedimos (una poco común, 25, pide 20 de base: una poco común o dos comunes). Por debajo, nadie lo aceptaría."
+ },
  "ataque.inyeccion_equipos": {
   "valor": 0,
   "min": 0,
