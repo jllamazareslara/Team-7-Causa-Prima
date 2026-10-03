@@ -74,10 +74,33 @@ def _oferta_del_otro(hilo, nosotros):
     for o in reversed(hilo.get("standing_offers") or []):
         if o.get("maker") in (nosotros, "me", "you") or o.get("status") not in (None, "open", "standing"):
             continue
-        precio = _precio(o.get("want")) if _precio(o.get("want")) is not None else _precio(o.get("give"))
-        if precio is not None:
+        # el juego manda "cash": 0 en el lado que no lleva dinero: cuando el vendedor NOS compra, el precio está en give
+        precio = _precio(o.get("want")) or _precio(o.get("give"))
+        if precio:
             return o.get("id"), precio, bool(o.get("final"))
     return None
+
+
+FALLIDAS_MAX, FALLIDAS_HORAS = 2, 1.0     # tras dos regateos sin trato por la misma carta, ese vendedor descansa de ella una hora
+
+
+def _fallida(est, h):
+    """Apunta un regateo que acabó sin trato (nos fuimos, se fue él, se cerró): para no repetirlo en bucle."""
+    if not h or not h.get("vendedor") or not h.get("carta"):
+        return
+    f = est.setdefault("fallidas", {}).setdefault(f"{h['vendedor']}|{h.get('lado')}|{h['carta']}", {"n": 0})
+    f["n"], f["hora"] = f["n"] + 1, _hora_de_juego(est)
+
+
+def _en_bucle(est, op):
+    f = (est.get("fallidas") or {}).get(f"{op['vendedor']}|{op.get('lado')}|{op['carta']}")
+    if not f or f["n"] < FALLIDAS_MAX:
+        return False
+    hora = _hora_de_juego(est)
+    if hora is not None and f.get("hora") is not None and hora - f["hora"] >= FALLIDAS_HORAS:
+        f["n"] = 0                                             # ha pasado la hora: se puede volver a intentar
+        return False
+    return True
 
 
 def _ultimo_texto(hilo, nosotros):
@@ -119,6 +142,7 @@ def leer(b, est, tick):
                     print(f"DESCANSA     {h['vendedor']} ({motivo}) hasta " +
                           (f"la hora de juego {desc['hasta_h']:g}" if "hasta_h" in desc else f"el tick {desc['hasta_tick']}"))
                 if estado != "deal":
+                    _fallida(est, h)
                     lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0], cerrado=crudo.get("closed_reason") or estado))
             else:                                                # abierta, pero sin una oferta suya que entendamos
                 h["mudo"] = h.get("mudo", 0) + 1
@@ -206,7 +230,7 @@ def aplicar(b, acciones, est, vivo):
         try:
             if vivo:
                 b.close_thread(c["id"])
-                est["hilos"].pop(str(c["id"]), None)
+                _fallida(est, est["hilos"].pop(str(c["id"]), None))
         except Exception as e:
             _linea("errores.jsonl", {"cerrar": c, "error": str(e)})
     f = acciones["firma"]
@@ -364,6 +388,7 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, tick=None):
     ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos,
                                      plan["p"].get("tienda.tratos_por_vendedor_y_dia"),
                                      guardar=reservadas(est, cuenta), niveles=est.get("niveles"), senales=senales)
+    ops = [op for op in ops if not _en_bucle(est, op)]
     for op in ops[:huecos]:
         if op["lado"] == "venta":
             ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])

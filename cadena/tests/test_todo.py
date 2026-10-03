@@ -1097,5 +1097,36 @@ class Vigia(unittest.TestCase):
             self.assertNotIn("me", json.load(f))                           # nuestros datos y claves no se vuelcan
 
 
+class VentaAVendedor(unittest.TestCase):
+    """Lo visto el 03/10 en el juego real: vendimos La Chulapa al Chato a 11 P cuando él ofrecía 13, y El Tatuador a la
+    Abuela a 2 P cuando ofrecía 5. El juego manda "cash": 0 en el lado sin dinero y se leía ese 0 como su precio."""
+
+    def test_el_precio_del_vendedor_que_nos_compra(self):
+        import director
+        compra = {"standing_offers": [{"id": 9041, "maker": "chato", "to": "t07", "status": "open", "final": False,
+                                       "give": {"cash": 13, "assets": [], "types": []},
+                                       "want": {"cash": 0, "assets": [], "types": ["card:LAT-06"]}}]}
+        self.assertEqual(director._oferta_del_otro(compra, "t07"), (9041, 13, False))
+        vende = {"standing_offers": [{"id": 11009, "maker": "chato", "to": "t07", "status": "open", "final": False,
+                                      "give": {"cash": 0, "assets": [], "types": ["card:RET-10"]},
+                                      "want": {"cash": 97, "assets": [], "types": []}}]}
+        self.assertEqual(director._oferta_del_otro(vende, "t07"), (11009, 97, False))
+
+    def test_con_su_oferta_bien_leida_no_se_pide_menos_que_el(self):
+        st = {"lado": "venta", "limite": 11, "suyas": [13], "nuestras": [], "final": False, "lista": None}
+        accion, precio, _ = tienda.decidir(st, params.perfil(P, "chato"), P)
+        self.assertTrue(accion == "aceptar" or precio >= 13, (accion, precio))
+
+    def test_dos_regateos_sin_trato_y_esa_carta_descansa(self):
+        import director
+        est, op = {}, {"vendedor": "chato", "lado": "compra", "carta": "RET-10"}
+        self.assertFalse(director._en_bucle(est, op))
+        director._fallida(est, op)
+        self.assertFalse(director._en_bucle(est, op))
+        director._fallida(est, op)
+        self.assertTrue(director._en_bucle(est, op))
+        self.assertFalse(director._en_bucle(est, dict(op, carta="RET-09")))          # otra carta sí se puede intentar
+
+
 if __name__ == "__main__":
     unittest.main()
