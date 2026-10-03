@@ -12,7 +12,7 @@ Copy it next to your agent, or run from this folder.
 export BAZAAR_URL=https://bazaar.causaprima.ai
 export BAZAAR_KEY=tk-xxxx-xxxx      # the key on your team's slip; keep it to your team
 curl -s -H "X-Team-Key: $BAZAAR_KEY" $BAZAAR_URL/api/me   # shows your team: the key works (401 = check it)
-python3 starter_agent.py            # or: uv run starter_agent.py
+python3 starter/starter_agent.py            # or: uv run starter_agent.py
 ```
 
 The starter says hello to Abuela Carmen, haggles for a neighbourhood pack, opens it and prints what you pulled.
@@ -73,7 +73,7 @@ You get a broker key for it:
 
 ```bash
 python3 -c 'from bazaar_sdk import Bazaar; import os; print(Bazaar(os.environ["BAZAAR_URL"], os.environ["BAZAAR_KEY"]).open_venue("My market", fee_bps=150, rules={"mechanism": "board"})["broker_key"])'
-BROKER_KEY=bk_... python3 starter_broker.py     # keep it running all game
+BROKER_KEY=bk_... python3 market/starter_broker.py     # keep it running all game
 ```
 
 Most of the market points come from *the Market Test*: every venue regularly gets the same synthetic book of buyers and sellers, and your broker scores the share of the possible gains it realises.

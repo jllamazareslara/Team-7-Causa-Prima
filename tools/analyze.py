@@ -1,7 +1,9 @@
 import collections
 import json
 import os
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # bazaar_sdk.py lives at the repo root
 from bazaar_sdk import Bazaar
 
 b = Bazaar(os.environ["BAZAAR_URL"], os.environ["BAZAAR_KEY"])

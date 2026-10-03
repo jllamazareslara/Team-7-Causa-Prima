@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+.broker_key
+.env
+duelos-log.jsonl
+duelos-limites.json
+agent_run.log

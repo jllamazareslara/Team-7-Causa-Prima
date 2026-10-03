@@ -1,13 +1,14 @@
 """A starter broker for your venue: it crosses the Market Test's bench offers exactly as the free auto stall does, and your
 venue's public offers card by card. Run it for the whole game on a venue opened with {"mechanism": "board"} (on an
 'auto' venue, the free stall included, the engine crosses every pair before a broker reads the book):
-    BROKER_KEY=bk_... python3 starter_broker.py   # BAZAAR_URL defaults to https://bazaar.causaprima.ai
+    BROKER_KEY=bk_... python3 market/starter_broker.py   # BAZAAR_URL defaults to https://bazaar.causaprima.ai
 
 On the Market Test it earns what the free stall earns, half the bench points and no more, because it crosses by quote and a
 quote is not a limit. Bench traders shade their quotes away from a limit they keep hidden. Some are patient and some
 leave soon; most relax their quotes as their patience runs out, and the firm ones never do. the Market Test counts the gains
 between the true limits, so a broker that estimates those limits, and who is about to leave, beats the stall."""
-import math, os, time  # noqa: E401
+import math, os, sys, time  # noqa: E401
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # bazaar_sdk.py lives at the repo root
 from bazaar_sdk import BazaarError, Broker
 
 

@@ -1,9 +1,11 @@
 """Your first deal in the Bazaar: buy a pack from Abuela Carmen, open it, see your score.
 
-    BAZAAR_URL=https://bazaar.causaprima.ai BAZAAR_KEY=tk-xxxx-xxxx python starter_agent.py
+    BAZAAR_URL=https://bazaar.causaprima.ai BAZAAR_KEY=tk-xxxx-xxxx python starter/starter_agent.py
 """
 import os
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # bazaar_sdk.py lives at the repo root
 from bazaar_sdk import Bazaar
 
 b = Bazaar(os.environ.get("BAZAAR_URL", "https://bazaar.causaprima.ai"), os.environ["BAZAAR_KEY"])
