@@ -242,7 +242,8 @@ def vendedores_nuevos(b, est, menus):
     except Exception as e:
         _linea("errores.jsonl", {"vendedores": str(e)})
         return []
-    lista = res.get("dealers", res.get("in_play", [])) if isinstance(res, dict) else res
+    lista = (res.get("personas", res.get("dealers", res.get("in_play", [])))
+              if isinstance(res, dict) else res)
     nuevos = []
     for d in lista if isinstance(lista, list) else []:
         vid = d.get("id") if isinstance(d, dict) else None

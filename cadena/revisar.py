@@ -101,7 +101,8 @@ def revisar(b, menus_actuales=None, stop=False):
 
     vendedores = lee("vendedores", b.dealers)
     borrador, dudas = M.del_juego(vendedores, cuenta) if vendedores is not None else ({}, [])
-    lista = vendedores.get("dealers", vendedores.get("in_play", [])) if isinstance(vendedores, dict) else vendedores
+    lista = (vendedores.get("personas", vendedores.get("dealers", vendedores.get("in_play", [])))
+              if isinstance(vendedores, dict) else vendedores)
     ids = [str(d["id"]) for d in lista if isinstance(d, dict) and d.get("id") is not None] if isinstance(lista, list) else []
     if vendedores is not None:
         di("OK" if ids else "FALTA", "vendedores en el juego: " + (", ".join(ids) or "no se entiende la lista"))

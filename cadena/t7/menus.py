@@ -26,10 +26,17 @@ def _precio(v):
     return v if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0 else None
 
 
-def _de_rareza(rareza, barrio, lado, cuenta):
+def _barrios(x):
+    """None = todos los barrios (p.ej. sets: "released"); si no, el conjunto de barrios, venga uno o una lista."""
+    if x is None or x == "released":
+        return None
+    return {x} if isinstance(x, str) else set(x) if isinstance(x, list) else None
+
+
+def _de_rareza(rareza, barrios, lado, cuenta):
     """Las cartas concretas de una rareza: vendiendo él, las del catálogo; comprando él, las que tenemos nosotros."""
     refs = cuenta if lado == "compra" else V.RAREZAS
-    return sorted(r for r in refs if V.rareza(r) == rareza and (barrio is None or V.barrio(r) == barrio)
+    return sorted(r for r in refs if V.rareza(r) == rareza and (barrios is None or V.barrio(r) in barrios)
                   and (lado != "compra" or cuenta.get(r, 0) > 0))
 
 
@@ -67,7 +74,7 @@ def _lado(x, lado, cuenta, dudas, quien):
             if it.get("kind") == "pack" or "pack" in it:
                 continue
             ref = next((it[k] for k in CLAVES_REF if isinstance(it.get(k), str)), None)
-            pon(ref, it.get("rarity"), it.get("set"), _precio(it), it)
+            pon(ref, it.get("rarity"), _barrios(it.get("sets", it.get("set"))), _precio(it), it)
     elif x is not None:
         dudas.append(f"{quien} · {lado}: forma que no se entiende: {x!r}")
     return out
@@ -78,7 +85,8 @@ def del_juego(vendedores, cuenta=None):
 
     menus solo trae vendedores de los que se entendió algo. dudas = textos para una persona: lo que no se entendió."""
     cuenta = cuenta or {}
-    lista = vendedores.get("dealers", vendedores.get("in_play", [])) if isinstance(vendedores, dict) else vendedores
+    lista = (vendedores.get("personas", vendedores.get("dealers", vendedores.get("in_play", [])))
+              if isinstance(vendedores, dict) else vendedores)
     menus, dudas = {}, []
     for d in lista if isinstance(lista, list) else []:
         if not isinstance(d, dict) or d.get("id") is None:
