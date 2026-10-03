@@ -95,7 +95,8 @@ def decidir(st, p):
 
 def mejor_dia(pesos, por_defecto=5, hacia=None):
     """El día de entrega que más nos vale según `your_days_weight`. Su forma real aún no se ha visto en un duelo:
-    se entiende una lista (posición = día) o un diccionario {día: peso}. Con cualquier otra cosa, el día por defecto.
+    se entiende una lista (posición = día), un diccionario {día: peso}, o un número (todos los días igual).
+    Con un número, se elige el día que el rival prefiere; si no hay pista, el día por defecto.
     Devuelve (día, motivo). Un mensaje con precio y sin día lo rechaza el juego, así que siempre sale un día.
 
     hacia: "pronto" o "tarde" si hay una pista de lo que prefiere el rival (ver dia_preferido_rival). Entre los
@@ -106,6 +107,8 @@ def mejor_dia(pesos, por_defecto=5, hacia=None):
             pares = [(int(k), float(v)) for k, v in pesos.items()]
         elif isinstance(pesos, (list, tuple)):
             pares = [(i, float(v)) for i, v in enumerate(pesos)]
+        elif isinstance(pesos, (int, float)):
+            pares = [(d, float(pesos)) for d in range(11)]
         else:
             pares = []
     except (TypeError, ValueError):
