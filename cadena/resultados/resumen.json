@@ -1,0 +1,425 @@
+{
+ "tienda": {
+  "abuela/compra": {
+   "ana_actual": {
+    "nota": 0.398,
+    "media": 0.56,
+    "peor": 0.236,
+    "tratos": 0.922,
+    "cooloff": 0.0,
+    "por_mundo": {
+     "base": 0.69,
+     "ofensa_dura": 0.69,
+     "cesion_con_tope": 0.236,
+     "suelo_alto": 0.626
+    }
+   },
+   "ganador": {
+    "nota": 0.428,
+    "media": 0.527,
+    "peor": 0.328,
+    "tratos": 0.909,
+    "cooloff": 0.0,
+    "por_mundo": {
+     "base": 0.602,
+     "ofensa_dura": 0.602,
+     "cesion_con_tope": 0.328,
+     "suelo_alto": 0.577
+    }
+   },
+   "nuestra": {
+    "nota": 0.54,
+    "media": 0.641,
+    "peor": 0.439,
+    "tratos": 0.915,
+    "cooloff": 0.018,
+    "por_mundo": {
+     "base": 0.786,
+     "ofensa_dura": 0.702,
+     "cesion_con_tope": 0.439,
+     "suelo_alto": 0.636
+    }
+   }
+  },
+  "abuela/venta": {
+   "ana_actual": {
+    "nota": 0.339,
+    "media": 0.662,
+    "peor": 0.015,
+    "tratos": 0.898,
+    "cooloff": 0.018,
+    "por_mundo": {
+     "base": 0.902,
+     "ofensa_dura": 0.831,
+     "cesion_con_tope": 0.015,
+     "suelo_alto": 0.902
+    }
+   },
+   "ganador": {
+    "nota": 0.379,
+    "media": 0.68,
+    "peor": 0.078,
+    "tratos": 0.901,
+    "cooloff": 0.018,
+    "por_mundo": {
+     "base": 0.907,
+     "ofensa_dura": 0.827,
+     "cesion_con_tope": 0.078,
+     "suelo_alto": 0.907
+    }
+   },
+   "nuestra": {
+    "nota": 0.379,
+    "media": 0.68,
+    "peor": 0.078,
+    "tratos": 0.901,
+    "cooloff": 0.018,
+    "por_mundo": {
+     "base": 0.907,
+     "ofensa_dura": 0.827,
+     "cesion_con_tope": 0.078,
+     "suelo_alto": 0.907
+    }
+   }
+  },
+  "chato/compra": {
+   "ana_actual": {
+    "nota": 0.353,
+    "media": 0.479,
+    "peor": 0.228,
+    "tratos": 0.885,
+    "cooloff": 0.019,
+    "por_mundo": {
+     "base": 0.603,
+     "ofensa_dura": 0.522,
+     "cesion_con_tope": 0.228,
+     "suelo_alto": 0.561
+    }
+   },
+   "ganador": {
+    "nota": 0.212,
+    "media": 0.245,
+    "peor": 0.179,
+    "tratos": 0.833,
+    "cooloff": 0.0,
+    "por_mundo": {
+     "base": 0.244,
+     "ofensa_dura": 0.244,
+     "cesion_con_tope": 0.179,
+     "suelo_alto": 0.312
+    }
+   },
+   "nuestra": {
+    "nota": 0.555,
+    "media": 0.615,
+    "peor": 0.496,
+    "tratos": 0.854,
+    "cooloff": 0.076,
+    "por_mundo": {
+     "base": 0.767,
+     "ofensa_dura": 0.496,
+     "cesion_con_tope": 0.531,
+     "suelo_alto": 0.665
+    }
+   }
+  },
+  "chato/venta": {
+   "ana_actual": {
+    "nota": 0.365,
+    "media": 0.628,
+    "peor": 0.103,
+    "tratos": 0.879,
+    "cooloff": 0.076,
+    "por_mundo": {
+     "base": 0.909,
+     "ofensa_dura": 0.589,
+     "cesion_con_tope": 0.103,
+     "suelo_alto": 0.909
+    }
+   },
+   "ganador": {
+    "nota": 0.545,
+    "media": 0.674,
+    "peor": 0.415,
+    "tratos": 0.885,
+    "cooloff": 0.076,
+    "por_mundo": {
+     "base": 0.874,
+     "ofensa_dura": 0.535,
+     "cesion_con_tope": 0.415,
+     "suelo_alto": 0.874
+    }
+   },
+   "nuestra": {
+    "nota": 0.545,
+    "media": 0.674,
+    "peor": 0.415,
+    "tratos": 0.885,
+    "cooloff": 0.076,
+    "por_mundo": {
+     "base": 0.874,
+     "ofensa_dura": 0.535,
+     "cesion_con_tope": 0.415,
+     "suelo_alto": 0.874
+    }
+   }
+  },
+  "desconocido/compra": {
+   "ana_actual": {
+    "nota": 0.379,
+    "media": 0.509,
+    "peor": 0.248,
+    "tratos": 0.902,
+    "cooloff": 0.0,
+    "por_mundo": {
+     "base": 0.624,
+     "ofensa_dura": 0.624,
+     "cesion_con_tope": 0.248,
+     "suelo_alto": 0.54
+    }
+   },
+   "ganador": {
+    "nota": 0.299,
+    "media": 0.366,
+    "peor": 0.232,
+    "tratos": 0.863,
+    "cooloff": 0.0,
+    "por_mundo": {
+     "base": 0.414,
+     "ofensa_dura": 0.414,
+     "cesion_con_tope": 0.232,
+     "suelo_alto": 0.405
+    }
+   },
+   "nuestra": {
+    "nota": 0.554,
+    "media": 0.605,
+    "peor": 0.502,
+    "tratos": 0.877,
+    "cooloff": 0.043,
+    "por_mundo": {
+     "base": 0.734,
+     "ofensa_dura": 0.553,
+     "cesion_con_tope": 0.502,
+     "suelo_alto": 0.632
+    }
+   }
+  },
+  "desconocido/venta": {
+   "ana_actual": {
+    "nota": 0.375,
+    "media": 0.648,
+    "peor": 0.102,
+    "tratos": 0.897,
+    "cooloff": 0.043,
+    "por_mundo": {
+     "base": 0.891,
+     "ofensa_dura": 0.709,
+     "cesion_con_tope": 0.102,
+     "suelo_alto": 0.891
+    }
+   },
+   "ganador": {
+    "nota": 0.508,
+    "media": 0.681,
+    "peor": 0.335,
+    "tratos": 0.897,
+    "cooloff": 0.043,
+    "por_mundo": {
+     "base": 0.859,
+     "ofensa_dura": 0.671,
+     "cesion_con_tope": 0.335,
+     "suelo_alto": 0.859
+    }
+   },
+   "nuestra": {
+    "nota": 0.508,
+    "media": 0.681,
+    "peor": 0.335,
+    "tratos": 0.897,
+    "cooloff": 0.043,
+    "por_mundo": {
+     "base": 0.859,
+     "ofensa_dura": 0.671,
+     "cesion_con_tope": 0.335,
+     "suelo_alto": 0.859
+    }
+   }
+  }
+ },
+ "duelos": {
+  "rondas_5": {
+   "juan": {
+    "media": 0.426,
+    "peor": 0.195,
+    "por_rival": {
+     "concesion_lenta": 0.333,
+     "concesion_media": 0.467,
+     "concesion_rapida": 0.589,
+     "ancla_firme": 0.195,
+     "boulware": 0.448,
+     "cede_pronto": 0.612,
+     "espejo": 0.227,
+     "ingenuo": 0.476,
+     "duro": 0.303,
+     "punto_medio": 0.607
+    }
+   },
+   "duel_agent_viernes": {
+    "media": 0.445,
+    "peor": 0.266,
+    "por_rival": {
+     "concesion_lenta": 0.369,
+     "concesion_media": 0.466,
+     "concesion_rapida": 0.571,
+     "ancla_firme": 0.266,
+     "boulware": 0.401,
+     "cede_pronto": 0.592,
+     "espejo": 0.386,
+     "ingenuo": 0.496,
+     "duro": 0.333,
+     "punto_medio": 0.573
+    }
+   },
+   "nuestra": {
+    "media": 0.451,
+    "peor": 0.194,
+    "por_rival": {
+     "concesion_lenta": 0.34,
+     "concesion_media": 0.454,
+     "concesion_rapida": 0.559,
+     "ancla_firme": 0.194,
+     "boulware": 0.389,
+     "cede_pronto": 0.574,
+     "espejo": 0.549,
+     "ingenuo": 0.471,
+     "duro": 0.27,
+     "punto_medio": 0.715
+    }
+   }
+  },
+  "rondas_8": {
+   "juan": {
+    "media": 0.409,
+    "peor": 0.162,
+    "por_rival": {
+     "concesion_lenta": 0.37,
+     "concesion_media": 0.524,
+     "concesion_rapida": 0.594,
+     "ancla_firme": 0.162,
+     "boulware": 0.415,
+     "cede_pronto": 0.555,
+     "espejo": 0.197,
+     "ingenuo": 0.505,
+     "duro": 0.252,
+     "punto_medio": 0.515
+    }
+   },
+   "duel_agent_viernes": {
+    "media": 0.401,
+    "peor": 0.197,
+    "por_rival": {
+     "concesion_lenta": 0.35,
+     "concesion_media": 0.487,
+     "concesion_rapida": 0.587,
+     "ancla_firme": 0.197,
+     "boulware": 0.26,
+     "cede_pronto": 0.515,
+     "espejo": 0.354,
+     "ingenuo": 0.498,
+     "duro": 0.197,
+     "punto_medio": 0.561
+    }
+   },
+   "nuestra": {
+    "media": 0.441,
+    "peor": 0.181,
+    "por_rival": {
+     "concesion_lenta": 0.355,
+     "concesion_media": 0.503,
+     "concesion_rapida": 0.607,
+     "ancla_firme": 0.181,
+     "boulware": 0.29,
+     "cede_pronto": 0.495,
+     "espejo": 0.5,
+     "ingenuo": 0.495,
+     "duro": 0.246,
+     "punto_medio": 0.737
+    }
+   }
+  },
+  "rondas_12": {
+   "juan": {
+    "media": 0.367,
+    "peor": 0.126,
+    "por_rival": {
+     "concesion_lenta": 0.388,
+     "concesion_media": 0.505,
+     "concesion_rapida": 0.541,
+     "ancla_firme": 0.126,
+     "boulware": 0.35,
+     "cede_pronto": 0.48,
+     "espejo": 0.165,
+     "ingenuo": 0.491,
+     "duro": 0.196,
+     "punto_medio": 0.428
+    }
+   },
+   "duel_agent_viernes": {
+    "media": 0.376,
+    "peor": 0.142,
+    "por_rival": {
+     "concesion_lenta": 0.342,
+     "concesion_media": 0.487,
+     "concesion_rapida": 0.587,
+     "ancla_firme": 0.163,
+     "boulware": 0.18,
+     "cede_pronto": 0.445,
+     "espejo": 0.349,
+     "ingenuo": 0.499,
+     "duro": 0.142,
+     "punto_medio": 0.561
+    }
+   },
+   "nuestra": {
+    "media": 0.425,
+    "peor": 0.164,
+    "por_rival": {
+     "concesion_lenta": 0.378,
+     "concesion_media": 0.535,
+     "concesion_rapida": 0.636,
+     "ancla_firme": 0.164,
+     "boulware": 0.25,
+     "cede_pronto": 0.439,
+     "espejo": 0.408,
+     "ingenuo": 0.504,
+     "duro": 0.191,
+     "punto_medio": 0.744
+    }
+   }
+  },
+  "memoria_de_escenario": 0.458
+ },
+ "mercado": {
+  "base": {
+   "puesto_gratuito": 0.877,
+   "casamentero_inmediato": 0.873,
+   "casamentero_espera": 0.723
+  },
+  "muchos_firmes": {
+   "puesto_gratuito": 0.846,
+   "casamentero_inmediato": 0.846,
+   "casamentero_espera": 0.6
+  },
+  "muy_impacientes": {
+   "puesto_gratuito": 0.842,
+   "casamentero_inmediato": 0.841,
+   "casamentero_espera": 0.618
+  },
+  "escasez_vendedores": {
+   "puesto_gratuito": 0.843,
+   "casamentero_inmediato": 0.838,
+   "casamentero_espera": 0.706
+  }
+ }
+}
