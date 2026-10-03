@@ -188,7 +188,7 @@ def comprar_ahora(ref, precio, nos_vale, tend, mom, esc=None, completa=False, es
 
 
 def precio_venta(base, suelo, tend, mom, esc=None, escaso=0.8, tope=1.3):
-    """Precio de un anuncio de venta ajustado al mercado, nunca por debajo de `suelo` (lo que nos vale + 1).
+    """Precio de un anuncio de venta ajustado al mercado, nunca por debajo de `suelo` (V.suelo_venta_rastro: valor + comisión + margen).
     Sube con el momento (dinero nuevo, final), con la escasez, si sube el precio o hay más compradores que
     vendedores; baja un poco si el precio baja con mucha oferta. Como mucho base × tope."""
     f = mom.get("vender", 1.0)

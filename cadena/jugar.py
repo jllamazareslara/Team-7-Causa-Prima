@@ -49,6 +49,7 @@ RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peti
 CALENDARIO_CADA = 20     # vendedores, calendario y catálogo (El Guion y El Ojeador) cada 20 ticks
 MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
 MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
+OCUPADO_TICKS = 10       # thread_exists: otra ejecución tiene ya una conversación con ese vendedor; no se reintenta en N ticks
 ANUNCIO_DURA = 40        # ticks que vive un anuncio nuestro en El Rastro
 MAX_ANUNCIOS_TICK, MAX_OFERTAS = 12, 30   # límites del juego: anuncios nuevos por tick y ofertas abiertas a la vez
 
@@ -78,6 +79,23 @@ def _precio(x):
     if isinstance(x, dict):
         x = x.get("price", x.get("cash"))
     return x if isinstance(x, (int, float)) else None
+
+
+def _codigo(e):
+    """El código del juego en un BazaarError ("thread_exists", "wait_for_tick", "self_trade"...); None si no lo trae."""
+    return getattr(e, "code", None)
+
+
+def _otro_programa(e, que):
+    """wait_for_tick al aceptar o self_trade: casi siempre otro programa juega con nuestra clave (otro ordenador).
+    Se avisa claro en pantalla y se apunta; nunca se repite a ciegas: el tick siguiente se relee todo."""
+    codigo = _codigo(e)
+    if codigo == "wait_for_tick":
+        print(f"CHOQUE       {que}: la aceptación de este tick ya la gastó otro programa con nuestra clave. "
+              "Se reintenta en el tick siguiente si sigue en pie. ¿Hay otro ordenador jugando?")
+    elif codigo == "self_trade":
+        print(f"PROPIA       {que}: era una oferta nuestra (no se acepta). Si se repite, revisar _oferta_del_otro")
+    return codigo
 
 
 def _somos(nosotros):
@@ -230,12 +248,21 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
     for x in (est.get("anuncios") or {}).values():               # lo anunciado en El Rastro no se ofrece además a un vendedor
         cuenta[x["ref"]] -= 1
     abiertas = {h["vendedor"] for h in est["hilos"].values()}
+    tick = (lectura or {}).get("tick")
+    ocupados = est.setdefault("ocupados", {})
+    for v, hasta in list(ocupados.items()):                      # thread_exists reciente: ese vendedor está ocupado
+        if not isinstance(hasta, int) or (isinstance(tick, int) and tick >= hasta):
+            ocupados.pop(v)
+        else:
+            abiertas.add(v)
     tope = plan["p"].get("tienda.tratos_por_vendedor_y_dia")
     if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
         ops = cadena.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
     else:
         ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
     for op in ops[:huecos]:
+        if op["vendedor"] in ocupados:
+            continue
         if op["lado"] == "venta":
             ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
             if not ids:
@@ -257,6 +284,10 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
                 est["hilos"][str(hid)] = dict(op, suyas=[], nuestras=[])
         except Exception as e:
             _linea("errores.jsonl", {"abrir": op, "error": str(e)})
+            if _codigo(e) == "thread_exists":                    # no es nuestra (otra ejecución u otro ordenador):
+                ocupados[op["vendedor"]] = (tick + OCUPADO_TICKS) if isinstance(tick, int) else None   # no se cierra
+                print(f"OCUPADO      {op['vendedor']}: ya hay una conversación abierta que no es de este programa. "
+                      f"No se reintenta en {OCUPADO_TICKS} ticks. ¿Hay otro ordenador jugando?")
 
 
 def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
@@ -312,13 +343,117 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         if not mandar:
             continue
         try:
-            b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue="rastro",
-                         expires_in_ticks=ANUNCIO_DURA)
+            r = b.list_offer(give={"assets": [ids[aid]["id"]]}, want={"cash": n["precio"]}, venue="rastro",
+                             expires_in_ticks=ANUNCIO_DURA)
+            r = r if isinstance(r, dict) else {}
             ads[aid] = vivos[aid] = {"ref": n["carta"], "precio": n["precio"], "tick": tick,
-                                     "caducidades": caducidades.get(n["carta"], 0)}
+                                     "caducidades": caducidades.get(n["carta"], 0),
+                                     "id": r.get("id", (r.get("offer") or {}).get("id"))}   # para poder cancelarlo
         except Exception as e:                                   # un anuncio que falla no para nada: se apunta
             _linea("errores.jsonl", {"anuncio": n, "error": str(e)})
     return nuevos
+
+
+def _oferta_de_la_carta(b, aid, cache):
+    """El id de nuestra oferta viva que da la carta `aid` (anuncios de antes, que no guardaban su id). None si no está."""
+    if "mias" not in cache:
+        try:
+            res = b.my_offers()
+        except Exception as e:
+            _linea("errores.jsonl", {"mis_ofertas": str(e)})
+            res = {}
+        listas = [res] if isinstance(res, list) else [v for v in (res or {}).values() if isinstance(v, list)]
+        cache["mias"] = [o for l in listas for o in l if isinstance(o, dict)]
+    for o in cache["mias"]:
+        dadas = [a.get("id") if isinstance(a, dict) else a for a in (o.get("give") or {}).get("assets") or []]
+        if str(aid) in {str(x) for x in dadas} and o.get("status") in (None, "open", "queued"):
+            return o.get("id")
+    return None
+
+
+def _cancelar(b, oid, que, vivo):
+    """Cancela una oferta nuestra de El Rastro. True si en vivo se canceló (o ya no existía)."""
+    print(f"CANCELA      {que}" + ("" if vivo else " · en seco: no se cancela"))
+    if not vivo:
+        return False
+    if oid is None:
+        _linea("errores.jsonl", {"cancelar": que, "error": "sin id de oferta"})
+        return False
+    try:
+        b.cancel(oid)
+        return True
+    except Exception as e:
+        _linea("errores.jsonl", {"cancelar": que, "error": str(e)})
+        return _codigo(e) in ("not_found", "offer_not_open")
+
+
+def revisar_publicadas(b, me, est, p, tick, vivo):
+    """Lo que tenemos publicado en El Rastro se vuelve a comprobar cada vez que se lee el tablón.
+
+    El trato no se cierra al publicar, sino cuando otro equipo acepta, a veces muchos ticks después. Si entretanto ha
+    salido la otra copia de una carta (por un vendedor, un cambio u otro programa), el anuncio vende la copia de una
+    página completa al precio de una repetida (LAV-03: 83,9 por 13 P). Se cancela:
+      anuncio   si la carta está protegida o su precio ya no cubre V.suelo_venta_rastro de lo que nos quita ahora
+      petición  si lo que pagaríamos más la comisión ya no es menos de lo que nos suma la carta
+      cambio    si lo que damos está protegido o ya vale tanto como lo que recibimos (con su comisión)
+    Devuelve lo que se ha cancelado (o se cancelaría en seco)."""
+    if not isinstance(tick, int):
+        return []
+    cartas = _cartas(me)
+    cuenta = Counter(a["ref"] for a in cartas.values())
+    margen = p.get("guardia.margen_venta", 0.10)
+    dura = int(p.get("cambista.peticion_dura_ticks", 10))
+    cache, fuera = {}, []
+
+    ads = est.setdefault("anuncios", {})
+    for aid, x in list(ads.items()):
+        if aid not in cartas or tick - x["tick"] >= ANUNCIO_DURA:
+            continue
+        ref = x["ref"]
+        perdida = max(V.valor_entregar(cuenta, [ref]) or 0.0, V._your_value(cartas[aid]) or 0.0)
+        suelo = V.suelo_venta_rastro(perdida, margen)
+        if V.protegida(cuenta, ref) or x["precio"] < suelo:
+            que = f"anuncio {ref} a {x['precio']} P: ahora nos quita {perdida:.1f} (suelo {suelo} P)"
+            if _cancelar(b, x.get("id") or (_oferta_de_la_carta(b, aid, cache) if vivo else None), que, vivo):
+                ads.pop(aid)
+            fuera.append(("anuncio", ref))
+
+    pets = est.setdefault("peticiones", {})
+    for ref, x in list(pets.items()):
+        if tick - x["tick"] >= dura or cuenta.get(ref, 0) > 0:    # caducada, o ya es nuestra (eso lo hace pedir())
+            continue
+        nos_vale = V.valor_recibir(cuenta, [ref])
+        coste = x["precio"] + V.comision_rastro(x["precio"], 1)
+        if coste >= nos_vale:
+            if _cancelar(b, x.get("id"), f"petición {ref} a {x['precio']} P: ahora nos suma {nos_vale:.1f}", vivo):
+                pets.pop(ref)
+            fuera.append(("peticion", ref))
+
+    trus = est.setdefault("trueques", {})
+    for ref, x in list(trus.items()):
+        if tick - x["tick"] >= dura or any(str(i) not in cartas for i in x.get("ids", [])):
+            continue
+        perdida = V.valor_entregar(cuenta, x["doy"])
+        gana = None if perdida is None else V.valor_recibir(cuenta, [ref]) - perdida - V.comision_rastro(0, len(x["doy"]))
+        if gana is None or gana <= 0 or any(V.protegida(cuenta, r) for r in x["doy"]):
+            que = f"cambio {' + '.join(x['doy'])} por {ref}: ya no renta ({'—' if gana is None else f'{gana:+.1f}'})"
+            if _cancelar(b, x.get("id"), que, vivo):
+                trus.pop(ref)
+            fuera.append(("trueque", ref))
+    return fuera
+
+
+def cancelar_todo(b, est, vivo, motivo):
+    """Al parar (STOP o fin del programa) no se deja nada vivo en El Rastro: nadie lo vigilaría."""
+    cache = {}
+    for aid, x in list((est.get("anuncios") or {}).items()):
+        oid = x.get("id") or (_oferta_de_la_carta(b, aid, cache) if vivo else None)
+        if _cancelar(b, oid, f"anuncio {x['ref']} · {motivo}", vivo):
+            est["anuncios"].pop(aid)
+    for clave in ("peticiones", "trueques"):
+        for ref, x in list((est.get(clave) or {}).items()):
+            if _cancelar(b, x.get("id"), f"{ {'peticiones': 'petición', 'trueques': 'cambio'}[clave]} {ref} · {motivo}", vivo):
+                est[clave].pop(ref)
 
 
 FIN_JUEGO = "2026-10-04T15:00:00+02:00"     # domingo 15:00, Madrid. Si la organización lo mueve: "fin_juego" en t7/hoy.json
@@ -476,7 +611,8 @@ def aceptar(b, firma, tablon, me, est, vivo):
             b.accept(firma["oferta_id"], assets=dar or None)
             _linea("rastro-tratos.jsonl", {"oferta": oferta, "damos": dar, "motivo": firma.get("motivo")})
         except Exception as e:                                   # nunca se repite a ciegas: se relee en el tick siguiente
-            _linea("errores.jsonl", {"aceptar": firma.get("oferta_id"), "error": str(e)})
+            _linea("errores.jsonl", {"aceptar": firma.get("oferta_id"), "error": str(e),
+                                     "codigo": _otro_programa(e, f"El Rastro · oferta {firma.get('oferta_id')}")})
     return dar
 
 
@@ -607,7 +743,8 @@ def aplicar(b, acciones, est, lectura, me, vivo):
                 b.accept(f["oferta_id"])
                 _linea("tratos.jsonl", {"conversacion": f["id"], "precio": f.get("precio"), "motivo": f.get("motivo")})
             except Exception as e:                               # nunca se repite a ciegas: se relee en el tick siguiente
-                _linea("errores.jsonl", {"firma": f, "error": str(e)})
+                _linea("errores.jsonl", {"firma": f, "error": str(e),
+                                         "codigo": _otro_programa(e, f"vendedor · conversación {f['id']}")})
         return f
     return None
 
@@ -638,6 +775,13 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
             _linea("diario.jsonl", {"linea": linea, "vivo": vivo})
         aplicar(b, acciones, est, lectura, me, vivo)
         soltar_mudos(b, est, lectura, vivo)
+        if stop and not est.get("todo_cancelado"):               # STOP: no dejar nada vivo en El Rastro
+            cancelar_todo(b, est, vivo, "STOP")
+            est["todo_cancelado"] = True
+        elif not stop:
+            est.pop("todo_cancelado", None)
+        if toca and not stop:                                    # lo publicado se revisa con las cartas de ahora
+            revisar_publicadas(b, me, est, plan["p"], tick, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: al tick siguiente
             tratos = cadena.tratos_de_hoy(mem, dia)
             abrir(b, me, est, plan, vivo, menus, tratos, mem=mem, lectura=lectura)
@@ -678,6 +822,11 @@ def main():
         _jugar(b, est, mem, a)
     finally:
         if a.live:
+            try:                                                 # al salir no se deja nada vivo en El Rastro
+                cancelar_todo(b, est, True, "fin del programa")
+                _guardar(os.path.join(RUNS, "jugar.json"), est)
+            except Exception as e:
+                print("ERROR        no se pudo cancelar lo publicado:", e)
             candado.soltar(candado.RUTA)
 
 

@@ -45,9 +45,9 @@ def vendibles(cuenta, mult=V.NUESTROS_MULT):
 
 
 def precio_anuncio(lista_vendedor, perdida, caducidades, p):
-    """Precio de un anuncio de venta en El Rastro. El que acepta paga la comisión."""
+    """Precio de un anuncio de venta en El Rastro, nunca por debajo de V.suelo_venta_rastro (cubre la comisión)."""
     inicial = math.ceil(p["rastro.precio_inicial_lista"] * lista_vendedor)
-    minimo = math.ceil(perdida + 1)
+    minimo = V.suelo_venta_rastro(perdida, p.get("guardia.margen_venta", 0.10))
     return max(inicial - p["rastro.bajada_por_caducidad"] * caducidades, minimo)
 
 
