@@ -423,8 +423,14 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
 
     for d in lectura.get("duelos") or []:
         aislado(paso_duelo, d, "duelo")
-    if ofertas_duelo:                        # una sola oferta de duelo por tick: la de plazo más corto
-        mensajes.append(min(ofertas_duelo, key=lambda x: x[0])[1])
+    # Una oferta por duelo por tick (lo que permite el servidor: `messages_per_side_per_tick: 1` por lado del duelo,
+    # no un total global). Antes el agente se auto-limitaba a UNA oferta de duelo por tick, lo que con 10-14 duelos
+    # simultáneos en Duels II dejaba varios sin oferta (visto en vivo el 3/10 en d5820, d5821, d5765, d5764, d5998,
+    # d5810 con `mios=[]` todo el duelo, aunque el rival ofrecía precios dentro del límite). Se mandan todas,
+    # ordenadas por plazo (urgentes primero por si la cola de red tira del rate_limit del SDK).
+    if ofertas_duelo:
+        for _, m in sorted(ofertas_duelo, key=lambda x: x[0]):
+            mensajes.append(m)
 
     # ---------- El Rastro: Contable → Cambista (con los precios del Ojeador y el Portavoz) ----------
     def paso_rastro(tablon):

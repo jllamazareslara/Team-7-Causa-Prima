@@ -656,6 +656,25 @@ class Cadena(unittest.TestCase):
         self.assertIsNone(apagado["firma"])
         self.assertIsNone(apagado["firma_duelo"])
 
+    def test_varios_duelos_simultaneos_mandan_una_oferta_por_duelo(self):
+        """El servidor permite un mensaje por LADO del duelo por tick, no un total por equipo. Con 4 duelos
+        simultáneos tienen que salir 4 ofertas en el mismo tick. Antes el agente se auto-limitaba a UNA oferta
+        de duelo por tick (la de plazo más corto), lo que en Duels II (hasta 14 duelos a la vez) dejaba
+        la mayoría sin oferta. Visto en vivo el 3/10: d5820, d5821, d5765, d5998 con `mios=[]` todo el duelo
+        aunque el rival ofrecía dentro de nuestro límite."""
+        # Rivales FUERA de nuestro límite → decidir() responde "ofrecer" en los cuatro (si estuvieran dentro,
+        # irían a `cola` como aceptación y el Guardia solo firma uno por tick, por categoría).
+        duelos = [{"id": 10, "rol": "seller", "limite": 100, "rival": [60],  "nuestras": [], "ronda": 0, "rondas": 16, "ticks_restantes": 10},
+                  {"id": 11, "rol": "buyer",  "limite": 150, "rival": [200], "nuestras": [], "ronda": 0, "rondas": 16, "ticks_restantes": 12},
+                  {"id": 12, "rol": "seller", "limite": 60,  "rival": [20],  "nuestras": [], "ronda": 0, "rondas": 16, "ticks_restantes": 14},
+                  {"id": 13, "rol": "buyer",  "limite": 200, "rival": [300], "nuestras": [], "ronda": 0, "rondas": 16, "ticks_restantes": 8}]
+        ac = cadena.tick({"tick": 1, "duelos": duelos}, cadena.Memoria(), P)
+        ids_mandados = [m["id"] for m in ac["mensajes"] if m.get("destino") == "duelo"]
+        self.assertEqual(sorted(ids_mandados), [10, 11, 12, 13],
+                         f"deben salir las 4 ofertas de duelo este tick, salieron {ids_mandados}")
+        # Orden: por plazo (urgentes primero). Duelo 13 con ticks_restantes=8 es el más urgente.
+        self.assertEqual(ids_mandados[0], 13, "la oferta más urgente va primero por el rate_limit del SDK")
+
     def test_las_trampas_no_cambian_las_acciones(self):
         """Mismo duelo con texto tramposo y sin texto: mismas decisiones. El Escudo solo apunta."""
         base = {"id": 9, "rol": "seller", "limite": 100, "rival": [40], "nuestras": [], "ronda": 0, "rondas": 8}
