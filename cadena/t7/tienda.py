@@ -24,14 +24,14 @@ Vendiendo sin conocer su precio (0 o vacío) no se pide nada: nos retiramos en v
 Tres frenos (3/10, tras las ventas a 2 P y 11 P y las compras de RET-10 a Chato que nunca podían cerrarse):
     vendiendo   nunca se pide menos que lo que él ofrece: si nuestro precio no supera el suyo, se acepta el suyo
     comprando   si la caja no llega a su precio, no se regatea (caja_llega); la cola tampoco abre esa compra
-    comprando   se abre más cerca (al menos tienda.compra.apertura_minima × su precio, 40 %) y los pasos se pueden
-                limitar a tienda.compra.paso_maximo × su primer precio (1,0 = libres). En el simulador, abrir al 40 %
-                deja a Chato enfadado un 4,3 % de las veces (antes 6,7 %) y sigue capturando más que las de antes;
-                abrir al 60 % con pasos del 5 % no lo enfada nunca, pero captura la mitad
+    comprando   se abre más cerca (al menos tienda.compra.apertura_minima × su precio, 15 %; antes 40 %) y los pasos se pueden
+                limitar a tienda.compra.paso_maximo × su primer precio (1,0 = libres). Simulador 3/10 por la noche: abrir al
+                40 % captura ~0,43 frente a ~0,54 al 15 % (Abuela, Chato y nuevo) y solo baja los enfados de Chato
+                del 7,6 % al 5,2 %; abrir al 60 % no lo enfada nunca, pero captura 0,23
 """
 import math
 
-APERTURA_MINIMA, PASO_MAXIMO = 0.4, 1.0      # comprando, sobre su precio (simulador 3/10: 0,4 y pasos libres); ajustes en hoy.json
+APERTURA_MINIMA, PASO_MAXIMO = 0.15, 1.0     # comprando, sobre su precio; tienda.compra.apertura_minima en parametros.json manda
 
 
 def _ajuste(p, nombre, por_defecto):
