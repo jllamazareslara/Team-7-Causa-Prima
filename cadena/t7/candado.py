@@ -21,6 +21,10 @@ CADUCA_HORAS = 12
 # El mismo archivo para todos los programas del equipo en este ordenador (se puede cambiar con TEAM7_CANDADO).
 # Dos ordenadores distintos no se ven: por eso la clave del equipo se usa en vivo desde UN solo ordenador.
 RUTA = os.environ.get("TEAM7_CANDADO") or os.path.join(tempfile.gettempdir(), "team7-acepta.lock")
+# Los duelos tienen su propia cuota de aceptación por tick, aparte de la tienda y El Rastro (confirmado por Causa
+# Prima: "duel accepts never block your trading"), así que llevan un candado aparte. Todo programa que vaya a
+# aceptar o mandar mensajes de duelo en vivo (duelos.py, play.py duel) toma ESTE candado, no RUTA.
+RUTA_DUELOS = os.environ.get("TEAM7_CANDADO_DUELOS") or os.path.join(tempfile.gettempdir(), "team7-acepta-duelos.lock")
 
 
 def _vivo(pid):

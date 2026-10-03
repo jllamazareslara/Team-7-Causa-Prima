@@ -37,9 +37,9 @@ for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) n
         _salida.reconfigure(errors="replace")
 
 RUNS = os.path.join(AQUI, "runs")
-# candado propio: no comparte cupo con rastro.py (cada uno tiene su cuota en el juego), pero sí protege contra
-# dos instancias de duelos.py a la vez.
-CANDADO = os.environ.get("TEAM7_CANDADO_DUELOS") or os.path.join(RUNS, "..", "duelos-acepta.lock")
+# candado.RUTA_DUELOS: no comparte cupo con rastro.py (cada uno tiene su cuota en el juego), pero sí protege
+# contra dos instancias jugando los mismos duelos a la vez (duelos.py dos veces, o duelos.py y play.py duel).
+CANDADO = candado.RUTA_DUELOS
 
 
 def _linea(nombre, d):

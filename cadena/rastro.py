@@ -46,6 +46,22 @@ ANUNCIO_DURA = 40        # ticks que vive un anuncio nuestro en El Rastro
 MAX_ANUNCIOS_TICK, MAX_OFERTAS = 12, 30   # límites del juego: anuncios nuevos por tick y ofertas abiertas a la vez
 
 
+def reservadas(est, tick, dura_trueque):
+    """Copias comprometidas AHORA en un anuncio o un cambio vivos de El Rastro: {ref: cuántas}. Se la pasamos a
+    cadena.tick() para que el Cambista no proponga aceptar una oferta del tablón que pediría una de esas copias
+    (ya la ofrecimos o prometimos por otro lado; aceptar también esa la dejaría sin cubrir, "asset_gone")."""
+    out = Counter()
+    for x in (est.get("anuncios") or {}).values():
+        if isinstance(tick, int) and tick - x["tick"] < ANUNCIO_DURA:
+            out[x["ref"]] += 1
+    dura = int(dura_trueque or 0)
+    for x in (est.get("trueques") or {}).values():
+        if isinstance(tick, int) and tick - x["tick"] < dura:
+            for ref in x.get("doy", []):
+                out[ref] += 1
+    return out
+
+
 def _json(ruta, por_defecto):
     if not os.path.exists(ruta):
         return por_defecto
@@ -396,6 +412,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
                                "tick_segundos": tick_segundos}, precios_venta=precios_de_venta(menus) or None)
         if primero:
             print(situacion.resumen(plan))
+        lectura["reservadas"] = reservadas(est, tick, plan["p"].get("cambista.peticion_dura_ticks"))
         acciones = cadena.tick(lectura, mem, plan["p"], plan["forzar"], plan["ordenes"], stop)
         for linea in acciones["diario"]:
             print(linea)
