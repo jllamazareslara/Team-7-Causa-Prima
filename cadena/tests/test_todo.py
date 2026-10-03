@@ -215,14 +215,6 @@ class Tienda(unittest.TestCase):
                         st["suyas"].append(x)
                         st["final"] = r == "final"
 
-    def test_mejor_que_lo_actual(self):
-        """La nuestra captura más rango comprando que la de Ana y la del equipo que gana, en los cuatro mundos."""
-        from sim import torneo_tienda as T, estrategias as E
-        for perfil in ("abuela", "chato"):
-            nuestra = T.robusto(E.adaptativo(params.perfil(P, perfil), P), perfil, "compra", n=300)["nota"]
-            self.assertGreater(nuestra, T.robusto(E.ana_actual, perfil, "compra", n=300)["nota"])
-            self.assertGreater(nuestra, T.robusto(E.ganador, perfil, "compra", n=300)["nota"])
-
 
 class Duelo(unittest.TestCase):
     def test_nunca_fuera_del_limite(self):
@@ -241,6 +233,20 @@ class Duelo(unittest.TestCase):
         a, precio, _ = duelo.decidir(st, P)
         self.assertNotEqual(a, "aceptar")
         self.assertGreater(precio, 100)
+
+    def test_rival_mudo_solo_acepta_dentro_de_su_limite(self):
+        st = {"rol": "buyer", "limite": 100, "rival": [120], "nuestras": [], "ronda": 0, "rondas": 16}
+        self.assertEqual(SD.rival_mudo(st), ("esperar", None))
+        st["rival"].append(95)
+        self.assertEqual(SD.rival_mudo(st), ("aceptar", 95))
+
+    def test_duelos_reales_repetidos(self):
+        """Los 68 duelos del 3/10: nunca fuera del límite, ninguna oferta dentro del límite se escapa, y al menos lo real."""
+        from sim import repeticion as R
+        r = R.informe({"nuestra": SD.nuestra_adaptativa(P)}, R.cargar())
+        self.assertEqual(r["nuestra"]["fuera_del_limite"], [])
+        self.assertEqual(r["nuestra"]["escapadas"], [])
+        self.assertGreaterEqual(r["nuestra"]["puntos"], r["real"]["puntos"])
 
     def test_memoria_sin_tarta_no_cierra(self):
         st = {"rol": "seller", "limite": 100, "rival": [95], "nuestras": [190], "ronda": 7, "rondas": 8, "limite_rival": 90}

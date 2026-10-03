@@ -1,10 +1,9 @@
-"""Duelos simulados: nuestras estrategias contra ocho tipos de rival y entre ellas.
+"""Duelos simulados: nuestra estrategia (t7.duelo) contra once tipos de rival.
 
 Protocolo (supuesto, a confirmar con un duelo real): por turnos; quien habla manda un precio o acepta el último del otro.
 Una ronda = un mensaje de cada lado. Sin trato tras T rondas, cero. Puntuación de cada lado:
     parte de la tarta = (su ganancia / tarta) × δ^ronda       (negativa si cerró fuera de su límite)
 """
-import math
 import os
 import random
 import sys
@@ -124,6 +123,15 @@ def rival_mitad(st):
     return ("ofrecer", round(mid))
 
 
+def rival_mudo(st):
+    """No escribe nunca; solo acepta nuestra oferta si cae dentro de su límite. Visto en los duelos reales del 3/10:
+    17 de 68 rivales no mandaron ningún mensaje, y los únicos tratos con ellos fueron aceptando nuestra oferta."""
+    su = st["rival"][-1] if st["rival"] else None
+    if su is not None and g(st["rol"], st["limite"], su) >= 0:
+        return ("aceptar", su)
+    return ("esperar", None)
+
+
 RIVALES = {
     "concesion_lenta": rival_concesion(0.15, 1.5),
     "concesion_media": rival_concesion(0.30, 1.5),
@@ -135,6 +143,7 @@ RIVALES = {
     "ingenuo": rival_ingenuo,
     "duro": rival_duro,
     "punto_medio": rival_mitad,
+    "mudo": rival_mudo,
 }
 
 
@@ -142,32 +151,6 @@ RIVALES = {
 
 def nuestra_adaptativa(p):
     return lambda st: duelo.decidir(st, p)[:2]
-
-
-def nuestra_juan(st):
-    return rival_ancla(st)
-
-
-def nuestra_betty_v1(st):
-    """duel_agent.py (versión del viernes), simplificado: abre ×1,6/×0,6, cede 30/25/20/15 % hacia el rival,
-    acepta si su precio vale el 94 % de nuestra siguiente, cualquiera dentro del límite tras 5 mensajes o al final."""
-    rol, lim = st["rol"], st["limite"]
-    s = 1 if rol == "seller" else -1
-    nos, su = st["nuestras"], (st["rival"][-1] if st["rival"] else None)
-    n = len(nos)
-    if not n:
-        sig = lim * 1.6 if rol == "seller" else lim * 0.6
-    else:
-        frac = [0.30, 0.25, 0.20, 0.15][min(n - 1, 3)]
-        meta = su if su is not None else lim
-        if s * (meta - lim) < 0:
-            meta = lim + s * max(lim * 0.03, 1)
-        sig = nos[-1] + frac * (meta - nos[-1])
-    sig = math.ceil(sig) if s > 0 else math.floor(sig)
-    if su is not None and g(rol, lim, su) >= 0:
-        if g(rol, lim, su) >= 0.94 * g(rol, lim, sig) or n >= 5 or st["ronda"] >= st["rondas"] - 1:
-            return ("aceptar", su)
-    return ("ofrecer", sig)
 
 
 # ---------- el duelo ----------
@@ -210,8 +193,9 @@ def jugar(nuestra, rival, rol_nuestro, coste, valor, T, delta, abrimos, memoria=
     return (0.0, 0.0, T, False)
 
 
-def torneo(estrategias, n=400, semilla=11, T=8, delta=0.94, memoria=False):
-    """Cada estrategia contra cada rival, n escenarios × 2 roles × quién abre. Devuelve tabla."""
+def torneo(estrategias, n=400, semilla=11, T=16, delta=0.94, memoria=False):
+    """Cada estrategia contra cada rival, n escenarios × 2 roles × quién abre. Devuelve tabla.
+    Por defecto, como Duelos I: 16 rondas y −6 % por ronda. Duelos II: T=16, delta=0,92; Duelos III: T=12, delta=0,90."""
     rng = random.Random(semilla)
     escenarios = [escenario(rng) for _ in range(n)]
     tabla = {}

@@ -73,9 +73,7 @@ def main():
             mejor = tabla[0]
             pf = dict(params.perfil(p, perfil), apertura_compra=mejor["apertura"],
                       paciencia_estimada=mejor["paciencia"], margen_rondas=mejor["margen"], k_reciproco=mejor["k_reciproco"])
-            fila = {"ana_actual": robusto(E.ana_actual, perfil, lado),
-                    "ganador": robusto(E.ganador, perfil, lado),
-                    "nuestra_con_parametros_actuales": robusto(E.adaptativo(params.perfil(p, perfil), p), perfil, lado),
+            fila = {"nuestra_con_parametros_actuales": robusto(E.adaptativo(params.perfil(p, perfil), p), perfil, lado),
                     "nuestra_ajustada": robusto(E.adaptativo(pf, p), perfil, lado),
                     "ajuste": {k: mejor[k] for k in ("apertura", "paciencia", "margen", "k_reciproco")}}
             out["comparacion"][f"{perfil}/{lado}"] = fila
