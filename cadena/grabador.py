@@ -21,7 +21,7 @@ import time
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
-sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
+sys.path.insert(0, os.path.dirname(AQUI))  # bazaar_sdk.py vive en la raíz del repo, no en una subcarpeta "bazaar-kit"
 
 from t7 import broker  # noqa: E402
 

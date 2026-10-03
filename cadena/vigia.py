@@ -19,7 +19,7 @@ import sys
 import time
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-KIT = os.path.join(os.path.dirname(AQUI), "bazaar-kit")
+KIT = os.path.dirname(AQUI)  # bazaar_sdk.py vive en la raíz del repo, no en una subcarpeta "bazaar-kit"
 sys.path.insert(0, AQUI)
 sys.path.insert(0, KIT)
 
