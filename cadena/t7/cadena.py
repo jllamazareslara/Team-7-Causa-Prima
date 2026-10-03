@@ -421,7 +421,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                     m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
                 k = d.get("k_dias")
                 if k is not None:                           # `precio` es efectivo: el que se escribe depende del día
-                    m["precio"] = duelo.precio_a_mandar(rol, precio, m["dias"], k)
+                    m["precio"] = duelo.precio_a_mandar(rol, precio, m["dias"], k, lim)
                     por_dia += f" · se escribe {m['precio']} (vale {precio} con el día)"
                 if not nuestras or hacia or k is not None:
                     apunta("DUELISTA", f"{quien} · {por_dia}")

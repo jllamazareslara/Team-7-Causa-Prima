@@ -107,6 +107,13 @@ class DiasReales(unittest.TestCase):
         k = leido["k_dias"]
         self.assertLessEqual(duelo.precio_efectivo(m[0]["precio"], m[0]["dias"], k), 86)     # lo que pedimos, dentro del límite
 
+    def test_el_precio_escrito_no_cruza_el_limite(self):
+        from t7 import duelo
+        self.assertEqual(duelo.precio_a_mandar("seller", 138, 10, 5.44, 86), 86)      # 84 sería por debajo del coste
+        self.assertEqual(duelo.precio_a_mandar("seller", 160, 10, 5.44, 86), 106)     # dentro del límite: tal cual
+        self.assertEqual(duelo.precio_a_mandar("buyer", 59, 5, 3.0, 50), 44)
+        self.assertEqual(duelo.precio_a_mandar("buyer", 59, 0, 3.0, 50), 50)          # nunca por encima del valor
+
     def test_acepta_lo_que_si_renta_con_el_dia(self):
         _, ac = self.jugar(self.VENTA)
         self.assertEqual((ac.get("firma_duelo") or {}).get("id"), 6088)

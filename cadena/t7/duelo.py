@@ -140,12 +140,18 @@ def dia_bueno(rol, k):
     return 10 if mas_dias_mejor else 0
 
 
-def precio_a_mandar(rol, efectivo, dia, k):
-    """El precio que se escribe para que (precio, día) valga `efectivo`. Redondeado a nuestro favor, nunca menos de 1."""
+def precio_a_mandar(rol, efectivo, dia, k, limite=None):
+    """El precio que se escribe para que (precio, día) valga `efectivo`. Redondeado a nuestro favor, nunca menos de 1.
+    Con `limite`, el precio escrito tampoco cruza nuestro límite (vendiendo, nunca por debajo del coste; comprando,
+    nunca por encima del valor): las reglas dicen que un trato fuera del límite resta, y no sabemos si miran el precio
+    escrito o el que vale con el día. Así el día solo suma."""
     if k is None or dia is None:
         return efectivo
     x = efectivo - k * dia
-    return max(1, math.ceil(x) if rol == "seller" else math.floor(x))
+    x = math.ceil(x) if rol == "seller" else math.floor(x)
+    if isinstance(limite, (int, float)):
+        x = max(x, math.ceil(limite)) if rol == "seller" else min(x, math.floor(limite))
+    return max(1, x)
 
 
 def mejor_dia(pesos, por_defecto=5, hacia=None):
