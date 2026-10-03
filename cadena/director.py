@@ -25,7 +25,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, situacion  # noqa: E402
+from t7 import cadena, cambista, guion, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -229,6 +229,8 @@ def vendedores_nuevos(b, est, menus):
     nuevos = []
     for d in lista if isinstance(lista, list) else []:
         vid = d.get("id") if isinstance(d, dict) else None
+        if vid is not None and isinstance(d.get("level"), (int, float)):
+            est.setdefault("niveles", {})[vid] = d["level"]     # la escalera: los niveles altos pesan más
         if vid is None or vid in est.setdefault("vendedores", []):
             continue
         est["vendedores"].append(vid)
@@ -236,6 +238,30 @@ def vendedores_nuevos(b, est, menus):
         _linea("crudo.jsonl", {"tipo": "vendedor", "crudo": d})
         print(f"VENDEDOR     {vid}" + ("" if vid in (menus or {}) else " · no está en menus.json: no se le abre nada todavía"))
     return nuevos
+
+
+def leer_calendario(b, est):
+    """El calendario del juego (solo GET), para El Guion: fiebres que vienen, cierres, etc. Si falla, se queda el anterior."""
+    try:
+        cal = b.schedule()
+        if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
+            est["calendario"] = {"leido": time.time(), "now_hours": cal["now_hours"], "upcoming": cal.get("upcoming") or []}
+    except Exception as e:
+        _linea("errores.jsonl", {"calendario": str(e)})
+
+
+def reservadas(est, cuenta):
+    """{ref: vendedor al que sí se vende ahora, o None}: cartas que esperan una fiebre (guion.reservadas).
+    La hora de juego se adelanta con el tiempo pasado desde la última lectura del calendario."""
+    cal = est.get("calendario")
+    if not cal:
+        return {}
+    h = cal["now_hours"] + (time.time() - cal.get("leido", time.time())) / 3600
+    res = guion.reservadas(dict(cuenta), guion.eventos(cal), h)
+    if res and not est.get("aviso_reservadas") == sorted(res):
+        est["aviso_reservadas"] = sorted(res)
+        print("GUARDADAS    " + ", ".join(f"{r}→{v or 'nadie'}" for r, v in sorted(res.items())) + " · esperan la fiebre")
+    return res
 
 
 def abrir_sobres(b, me, vivo):
@@ -289,7 +315,8 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None):
         cuenta[x["ref"]] -= 1
     abiertas = {h["vendedor"] for h in est["hilos"].values()}
     ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos,
-                                     plan["p"].get("tienda.tratos_por_vendedor_y_dia"))
+                                     plan["p"].get("tienda.tratos_por_vendedor_y_dia"),
+                                     guardar=reservadas(est, cuenta), niveles=est.get("niveles"))
     for op in ops[:huecos]:
         if op["lado"] == "venta":
             ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
@@ -340,6 +367,7 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         listas.update({r: x for r, x in (menu.get("vende") or {}).items() if isinstance(x, (int, float))})
         if tope is None or tratos.get(vendedor, 0) < tope:
             guardadas.update(menu.get("compra") or {})
+    guardadas.update(reservadas(est, Counter(a["ref"] for a in ids.values())))   # esperan una fiebre: no van a El Rastro
     ocupadas = [h["carta"] for h in est["hilos"].values() if h.get("lado") == "venta"]
     ocupadas += [r for x in (est.get("trueques") or {}).values()                 # ya ofrecidas en un cambio
                  if tick - x["tick"] < p.get("cambista.peticion_dura_ticks", 10) for r in x["doy"]]
@@ -532,6 +560,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
         menus = _json(os.path.join(AQUI, "menus.json"), None)
         if primero or (isinstance(tick, int) and tick % VENDEDORES_CADA == 0):
             vendedores_nuevos(b, est, menus)
+            leer_calendario(b, est)
         lectura, me = leer(b, est, tick)
         lectura["dia"] = dia
         plan = situacion.plan({"efectivo": lectura["efectivo"], "cuenta": lectura["cuenta"],
