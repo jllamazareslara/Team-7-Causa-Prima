@@ -198,6 +198,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     t = lectura.get("tick")
     cuenta, efectivo = lectura.get("cuenta", {}), lectura.get("efectivo", 0)
     mensajes, cerrar, cola, diario, mala_fe = [], [], [], [], []
+    ofertas_duelo = []    # el servidor solo deja mandar un mensaje de duelo por equipo y tick: una sola, la más urgente
     try:                                                 # el Ojeador primero: hora, momento, escasez, descansos
         ojear(lectura, mem)
     except Exception as e:
@@ -387,10 +388,13 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
                 if not nuestras or hacia:
                     apunta("DUELISTA", f"{quien} · {por_dia}")
-            mensajes.append(m)
+            quedan = d.get("ticks_restantes")
+            ofertas_duelo.append((quedan if isinstance(quedan, (int, float)) else float("inf"), m))
 
     for d in lectura.get("duelos") or []:
         aislado(paso_duelo, d, "duelo")
+    if ofertas_duelo:                        # una sola oferta de duelo por tick: la de plazo más corto
+        mensajes.append(min(ofertas_duelo, key=lambda x: x[0])[1])
 
     # ---------- El Rastro: Contable → Cambista (con los precios del Ojeador y el Portavoz) ----------
     def paso_rastro(tablon):

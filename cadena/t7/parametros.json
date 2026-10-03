@@ -372,11 +372,11 @@
   "por_que": "Anuncio de venta: múltiplo del precio de lista del vendedor. Era 0,9; la revisión del 3/10 dice que dejaba valor en la mesa. Con 1,3 una común sale a 13 P y una poco común a 33 P: quien tiene ese barrio a × 1,6 (le valen 16 y 40) todavía gana pagando la comisión. Con 1,4 ya no ganaría con la común. Baja 1 P cada vez que caduca."
  },
  "rastro.publicar": {
-  "valor": 0,
+  "valor": 1,
   "min": 0,
   "max": 1,
-  "estado": "decisión",
-  "por_que": "1 = jugar.py publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Viene apagado porque publicar anuncios no se ha probado contra el juego real: lo enciende el equipo tras verlo en seco."
+  "estado": "medido",
+  "por_que": "1 = jugar.py publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Encendido el 3/10 a las 16:25 (main-v2 03fcc7a): con 0 solo reaccionábamos al tablón y nunca publicábamos, con rank 17/18 y ladder_points 0,081 pese a 35 tratos. Comprobado en vivo después: las cuatro ofertas abiertas son todas de copias repetidas y por encima de lo que nos valen (LAV-03 7 P sobre 2,8; RET-04 12 P sobre 3,2; LAT-01 6 P sobre 4,0)."
  },
  "rastro.bajada_por_caducidad": {
   "valor": 1,
@@ -386,11 +386,11 @@
   "por_que": "Primas que baja un anuncio cada vez que caduca sin venderse."
  },
  "cambista.pedir": {
-  "valor": 0,
+  "valor": 1,
   "min": 0,
   "max": 1,
   "estado": "decisión",
-  "por_que": "1 = jugar.py publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Viene apagado: publicar peticiones no se ha probado contra el juego real."
+  "por_que": "1 = jugar.py publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Encendido el 3/10 a las 16:25 (main-v2 03fcc7a) junto con rastro.publicar. El tope real de gasto lo sigue poniendo guardia.reserva_efectivo."
  },
  "cambista.apertura_peticion": {
   "valor": 0.45,

@@ -1233,7 +1233,8 @@ class Jugar(unittest.TestCase):
                          {"id": 3, "kind": "card", "ref": "LAT-08"}, {"id": 4, "kind": "pack", "ref": "sobre_barrio"}]}
         encendido = {"p": dict(P, **{"rastro.publicar": 1}), "forzar": {}}
         b = self.Juego()
-        self.r.anunciar(b, me, {}, {"p": dict(P), "forzar": {}}, 3, True, primero=True)      # apagado: enseña, no manda
+        apagado = {"p": dict(P, **{"rastro.publicar": 0}), "forzar": {}}
+        self.r.anunciar(b, me, {}, apagado, 3, True, primero=True)                            # apagado: enseña, no manda
         self.r.anunciar(b, me, {}, encendido, 3, False)                                       # en seco: tampoco
         self.assertEqual(b.ofertas, [])
         est = {}
@@ -1263,7 +1264,8 @@ class Jugar(unittest.TestCase):
         self.assertTrue(b.canceladas)                                                          # su petición viva se cancela
         self.assertEqual(est["pagado"]["rare"], [precio])                                      # y se aprende el precio
         seco = self.Juego()
-        self.r.pedir(seco, me, {}, {"p": P, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
+        apagado = dict(P, **{"cambista.pedir": 0})
+        self.r.pedir(seco, me, {}, {"p": apagado, "forzar": {}, "ordenes": {}}, 102, True, mem, primero=True, ahora=ahora)
         self.assertEqual(seco.ofertas, [])                                                     # con cambista.pedir = 0, nada
 
     def test_minutos_al_final(self):
