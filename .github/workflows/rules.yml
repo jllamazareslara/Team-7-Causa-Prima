@@ -1,0 +1,25 @@
+# On every push to a rules/<author> branch: check it only touches rules/<author>/, then benchmark it
+# against the baseline and show the table in the run's summary.
+name: rules
+on:
+  push:
+    branches: ["rules/**"]
+  pull_request:
+    branches: [main]
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Only my folder
+        run: python3 -m bench.guard "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" origin/main
+      - name: Benchmark
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          case "$BRANCH" in rules/*) python3 -m bench.run --author "${BRANCH#rules/}" ;; *) python3 -m bench.run ;; esac
+          cat results/benchmark.md >> "$GITHUB_STEP_SUMMARY"
