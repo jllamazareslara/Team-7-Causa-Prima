@@ -18,6 +18,14 @@
   "rastro.publicar": 1,
   "cambista.pedir": 1,
   "rastro.precio_inicial_lista": 1.3,
-  "tienda.chato.apertura_compra": 0.6
+  "tienda.chato.apertura_compra": 0.1,
+  "guardia.margen_compra": 0.20,
+  "guardia.margen_venta": 0.20,
+  "guardia.protegida_factor": 2.0,
+  "cambista.caza_veces": 1,
+  "cambista.apertura_peticion": 0.55,
+  "duelo.apertura_vendedor": 1.35,
+  "duelo.apertura_comprador": 0.70,
+  "duelo.dureza_beta": 1.0
  }
 }

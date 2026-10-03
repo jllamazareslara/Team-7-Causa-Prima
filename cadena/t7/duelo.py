@@ -56,6 +56,7 @@ def decidir(st, p):
 
     # margen inicial: el ancla (apertura) o, con memoria de escenario, el 85 % de la tarta conocida
     lr = st.get("limite_rival")
+    tarta_est = None
     if lr is not None and ganancia(rol, lim, lr) <= 0:
         return ("esperar", None, "memoria de escenario: no hay tarta, cualquier trato nos haría perder")
     if lr is not None:
@@ -72,8 +73,18 @@ def decidir(st, p):
         mfin = max(1.0, p["duelo.cuota_minima"] * (tarta_est if tarta_est else m0))
         if tarta_est:                                   # no pedir más de lo que cabe en su límite estimado
             m0 = min(m0, max(tarta_est * 0.95, mfin))
-    x = (t / max(T - 1, 1)) ** (1 / beta)
+    # Parche B (silencio del rival): si llevamos ofertas sin que nos contesten con precio, aflojar la curva.
+    # Boulware duro gana en el simulador pero deja 9 de 9 no-deals en vivo (rival calla, esperamos hasta el final,
+    # el decay se come la tarta). Cada oferta nuestra sin respuesta sube `beta_eff` → curva más lineal.
+    silencio = max(0, len(nuestras) - len(rivales))
+    beta_eff = beta * (1 + 0.5 * silencio) if silencio >= 2 else beta
+    x = (t / max(T - 1, 1)) ** (1 / beta_eff)
     margen = m0 * (1 - x) + mfin * x
+    # Parche A (última ronda al límite): si hay tarta y es la última ronda, el margen mínimo del 5 % puede
+    # dejarnos por encima del límite real del rival y perder el trato. Mejor ir al límite que no cerrar.
+    # Solo si sabemos (memoria) o estimamos que hay tarta positiva; si no, mantener el Boulware normal.
+    if t >= T - 1 and (lr is not None or (tarta_est or 0) > 0):
+        margen = 0.0
     nuestra = lim + s * margen
     nuestra = math.ceil(nuestra) if s > 0 else math.floor(nuestra)
     if nuestra % 5 == 0:                                # número preciso, no redondo
