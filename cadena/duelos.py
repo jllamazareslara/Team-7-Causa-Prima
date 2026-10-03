@@ -89,12 +89,16 @@ def leer(b, est, tick):
         restantes = plazo - tick if isinstance(plazo, (int, float)) and isinstance(tick, (int, float)) else None
         esc = next((d[k] for k in ("scenario", "scenario_id", "scenario_ref", "case", "item")
                     if d.get(k) is not None and not isinstance(d[k], (dict, list))), None)
+        # el descuento por ronda lo dice el propio duelo: 0,06 en Duelos I y 0,08 en Duelos II (calendario del
+        # juego). Se pasa tal cual en vez de suponerlo: marca cuándo deja de compensar seguir hablando.
+        decay = d.get("decay_per_round")
+        descuento = 1 - decay if isinstance(decay, (int, float)) and 0 <= decay < 1 else None
         lectura["duelos"].append({"id": d["duel"], "rol": rol, "limite": limite, "rival": rival, "nuestras": nuestras,
                                   "ronda": ronda, "rondas": ronda + max(1, restantes) if restantes is not None else None,
                                   "texto": d.get("rival_text") or d.get("last_message") or "",
                                   "ticks_restantes": restantes, "escenario": esc,
                                   "dias": "days" in (d.get("issues") or []), "pesos_dias": d.get("your_days_weight"),
-                                  "rival_paquetes": rival_paquetes})
+                                  "rival_paquetes": rival_paquetes, "descuento": descuento})
     return lectura
 
 
