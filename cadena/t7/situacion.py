@@ -95,6 +95,12 @@ def plan(estado, hoy=None, precios_venta=None):
         forzar["sobre"] = "apagado"
         motivos.append(f"caja {modo}: quedan {max(0, libre):.0f} P libres, tope de {tope} P por trato")
     ordenes["sin_coste"] = ["duelos", "vender a vendedores", "cambios carta por carta", "Market Test del puesto gratuito"]
+    if hoy.get("solo_vender"):                          # el equipo solo quiere vender (las repetidas): nada de compras
+        ordenes["compras"] = "ninguna"
+        cambios["cambista.pedir"] = 0                     # manda sobre lo que diga "ajustes"
+        motivos[:] = [m for m in motivos if not m.startswith("cambista.pedir:")]
+        motivos.append("solo vender: no se abren compras a vendedores, no se publican peticiones ni cambios y no se "
+                       "compra en El Rastro")
 
     # 3. Qué vender para volver al colchón, sin perder valor.
     ventas = None

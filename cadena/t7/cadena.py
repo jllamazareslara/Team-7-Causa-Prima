@@ -381,6 +381,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         ojeador.observar(mem.historial, tablon, t)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"], p=p)[:3]:
             prop = o["propuesta"]
+            if ordenes.get("compras") == "ninguna" and prop["recibo"]["cartas"] and not prop["entrego"]["cartas"]:
+                continue                                 # solo vender o caja seca: en El Rastro no se compra
             compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
             if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
                 ref = prop["recibo"]["cartas"][0]

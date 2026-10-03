@@ -1,10 +1,11 @@
 {
  "_como_leer": "Las noticias del día. Se cambia aquí, sin tocar código; situacion.plan() las convierte en ajustes para todos los agentes. Lo que no se sabe se deja vacío. El efectivo y las cartas no van aquí: se leen del juego.",
- "_ejemplos": "tick_segundos: 30 el sábado, 15 el domingo. compra_minima: el precio de lista más barato del día. guardar_para_mercado: true si decidimos abrir mercado propio (reserva 270). mesa_permite_inyeccion_equipos: true solo si la mesa lo confirma. duelo: {\"rondas\": 8, \"descuento_ronda\": 0.94} en cuanto se vea un duelo real. enfados: {\"chato\": 2} = conversaciones que ese vendedor ha cortado. apagar: categorías (vendedor, equipo, sobre, duelo). ajustes: cualquier ajuste de parametros.json, por su nombre.",
+ "_ejemplos": "tick_segundos: 30 el sábado, 15 el domingo. compra_minima: el precio de lista más barato del día. guardar_para_mercado: true si decidimos abrir mercado propio (reserva 270). mesa_permite_inyeccion_equipos: true solo si la mesa lo confirma. duelo: {\"rondas\": 8, \"descuento_ronda\": 0.94} en cuanto se vea un duelo real. enfados: {\"chato\": 2} = conversaciones que ese vendedor ha cortado. apagar: categorías (vendedor, equipo, sobre, duelo). ajustes: cualquier ajuste de parametros.json, por su nombre. solo_vender: true = solo vender (repetidas a los vendedores y lo que no compren a El Rastro): no se abren compras, no se publican peticiones ni cambios, no se compra en El Rastro.",
  "tick_segundos": 30,
  "compra_minima": 10,
  "guardar_para_mercado": false,
  "mesa_permite_inyeccion_equipos": false,
+ "solo_vender": true,
  "duelo": {},
  "enfados": {},
  "apagar": [],

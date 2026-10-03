@@ -956,9 +956,12 @@ class Jugar(unittest.TestCase):
         import jugar
         self.r = jugar
         jugar.RUNS = tempfile.mkdtemp()
+        self._leer_hoy = situacion.leer_hoy                  # estas pruebas no dependen de lo que diga hoy.json
+        situacion.leer_hoy = lambda: {}
         self.mult, self.rarezas = dict(V.NUESTROS_MULT), dict(V.RAREZAS)
 
     def tearDown(self):
+        situacion.leer_hoy = self._leer_hoy
         V.NUESTROS_MULT.clear()
         V.NUESTROS_MULT.update(self.mult)
         V.RAREZAS.clear()
@@ -1096,6 +1099,22 @@ class Jugar(unittest.TestCase):
         self.assertEqual(len(est["hilos"]), 2)
         self.r.abrir(b, b.me(), est, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 2})
         self.assertEqual(len(b.abiertas_), 2)                                 # ya tienen conversación: no se repite
+
+    def test_solo_vender(self):
+        """Con solo_vender: no se abre una compra a un vendedor ni se compra en El Rastro; vender sigue."""
+        situacion.leer_hoy = lambda: {"solo_vender": True}
+        b = self.Juego(self.TABLON, self.cartas())
+        b.hilo = self.hilo_abuela(20)
+        est = {"hilos": {"7": {"vendedor": "abuela", "lado": "compra", "carta": "RET-01", "suyas": [], "nuestras": []}}}
+        self.r.un_tick(b, est, cadena.Memoria(), 3, 30, vivo=True, stop=False)
+        self.assertEqual((b.dichos, b.cerrados), ([], [7]))                 # la compra no se abre: se cierra
+        self.assertNotIn(1, [oid for oid, _ in b.aceptadas])                  # la oferta 1 era comprar LAT-09: no
+        self.assertEqual(b.aceptadas, [(2, b.aceptadas[0][1])])               # la 2 nos compra una LAT-03: sí
+        plan = {"p": dict(P), "forzar": {}, "ordenes": {"compras": "ninguna"}}
+        menus = {"abuela": {"vende": {"RET-01": 12}, "compra": {"LAT-03": 4}}}
+        b2 = self.Juego(cartas=self.cartas())
+        self.r.abrir(b2, b2.me(), {"hilos": {}}, plan, True, menus, {}, mem=cadena.Memoria(), lectura={"tick": 1})
+        self.assertEqual([t for _, t in b2.abiertas_], [{"sell": {"assets": [max(a["id"] for a in b2.me()["assets"] if a["ref"] == "LAT-03")]}}])
 
     def test_al_arrancar_cierra_conversaciones_sueltas(self):
         b = self.Juego()

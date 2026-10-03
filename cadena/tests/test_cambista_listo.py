@@ -63,9 +63,14 @@ class Candado(unittest.TestCase):
 
 
 class Hoy(unittest.TestCase):
-    def test_venta_y_compra_encendidas(self):
+    def test_hoy_solo_vender(self):
+        """Decisión del equipo: vender las repetidas (anuncios en El Rastro sí), sin comprar."""
         pl = situacion.plan({"efectivo": 300, "cuenta": {}})
-        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"]), (1, 1))
+        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, 0, "ninguna"))
+
+    def test_sin_solo_vender_se_compra(self):
+        pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"ajustes": {"cambista.pedir": 1}})
+        self.assertEqual((pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, "todas"))
 
     def test_datos_reales_en_el_repositorio(self):
         self.assertTrue(os.path.exists(os.path.join(RAIZ, "datos", "estado-actual.json")))
