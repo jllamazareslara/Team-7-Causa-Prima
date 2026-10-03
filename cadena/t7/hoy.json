@@ -7,6 +7,6 @@
  "mesa_permite_inyeccion_equipos": false,
  "duelo": {},
  "enfados": {},
- "apagar": ["equipo", "rastro"],
+ "apagar": [],
  "ajustes": {}
 }
