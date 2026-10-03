@@ -64,9 +64,24 @@ class Candado(unittest.TestCase):
 
 class Hoy(unittest.TestCase):
     def test_hoy_solo_vender(self):
-        """Decisión del equipo: vender las repetidas (anuncios en El Rastro sí), sin comprar."""
+        """Decisión del equipo (3/10, tarde): sin compras a vendedores, pero en El Rastro se piden las cartas de RET,
+        y la que cierra la página se busca en otro equipo."""
         pl = situacion.plan({"efectivo": 300, "cuenta": {}})
-        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, 0, "ninguna"))
+        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, 1, "ninguna"))
+        self.assertTrue(pl["ordenes"]["pedir_completar"] and pl["ordenes"]["cerrar_en_rastro"])
+
+    def test_solo_vender_sin_completar_no_pide(self):
+        pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"solo_vender": True, "ajustes": {"cambista.pedir": 1}})
+        self.assertEqual((pl["p"]["cambista.pedir"], pl["ordenes"].get("pedir_completar")), (0, None))
+
+    def test_la_carta_que_cierra_la_pagina_no_se_compra_a_un_vendedor(self):
+        from t7 import cadena
+        cuenta = {f"RET-0{i}": 1 for i in range(1, 10)}                       # falta solo RET-10
+        menus = {"picaros": {"vende": {"RET-10": 63}, "compra": {}}}
+        ordenes = {"compras": "ninguna", "completar": ["RET"], "reserva": 0, "margen_completar": 1.2}
+        con = cadena.cola_de_operaciones(cuenta, 500, menus, ordenes)
+        sin = cadena.cola_de_operaciones(cuenta, 500, menus, dict(ordenes, cerrar_en_rastro=True))
+        self.assertEqual(([o["carta"] for o in con], sin), (["RET-10"], []))
 
     def test_sin_solo_vender_se_compra(self):
         pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"ajustes": {"cambista.pedir": 1}})

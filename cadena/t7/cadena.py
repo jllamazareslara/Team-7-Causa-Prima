@@ -426,8 +426,9 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         ojeador.observar(mem.historial, tablon, t)
         for o in cambista.oportunidades(tablon, cuenta, efectivo, reserva=p["guardia.reserva_efectivo"], p=p)[:3]:
             prop = o["propuesta"]
-            if ordenes.get("compras") == "ninguna" and prop["recibo"]["cartas"] and not prop["entrego"]["cartas"]:
-                continue                                 # solo vender o caja seca: en El Rastro no se compra
+            if ordenes.get("compras") == "ninguna" and prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and \
+                    not (ordenes.get("pedir_completar") and all(contable.para_completar(r, ordenes) for r in prop["recibo"]["cartas"])):
+                continue                                 # solo vender o caja seca: en El Rastro no se compra (salvo páginas a completar)
             compra = prop["recibo"]["cartas"] and not prop["entrego"]["cartas"] and len(prop["recibo"]["cartas"]) == 1
             if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
                 ref = prop["recibo"]["cartas"][0]
@@ -603,6 +604,8 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
                 continue                                  # la caja no llega a su precio: no se abre (ni se le cansa)
             vale = V.valor_recibir(cuenta, [ref])
             completa = V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref]
+            if objetivo and completa and ordenes.get("cerrar_en_rastro"):
+                continue                                  # la que cierra la página, de otro equipo: el salto de valor puntúa
             if vale < 0.8 * lista or (cupo_lleno and not (completa or objetivo)):
                 continue
             if ordenes.get("compras") == "escalera_y_pagina" and not (completa or objetivo) and \

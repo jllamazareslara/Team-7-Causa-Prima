@@ -98,10 +98,15 @@ def plan(estado, hoy=None, precios_venta=None):
     ordenes["sin_coste"] = ["duelos", "vender a vendedores", "cambios carta por carta", "Market Test del puesto gratuito"]
     if hoy.get("solo_vender"):                          # el equipo solo quiere vender (las repetidas): nada de compras
         ordenes["compras"] = "ninguna"
-        cambios["cambista.pedir"] = 0                     # manda sobre lo que diga "ajustes"
-        motivos[:] = [m for m in motivos if not m.startswith("cambista.pedir:")]
-        motivos.append("solo vender: no se abren compras a vendedores, no se publican peticiones ni cambios y no se "
-                       "compra en El Rastro")
+        if hoy.get("completar"):                          # salvo las páginas a completar: peticiones y El Rastro, solo de ellas
+            ordenes["pedir_completar"] = True
+            motivos.append("solo vender: no se abren compras a vendedores; en El Rastro solo se piden y se compran "
+                           "cartas de las páginas a completar")
+        else:
+            cambios["cambista.pedir"] = 0                 # manda sobre lo que diga "ajustes"
+            motivos[:] = [m for m in motivos if not m.startswith("cambista.pedir:")]
+            motivos.append("solo vender: no se abren compras a vendedores, no se publican peticiones ni cambios y no se "
+                           "compra en El Rastro")
 
     # 3. Qué vender para volver al colchón, sin perder valor.
     ventas = None
@@ -119,6 +124,7 @@ def plan(estado, hoy=None, precios_venta=None):
     ordenes["completar"] = [s for s in hoy.get("completar") or [] if isinstance(s, str)]
     ordenes["reserva"] = p["guardia.reserva_efectivo"]
     ordenes["margen_completar"] = MARGEN_COMPLETAR
+    ordenes["cerrar_en_rastro"] = bool(hoy.get("cerrar_en_rastro"))   # la carta que cierra la página, de otro equipo
     if ordenes["completar"]:
         motivos.append(f"completar {', '.join(ordenes['completar'])}: se compran a vendedores las cartas que faltan, "
                        f"cuando sobran {MARGEN_COMPLETAR} × su lista por encima de la reserva")

@@ -1,11 +1,12 @@
 {
  "_como_leer": "Las noticias del día. Se cambia aquí, sin tocar código; situacion.plan() las convierte en ajustes para todos los agentes. Lo que no se sabe se deja vacío. El efectivo y las cartas no van aquí: se leen del juego.",
- "_ejemplos": "tick_segundos: 30 el sábado, 15 el domingo. compra_minima: el precio de lista más barato del día. guardar_para_mercado: true si decidimos abrir mercado propio (reserva 270). mesa_permite_inyeccion_equipos: true solo si la mesa lo confirma. duelo: {\"rondas\": 8, \"descuento_ronda\": 0.94} en cuanto se vea un duelo real. enfados: {\"chato\": 2} = conversaciones que ese vendedor ha cortado. apagar: categorías (vendedor, equipo, sobre, duelo). ajustes: cualquier ajuste de parametros.json, por su nombre. solo_vender: true = solo vender (repetidas a los vendedores y lo que no compren a El Rastro): no se abren compras, no se publican peticiones ni cambios, no se compra en El Rastro. completar: [\"RET\"] = páginas que queremos completar: sus cartas se compran a los vendedores aunque solo_vender esté encendido, cuando sobran 1,2 × su lista por encima de la reserva.",
+ "_ejemplos": "tick_segundos: 30 el sábado, 15 el domingo. compra_minima: el precio de lista más barato del día. guardar_para_mercado: true si decidimos abrir mercado propio (reserva 270). mesa_permite_inyeccion_equipos: true solo si la mesa lo confirma. duelo: {\"rondas\": 8, \"descuento_ronda\": 0.94} en cuanto se vea un duelo real. enfados: {\"chato\": 2} = conversaciones que ese vendedor ha cortado. apagar: categorías (vendedor, equipo, sobre, duelo). ajustes: cualquier ajuste de parametros.json, por su nombre. solo_vender: true = solo vender (repetidas a los vendedores y lo que no compren a El Rastro): no se abren compras, no se publican peticiones ni cambios, no se compra en El Rastro. completar: [\"RET\"] = páginas que queremos completar: sus cartas se compran a los vendedores aunque solo_vender esté encendido, cuando sobran 1,2 × su lista por encima de la reserva; con solo_vender, en El Rastro solo se piden y se compran cartas de esas páginas (cambista.pedir = 1). cerrar_en_rastro: true = la carta que cierra una página a completar no se compra a un vendedor, sino a otro equipo (El Rastro): el salto de valor de la página cuenta en la puntuación.",
  "tick_segundos": 30,
  "compra_minima": 10,
  "guardar_para_mercado": false,
  "mesa_permite_inyeccion_equipos": false,
  "solo_vender": true,
+ "cerrar_en_rastro": true,
  "completar": ["RET"],
  "_duelo_de_donde_sale": "GET /api/schedule leído el 3/10 a las ~17:00 (tick 808): Duels II at_hours 11,65 -> duel_ticks 16, decay 0,08, max_concurrent 6, issues [price, days]. Duels III (domingo, at_hours 18,65): duel_ticks 12, decay 0,10, max_concurrent 4 -> poner rondas 12 y descuento_ronda 0,90 antes de esa.",
  "duelo": {"rondas": 16, "descuento_ronda": 0.92},
@@ -15,7 +16,7 @@
  "mercado_barato": {"venue": "v02", "hasta": 25, "leer": ["v02", "v07", "v01"]},
  "ajustes": {
   "rastro.publicar": 1,
-  "cambista.pedir": 0,
+  "cambista.pedir": 1,
   "rastro.precio_inicial_lista": 1.3,
   "tienda.chato.apertura_compra": 0.6
  }

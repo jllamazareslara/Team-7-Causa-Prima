@@ -39,7 +39,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, candado, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, contable, ojeador, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -256,8 +256,16 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
     cuenta = Counter(a["ref"] for a in me.get("assets") or [] if a.get("kind") == "card" and a.get("ref"))
     for x in (est.get("anuncios") or {}).values():               # lo anunciado en El Rastro no se ofrece además a un vendedor
         cuenta[x["ref"]] -= 1
-    abiertas = {h["vendedor"] for h in est["hilos"].values()}
     tick = (lectura or {}).get("tick")
+    dura = plan["p"].get("cambista.peticion_dura_ticks", 10)
+    vivo_en_rastro = lambda x: not isinstance(tick, int) or tick - x.get("tick", tick) < dura   # noqa: E731
+    for x in (est.get("trueques") or {}).values():               # lo ofrecido en un cambio tampoco
+        if vivo_en_rastro(x):
+            for r in x.get("doy") or []:
+                cuenta[r] -= 1
+    pedidas = {r for r, x in (est.get("peticiones") or {}).items() if vivo_en_rastro(x)}
+    pedidas |= {r for r, x in (est.get("trueques") or {}).items() if vivo_en_rastro(x)}
+    abiertas = {h["vendedor"] for h in est["hilos"].values()}
     ocupados = est.setdefault("ocupados", {})
     for v, hasta in list(ocupados.items()):                      # thread_exists reciente: ese vendedor está ocupado
         if not isinstance(hasta, int) or (isinstance(tick, int) and tick >= hasta):
@@ -269,6 +277,7 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
         ops = cadena.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
     else:
         ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
+    ops = [op for op in ops if not (op["lado"] == "compra" and op["carta"] in pedidas)]   # ya se pide en El Rastro
     for op in ops[:huecos]:
         if op["vendedor"] in ocupados:
             continue
@@ -618,10 +627,12 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
             _linea("errores.jsonl", {"trueque": c, "error": str(e)})
 
     # 2. peticiones con efectivo, solo de lo que eligió la mochila (solo con cambista.pedir = 1)
-    if ordenes.get("compras") == "ninguna" or not (publicar or primero):   # caja seca: no se compromete efectivo
-        return cambios
+    if (ordenes.get("compras") == "ninguna" and not ordenes.get("pedir_completar")) or not (publicar or primero):
+        return cambios                                          # caja seca: no se compromete efectivo
     nuevas = cadena.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades,
                                       getattr(mem, "demanda", None), final)
+    if ordenes.get("compras") == "ninguna":                     # solo vender: solo las páginas a completar
+        nuevas = [n for n in nuevas if contable.para_completar(n["carta"], ordenes)]
     for n in nuevas:
         if n["carta"] in trus_vivos or any(c["quiero"] == n["carta"] for c in cambios):
             continue                                            # ya se pide con un cambio: no pagar además
@@ -880,10 +891,10 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
             revisar_publicadas(b, me, est, plan["p"], tick, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: al tick siguiente
             tratos = cadena.tratos_de_hoy(mem, dia)
-            abrir(b, me, est, plan, vivo, menus, tratos, mem=mem, lectura=lectura)
-            if toca:
+            if toca:                                             # El Rastro primero: un cambio puntúa a nuestro valor;
                 anunciar(b, me, est, plan, tick, vivo, menus, tratos, primero, mem=mem, lectura=lectura)
                 pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
+            abrir(b, me, est, plan, vivo, menus, tratos, mem=mem, lectura=lectura)   # los vendedores, con lo que queda
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
             mom = lectura.get("momento") or {}
             if mom.get("fase", "normal") != "normal":
