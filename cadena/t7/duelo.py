@@ -1,13 +1,42 @@
 """La Duelista: duelos de precio contra otro equipo (y versión con día de entrega).
 
 Lo que sabemos: cada lado ve solo su límite; fuera del límite resta; sin trato, cero; cada ronda encoge el trato
-(descuento δ ≈ 0,94). Cada escenario se juega dos veces, una desde cada lado.
+(el juego dice cuánto: 6 % en Duelos I, 8 % en Duelos II). Cada escenario se juega dos veces, una desde cada lado.
+
+LAS REGLAS, por orden de importancia. Las tres primeras salen de la charla de Causa Prima ("Duels: how they
+work") y de medir los 68 duelos reales del sábado; las demás, del simulador.
+
+R1. Contestar TODOS los duelos desde el primer minuto. Un duelo que nadie responde vale cero para los dos.
+    Solo hay una excusa para no mandar nada: que la memoria de escenario demuestre que no hay tarta (los dos
+    límites no se cruzan), porque ahí cualquier trato nos restaría. Lo cumple el lanzador (duelos.py, cada tick)
+    junto con "esperar", la única acción que no manda nada.
+
+R2. Abrir con una oferta que el otro PUEDA aceptar, no con un ancla imposible. Vendiendo, coste × 1,6;
+    comprando, valor × 0,60. Medido con el decay real de Duelos II (0,92) y 16 rondas, ponderando el 26 % de
+    rivales que no negocian nunca (10 de los 38 duelos del log de hoy): 0,393 frente a 0,381 del ancla de 2,0.
+    Contra un rival que solo acepta y nunca contraoferta, la diferencia es grande: 0,514 frente a 0,416.
+
+R3. Cerrar pronto: lo que se reparte encoge cada ronda. β = 1,5 (cede pronto) en vez del 0,6 de antes
+    (aguantar hasta el final). Con la apertura de R2 da 0,401 ponderado, el mejor medido.
+
+R4. En Duelos II y III, TODO mensaje con precio lleva día de entrega (days). Sin él el juego lo rechaza
+    (400 missing_days) y el duelo vale cero. Lo garantiza mejor_dia(), que siempre devuelve un día: el que más
+    nos vale, o el 5 si no entendemos los pesos.
+
+R5. Regalar el día solo cuando no nos cuesta. Entre días que nos valen casi lo mismo (dentro del 5 % de nuestro
+    rango), se elige el que el rival parece preferir por los días que él mismo propone. Si un día nos conviene
+    claramente, no se cede aunque él prefiera otro.
+
+R6. Nunca ofrecer ni aceptar fuera de nuestro límite, ni siquiera en la última ronda: es lo único que resta.
+
+R7. El descuento por ronda se lee del propio duelo (decay_per_round), no se supone: cambia por sesión.
 
 Cómo piensa, en tres fórmulas:
 
-1. Cuánto pedir en la ronda t de T (curva de concesión "Boulware", la de los ganadores de la competición ANAC):
+1. Cuánto pedir en la ronda t de T (curva de concesión de la competición ANAC):
        margen(t) = margen_inicial × (1 − (t/T)^(1/β)) + margen_final × (t/T)^(1/β)
-   con β < 1: casi no se mueve hasta el final. margen = distancia a nuestro límite, en nuestro favor.
+   margen = distancia a nuestro límite, en nuestro favor. β < 1 aguanta hasta el final (Boulware); β > 1 cede
+   pronto. Usamos β = 1,5 por R3: el pastel encoge cada ronda, así que apurar sale caro.
 
 2. Dónde está su límite (modelo del rival): sus pasos se van encogiendo con razón q = paso_k / paso_(k−1);
    lo que le queda por ceder es paso_k × q / (1 − q). Su límite estimado = su último precio + eso.
