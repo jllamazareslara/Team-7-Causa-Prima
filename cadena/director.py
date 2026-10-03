@@ -16,7 +16,6 @@ Sin ese archivo no abre conversaciones nuevas; sigue las que él mismo abrió, l
 """
 import argparse
 import json
-import math
 import os
 import sys
 import time
@@ -26,7 +25,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, guion, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, ojeador, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -112,14 +111,9 @@ def leer(b, est, tick):
         if estado in ("deal", "walked", "closed", "cooloff") or vigente is None:
             if estado in ("deal", "walked", "closed", "cooloff"):
                 est["hilos"].pop(hid)
-                motivo = crudo.get("closed_reason") or estado    # cupo agotado o enfado: ese vendedor descansa
-                desc = ojeador.descanso(motivo, _hora_de_juego(est), tick, crudo.get("until_tick"))
-                if desc and h.get("vendedor"):
-                    est.setdefault("descansos", {})[h["vendedor"]] = desc
-                    print(f"DESCANSA     {h['vendedor']} ({motivo}) hasta " +
-                          (f"la hora de juego {desc['hasta_h']:g}" if "hasta_h" in desc else f"el tick {desc['hasta_tick']}"))
-                if estado != "deal":
-                    lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0], cerrado=crudo.get("closed_reason") or estado))
+                if estado != "deal":                             # el motivo y until_tick: el Ojeador decide el descanso
+                    lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0], cerrado=crudo.get("closed_reason") or estado,
+                                                      until_tick=crudo.get("until_tick")))
             else:                                                # abierta, pero sin una oferta suya que entendamos
                 h["mudo"] = h.get("mudo", 0) + 1
                 if h["mudo"] >= MUDO_MAX:                        # no se queda ocupando el hueco de ese vendedor
@@ -178,8 +172,9 @@ def leer(b, est, tick):
                     _linea("crudo.jsonl", {"tipo": "feed", "crudo": lectura["feed"]})
             except Exception as e:
                 _linea("errores.jsonl", {"tick": tick, "feed": str(e)})
-    lectura["momento"] = momento_del_juego(est)
-    lectura["escasez"] = est.get("escasez") or {}
+    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para la cadena (El Guion y El Ojeador)
+    lectura["catalogo"] = est.pop("catalogo_nuevo", None)
+    lectura["niveles"] = est.get("niveles")
     return lectura, me
 
 
@@ -258,45 +253,18 @@ def vendedores_nuevos(b, est, menus):
 
 
 def leer_calendario(b, est):
-    """El calendario del juego (solo GET), para El Guion: fiebres que vienen, cierres, etc. Si falla, se queda el anterior."""
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion (fiebres, cierres) y El Ojeador
+    (momento del juego, escasez). Se pasan en la lectura del tick; la lógica vive en t7/cadena.py (ojear)."""
     try:
         cal = b.schedule()
         if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
-            est["calendario"] = {"leido": time.time(), "now_hours": cal["now_hours"], "upcoming": cal.get("upcoming") or []}
+            est["calendario_nuevo"] = cal
     except Exception as e:
         _linea("errores.jsonl", {"calendario": str(e)})
-    try:                                                         # escasez: copias acuñadas / tirada, para el Ojeador
-        esc = ojeador.escasez(b.catalog())
-        if esc:
-            est["escasez"] = esc
+    try:
+        est["catalogo_nuevo"] = b.catalog()
     except Exception as e:
         _linea("errores.jsonl", {"catalogo": str(e)})
-
-
-def _hora_de_juego(est):
-    """La hora de juego ahora: la del último calendario leído más el tiempo pasado desde entonces. None sin calendario."""
-    cal = est.get("calendario")
-    return None if not cal else cal["now_hours"] + (time.time() - cal.get("leido", time.time())) / 3600
-
-
-def momento_del_juego(est):
-    """La fase del mercado según el calendario (ojeador.momento): final, dinero nuevo, antes del dinero, normal."""
-    h = _hora_de_juego(est)
-    return {"fase": "normal", "vender": 1.0, "comprar": "normal", "motivo": ""} if h is None else \
-        ojeador.momento(guion.eventos(est["calendario"]), h)
-
-
-def reservadas(est, cuenta):
-    """{ref: vendedor al que sí se vende ahora, o None}: cartas que esperan una fiebre (guion.reservadas).
-    La hora de juego se adelanta con el tiempo pasado desde la última lectura del calendario."""
-    h = _hora_de_juego(est)
-    if h is None:
-        return {}
-    res = guion.reservadas(dict(cuenta), guion.eventos(est["calendario"]), h)
-    if res and not est.get("aviso_reservadas") == sorted(res):
-        est["aviso_reservadas"] = sorted(res)
-        print("GUARDADAS    " + ", ".join(f"{r}→{v or 'nadie'}" for r, v in sorted(res.items())) + " · esperan la fiebre")
-    return res
 
 
 def abrir_sobres(b, me, vivo):
@@ -339,7 +307,7 @@ def precios_de_venta(menus):
     return precios
 
 
-def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, tick=None):
+def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=None):
     """Rellena los huecos: una conversación nueva por vendedor libre, según menus.json. Primero vender, luego comprar."""
     menus = _json(os.path.join(AQUI, "menus.json"), None) if menus is None else menus
     huecos = MAX_HILOS - len(est["hilos"])
@@ -349,15 +317,11 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, tick=None):
     for x in (est.get("anuncios") or {}).values():               # lo anunciado en El Rastro no se ofrece además a un vendedor
         cuenta[x["ref"]] -= 1
     abiertas = {h["vendedor"] for h in est["hilos"].values()}
-    hora = _hora_de_juego(est)                                   # los que descansan (cupo agotado, enfado) no se abren
-    abiertas |= {v for v, d in (est.get("descansos") or {}).items() if ojeador.descansa(d, hora, tick)}
-    senales = None
-    if mem is not None:                                          # el Ojeador: El Rastro más barato, cartas que se agotan
-        refs = {r for m in menus.values() if isinstance(m, dict) for r in (m.get("vende") or {})}
-        senales = ojeador.senales_vendedor(mem.historial, refs, tick if isinstance(tick, int) else 0, est.get("escasez"))
-    ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos,
-                                     plan["p"].get("tienda.tratos_por_vendedor_y_dia"),
-                                     guardar=reservadas(est, cuenta), niveles=est.get("niveles"), senales=senales)
+    tope = plan["p"].get("tienda.tratos_por_vendedor_y_dia")
+    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
+        ops = cadena.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
+    else:
+        ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
     for op in ops[:huecos]:
         if op["lado"] == "venta":
             ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
@@ -378,7 +342,7 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, tick=None):
             _linea("errores.jsonl", {"abrir": op, "error": str(e)})
 
 
-def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None):
+def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
     """El Cambista vende: anuncia en El Rastro lo que podemos dar sin perder valor (qué y a cuánto lo dice la cadena).
 
     Solo publica en vivo y con rastro.publicar = 1. Con 0 (como viene), enseña una vez lo que anunciaría y no manda nada.
@@ -408,21 +372,17 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         listas.update({r: x for r, x in (menu.get("vende") or {}).items() if isinstance(x, (int, float))})
         if tope is None or tratos.get(vendedor, 0) < tope:
             guardadas.update(menu.get("compra") or {})
-    guardadas.update(reservadas(est, Counter(a["ref"] for a in ids.values())))   # esperan una fiebre: no van a El Rastro
     ocupadas = [h["carta"] for h in est["hilos"].values() if h.get("lado") == "venta"]
     ocupadas += [r for x in (est.get("trueques") or {}).values()                 # ya ofrecidas en un cambio
                  if tick - x["tick"] < p.get("cambista.peticion_dura_ticks", 10) for r in x["doy"]]
-    nuevos = cadena.anuncios_rastro(Counter(a["ref"] for a in ids.values()), p, Counter(x["ref"] for x in vivos.values()),
-                                    ocupadas, guardadas, listas, caducidades,
-                                    maximo=max(0, min(MAX_ANUNCIOS_TICK, MAX_OFERTAS - len(vivos))))
-    if mem is not None:                                          # el Ojeador ajusta el precio al mercado y al momento
-        mom, esc = momento_del_juego(est), est.get("escasez") or {}
-        for n in nuevos:
-            antes = n["precio"]
-            n["precio"] = ojeador.precio_venta(antes, math.ceil(n["pierde"] + 1),
-                                               ojeador.tendencia(mem.historial, n["carta"], tick), mom, esc.get(n["carta"]))
-            if n["precio"] != antes:
-                n["ojeador"] = f"{antes} → {n['precio']} ({mom['fase']})"
+    cuenta = Counter(a["ref"] for a in ids.values())
+    maximo = max(0, min(MAX_ANUNCIOS_TICK, MAX_OFERTAS - len(vivos)))
+    activos = Counter(x["ref"] for x in vivos.values())
+    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
+        nuevos = cadena.anuncios(cuenta, p, mem, lectura or {"tick": tick}, activos, ocupadas, guardadas, listas,
+                                 caducidades, maximo)
+    else:
+        nuevos = cadena.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
     for n in nuevos:
         libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos)
         if not libres:
@@ -592,7 +552,7 @@ def main():
         t0 = time.time()
         seg = reloj.get("tick_seconds")
         hecho = un_tick(b, est, mem, tick, seg, a.live, os.path.exists(os.path.join(RUNS, "STOP")),
-                        time.strftime("%Y-%m-%d"), primero=hechos == 1)
+                        time.strftime("%Y-%m-%d"), primero=hechos == 1, t_horas=reloj.get("t_hours"))
         try:
             _guardar(os.path.join(RUNS, "director.json"), est)
             _guardar(os.path.join(RUNS, "memoria.json"), mem.a_dict())
@@ -603,7 +563,7 @@ def main():
             print(f"LENTO        el tick tardó {tardo:.1f} s de {seg} s: hay riesgo de saltarse ticks")
 
 
-def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
+def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False, t_horas=None):
     """Todo lo de un tick, en orden. Un fallo aquí no tira el programa: se apunta y se espera al tick siguiente.
     Devuelve True si el tick se completó."""
     try:
@@ -613,6 +573,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
             leer_calendario(b, est)
         lectura, me = leer(b, est, tick)
         lectura["dia"] = dia
+        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para El Ojeador
         plan = situacion.plan({"efectivo": lectura["efectivo"], "cuenta": lectura["cuenta"],
                                "tick_segundos": tick_segundos}, precios_venta=precios_de_venta(menus) or None)
         if primero:
@@ -624,16 +585,16 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, dia, primero=False):
         aplicar(b, acciones, est, vivo)
         soltar_mudos(b, est, lectura, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: se abre al tick siguiente
-            abrir(b, me, est, plan, vivo, menus, cadena.tratos_de_hoy(mem, dia), mem=mem, tick=tick)
+            abrir(b, me, est, plan, vivo, menus, cadena.tratos_de_hoy(mem, dia), mem=mem, lectura=lectura)
             if primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0):
-                anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, dia), primero, mem=mem)
+                anunciar(b, me, est, plan, tick, vivo, menus, cadena.tratos_de_hoy(mem, dia), primero, mem=mem, lectura=lectura)
+                pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
         if primero or (isinstance(tick, int) and tick % VENDEDORES_CADA == 0):
             mom = lectura.get("momento") or {}
             if mom.get("fase", "normal") != "normal":
                 print(f"MOMENTO      {mom['fase']}: {mom['motivo']}")
             for linea in ojeador.informe(mem.historial, tick if isinstance(tick, int) else 0):
                 print(linea)
-                pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
         return True
     except Exception as e:
         print("ERROR       ", f"{type(e).__name__}: {e}")
