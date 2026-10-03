@@ -30,7 +30,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.dirname(AQUI))  # bazaar_sdk.py vive en la raíz del repo
 
-from t7 import cadena, candado  # noqa: E402
+from t7 import cadena, candado, duelo  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
     if hasattr(_salida, "reconfigure"):
@@ -78,11 +78,16 @@ def leer(b, est, tick):
         if rol not in ("seller", "buyer") or not isinstance(limite, (int, float)):
             continue                                              # no se juega lo que no se entiende
         msgs = d.get("messages") or []                            # el historial real, no lo que recuerde este proceso:
-        nuestras = [m["price"] for m in msgs if m.get("from") == "you" and m.get("price") is not None]
-        rival = [m["price"] for m in msgs if m.get("from") != "you" and m.get("price") is not None]
+        # con día de entrega, cada precio pasa a precio efectivo (precio + k × días): ver t7/duelo.py
+        k = duelo.k_dias(rol, d.get("your_days_weight"), d.get("days_meaning")) if "days" in (d.get("issues") or []) else None
+        ef = lambda m: duelo.precio_efectivo(m["price"], m.get("days"), k)   # noqa: E731
+        nuestras = [ef(m) for m in msgs if m.get("from") == "you" and m.get("price") is not None]
+        rival = [ef(m) for m in msgs if m.get("from") != "you" and m.get("price") is not None]
         rival_paquetes = [(m["price"], m["days"]) for m in msgs if m.get("from") != "you"
                           and m.get("price") is not None and isinstance(m.get("days"), int)]
         vigente = _precio(d.get("rival_offer"))
+        if vigente is not None and isinstance(d.get("rival_offer"), dict):
+            vigente = duelo.precio_efectivo(vigente, d["rival_offer"].get("days"), k)
         if vigente is not None and (not rival or rival[-1] != vigente):
             rival.append(vigente)
         plazo, ronda = d.get("deadline_tick"), d.get("rounds", len(nuestras))
@@ -94,7 +99,7 @@ def leer(b, est, tick):
                                   "texto": d.get("rival_text") or d.get("last_message") or "",
                                   "ticks_restantes": restantes, "escenario": esc,
                                   "dias": "days" in (d.get("issues") or []), "pesos_dias": d.get("your_days_weight"),
-                                  "rival_paquetes": rival_paquetes})
+                                  "k_dias": k, "rival_paquetes": rival_paquetes})
     return lectura
 
 

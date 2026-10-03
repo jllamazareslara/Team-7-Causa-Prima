@@ -414,9 +414,16 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 # nos cuesta a cambio de ganar en precio (la tarta crece ahí, según el PDF del juego).
                 if not nuestras and not paquetes_rival:
                     m["dias"], por_dia = DIA_POR_DEFECTO, f"día {DIA_POR_DEFECTO}: sonda inicial para medir preferencia del rival"
+                elif duelo.dia_bueno(rol, d.get("k_dias")) is not None:   # peso real: un número con su sentido
+                    m["dias"] = duelo.dia_bueno(rol, d["k_dias"])
+                    por_dia = f"día {m['dias']}: el que más nos vale (k = {d['k_dias']:+.2f} por día)"
                 else:
                     m["dias"], por_dia = duelo.mejor_dia(d.get("pesos_dias"), DIA_POR_DEFECTO, hacia=hacia)
-                if not nuestras or hacia:
+                k = d.get("k_dias")
+                if k is not None:                           # `precio` es efectivo: el que se escribe depende del día
+                    m["precio"] = duelo.precio_a_mandar(rol, precio, m["dias"], k, lim)
+                    por_dia += f" · se escribe {m['precio']} (vale {precio} con el día)"
+                if not nuestras or hacia or k is not None:
                     apunta("DUELISTA", f"{quien} · {por_dia}")
             quedan = d.get("ticks_restantes")
             ofertas_duelo.append((quedan if isinstance(quedan, (int, float)) else float("inf"), m))

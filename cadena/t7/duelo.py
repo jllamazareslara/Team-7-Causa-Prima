@@ -103,6 +103,56 @@ def decidir(st, p):
 
 
 # ---------- duelos con día de entrega ----------
+#
+# Forma real (Duels II, 3/10): your_days_weight es UN número y days_meaning dice su sentido:
+#     comprando  "each delivery day costs you this much cash"          ganancia = límite − precio − peso × días
+#     vendiendo  "each delivery day adds this much cash to your side"  ganancia = precio − límite + peso × días
+# Visto en vivo: aceptar 50 P a día 10 con límite 86 y peso 4,02 dio −4,2 (duelo 5635), porque solo se miraba el precio.
+# Por eso todo se pasa a PRECIO EFECTIVO = precio + k × días, que se compara con el límite como un precio normal:
+# decidir(), la Contable y el Guardia no cambian. Al mandar, se elige el día y se vuelve al precio que se escribe.
+
+def k_dias(rol, peso, sentido):
+    """El k del precio efectivo (precio + k × días), o None si el peso o su sentido no se entienden."""
+    if not isinstance(peso, (int, float)) or isinstance(peso, bool) or not isinstance(sentido, str):
+        return None
+    s = sentido.lower()
+    if "add" in s or "suma" in s or "añade" in s:
+        signo = 1                                          # cada día nos da peso
+    elif "cost" in s or "cuesta" in s:
+        signo = -1                                         # cada día nos quita peso
+    else:
+        return None
+    return signo * peso * (1 if rol == "seller" else -1)
+
+
+def precio_efectivo(precio, dias, k):
+    """El precio de un paquete (precio, días) como si fuera solo precio. Sin k o sin días, el precio tal cual."""
+    if k is None or not isinstance(dias, (int, float)) or isinstance(dias, bool):
+        return precio
+    return round(precio + k * dias, 2)
+
+
+def dia_bueno(rol, k):
+    """El día que más nos vale con k: vendiendo, más días suben el precio efectivo si k > 0; comprando, lo bajan si k < 0."""
+    if not k:
+        return None
+    mas_dias_mejor = k > 0 if rol == "seller" else k < 0
+    return 10 if mas_dias_mejor else 0
+
+
+def precio_a_mandar(rol, efectivo, dia, k, limite=None):
+    """El precio que se escribe para que (precio, día) valga `efectivo`. Redondeado a nuestro favor, nunca menos de 1.
+    Con `limite`, el precio escrito tampoco cruza nuestro límite (vendiendo, nunca por debajo del coste; comprando,
+    nunca por encima del valor): las reglas dicen que un trato fuera del límite resta, y no sabemos si miran el precio
+    escrito o el que vale con el día. Así el día solo suma."""
+    if k is None or dia is None:
+        return efectivo
+    x = efectivo - k * dia
+    x = math.ceil(x) if rol == "seller" else math.floor(x)
+    if isinstance(limite, (int, float)):
+        x = max(x, math.ceil(limite)) if rol == "seller" else min(x, math.floor(limite))
+    return max(1, x)
+
 
 def mejor_dia(pesos, por_defecto=5, hacia=None):
     """El día de entrega que más nos vale según `your_days_weight`. Su forma real aún no se ha visto en un duelo:
