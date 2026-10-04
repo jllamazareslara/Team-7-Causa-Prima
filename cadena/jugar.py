@@ -36,7 +36,7 @@ from collections import Counter
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
-sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
+sys.path.insert(0, os.path.dirname(AQUI))  # bazaar_sdk.py vive en la raíz del repo
 
 from t7 import cadena, cambista, candado, comerciante, contable, guardia, ojos, params, situacion
 from t7 import menus as M  # noqa: E402
