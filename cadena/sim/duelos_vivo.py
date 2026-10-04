@@ -421,12 +421,13 @@ def escenario(rng):
     return round(coste), round(valor), round(rng.uniform(0.8, 6.0), 2), round(rng.uniform(1.5, 9.0), 2)
 
 
-def torneo(n=600, semilla=11, dos=True, a_la_vez=4, ajustes=None, callado=True):
-    """Juega n duelos en tandas de `a_la_vez` (acaban en el mismo tick, como en el juego) con el programa real."""
+def torneo(n=600, semilla=11, dos=True, a_la_vez=4, ajustes=None, callado=True, registro=None):
+    """Juega n duelos en tandas de `a_la_vez` (acaban en el mismo tick, como en el juego) con el programa real.
+    registro: una lista donde se guarda cada línea del diario (para mirar después por qué hizo algo)."""
     import duelos as prog
     from t7 import cadena
     if callado:
-        prog._linea = lambda *a, **k: None
+        prog._linea = (lambda nombre, d: registro.append(d)) if registro is not None else (lambda *a, **k: None)
     if hasattr(prog, "ajustes"):
         original = prog.__dict__.setdefault("_ajustes_de_verdad", prog.ajustes)
 

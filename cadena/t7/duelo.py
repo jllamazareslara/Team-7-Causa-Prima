@@ -125,9 +125,10 @@ def k_dias(rol, peso, sentido):
     if not isinstance(peso, (int, float)) or isinstance(peso, bool) or rol not in ("seller", "buyer"):
         return None
     s = sentido.lower() if isinstance(sentido, str) else ""
-    if "add" in s or "suma" in s or "añade" in s:
+    suma, cuesta = "add" in s or "suma" in s or "añade" in s, "cost" in s or "cuesta" in s
+    if suma and not cuesta:
         signo = 1                                          # cada día nos da peso
-    elif "cost" in s or "cuesta" in s:
+    elif cuesta and not suma:
         signo = -1                                         # cada día nos quita peso
     else:
         signo = 1 if rol == "seller" else -1               # texto nuevo: lo visto en los 21 duelos reales del 3/10
@@ -358,22 +359,29 @@ def decidir_vivo(st, p):
             dia = _dia(rol, lim, x, p, m, n_r) if dia is None else _dia_posible(rol, lim, abs(x["k"]), m, dia)
         else:
             dia = None
-        if nos and abs(nos[-1][1] - e) < 0.5 and (dia is None or nos[-1][3] == dia):
+        escrito = precio_a_mandar(rol, e, dia, x.get("k") if con_dia else None, lim)
+        if nos and nos[-1][2] == escrito and (dia is None or nos[-1][3] == dia):   # lo que se escribiría, no el efectivo
             return ("esperar", None, None, "nuestra oferta sigue en pie: repetirla no aporta y puede costar una ronda")
         return ("ofrecer", e, dia, motivo)
 
     # ---------- a. hay una oferta suya dentro de nuestro límite ----------
+    if g_su is not None and g_su > 0 and x.get("rechazada") and quedan > 1:
+        return ("esperar", None, None, "el juego rechazó aceptar este duelo en el tick anterior: este tick se deja la "
+                                       "firma a otro duelo y se vuelve a intentar en el siguiente")
     if g_su is not None and g_su > 0:
         if quedan <= cierre:
-            if (int(_aj(p, "duelo.apurar", 1)) and not int(x.get("turno") or 0) and quedan == cierre and quedan >= 2
+            # Solo si es el ÚNICO duelo con este plazo: en el último tick hay una aceptación para todo el equipo, y
+            # si otro duelo la necesita este se queda sin trato (visto en el juego falso: +23 perdidos así).
+            if (int(_aj(p, "duelo.apurar", 1)) and x.get("solo") and quedan == cierre and quedan >= 2
                     and sin_mejora is not None and sin_mejora <= 1 and not retrocede):
-                return ("esperar", None, None, f"su oferta (+{g_su:.0f}) ha mejorado en el último tick y es el último "
-                                               f"duelo en cerrar: un tick más, y se acepta")
+                return ("esperar", None, None, f"su oferta (+{g_su:.0f}) ha mejorado en el último tick y no hay otro "
+                                               f"duelo que cerrar a la vez: un tick más, y se acepta")
             return ("aceptar", vig[0], None, f"se acaba el tiempo (quedan {quedan} ticks): +{g_su:.0f} es mejor que cero")
         if g_mio is not None and g_su >= g_mio:
             return ("aceptar", vig[0], None, f"nos da +{g_su:.0f}, al menos lo que pedíamos (+{g_mio:.0f})")
-        if g_su >= float(_aj(p, "duelo.aceptar_ya_desde", 1.0)) * m0:
-            return ("aceptar", vig[0], None, f"nos da +{g_su:.0f}, más de lo que pediríamos al abrir (+{m0:.0f}): se coge ya")
+        ya = float(_aj(p, "duelo.aceptar_ya_desde", 1.0)) * m0
+        if g_su >= ya:
+            return ("aceptar", vig[0], None, f"nos da +{g_su:.0f}: es una oferta muy buena (el listón es +{ya:.0f}), se coge ya")
         reactivo = (not autonomo and len(riv) >= 2 and t_mia is not None and t_mej is not None and t_mej >= t_mia
                     and not retrocede)
         # el día: si a nosotros nos importa claramente más, UNA vez pedimos nuestro día compensándole en precio.
@@ -419,6 +427,8 @@ def decidir_vivo(st, p):
         return oferta(margen, f"rival mudo: bajamos poco a poco, gratis (margen {margen:.0f})")
 
     # ---------- c. el rival habla, pero su oferta no nos sirve ----------
+    if edad < escuchar and not nos:
+        return ("esperar", None, None, "primeros ticks: escuchamos antes de hablar")
     if len(riv) <= 1 and sin_mejora is not None and sin_mejora <= pac and not nos:
         return ("esperar", None, None, "acaba de abrir: miramos si camina solo antes de hablar")
     if g_su is not None and autonomo and not parado and paso > 0 and (1 - g_su) / paso <= quedan - cierre - 1:

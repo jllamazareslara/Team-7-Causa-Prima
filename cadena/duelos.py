@@ -66,7 +66,8 @@ _ULTIMOS = []          # los últimos ajustes leídos bien, por si un archivo se
 def ajustes(hoy=None):
     """Los ajustes de la Duelista: parametros.json con lo que diga hoy.json encima (su bloque "duelo" y los
     "ajustes" que empiezan por "duelo."). Se relee en cada tick: cambiar hoy.json cambia el duelo sin relanzar.
-    Si hoy.json está roto, se juega con parametros.json y se avisa."""
+    Si un archivo no se puede leer (se está guardando justo entonces, o está roto), se sigue con lo último que se
+    leyó bien y se avisa: editar los ajustes en mitad de un duelo no puede parar el programa."""
     aviso = None
     try:
         hoy = situacion.leer_hoy() if hoy is None else hoy
@@ -75,12 +76,13 @@ def ajustes(hoy=None):
         _HOY_BUENO[:] = [hoy]
     except (OSError, ValueError, AttributeError) as e:           # hoy.json a medio guardar: el último que se leyó bien
         hoy = _HOY_BUENO[0] if _HOY_BUENO else {}
-        aviso = f"hoy.json no se puede leer ({type(e).__name__}): se sigue con " +                 ("el último leído" if _HOY_BUENO else "parametros.json")
-    cambios = {k: v for k, v in (hoy.get("ajustes") or {}).items()
-               if k.startswith("duelo.") and isinstance(v, (int, float)) and not isinstance(v, bool)}
-    bloque = hoy.get("duelo") or {}
+        de_donde = "el último leído" if _HOY_BUENO else "parametros.json"
+        aviso = f"hoy.json no se puede leer ({type(e).__name__}): se sigue con {de_donde}"
+    de_hoy = hoy.get("ajustes") if isinstance(hoy.get("ajustes"), dict) else {}
+    cambios = {k: v for k, v in de_hoy.items() if isinstance(k, str) and k.startswith("duelo.") and _num(v)}
+    bloque = hoy.get("duelo") if isinstance(hoy.get("duelo"), dict) else {}
     for corto in ("rondas", "descuento_ronda"):
-        if isinstance(bloque.get(corto), (int, float)) and bloque.get(corto):
+        if _num(bloque.get(corto)) and bloque.get(corto):
             cambios["duelo." + corto] = bloque[corto]
     try:
         p = params.cargar(cambios=cambios)
@@ -148,6 +150,7 @@ def repartir_turnos(duelos):
             return t
         for i, d in enumerate(sorted(grupo, key=lambda d: (-ultima_mejora(d), str(d["id"])))):
             d["x"]["turno"] = i
+            d["x"]["solo"] = len(grupo) == 1 and len(duelos) == 1    # nadie más puede necesitar la última aceptación
 
 
 def _num(v):
@@ -212,6 +215,9 @@ def leer(b, est, tick):
         if leido is not None:
             lectura["duelos"].append(leido)
     repartir_turnos(lectura["duelos"])
+    rechazadas = est.get("rechazadas") or {}
+    for d in lectura["duelos"]:                                   # solo el tick siguiente al rechazo
+        d["x"]["rechazada"] = _num(tick) and rechazadas.get(d["id"]) == tick - 1
     return lectura
 
 
@@ -241,12 +247,15 @@ def sigue_en_pie(b, firma, lectura):
     return False, f"el rival ha cambiado su oferta: ahora da {hay:+.1f}, se firmó {firmado:+.1f}"
 
 
-def aplicar(b, acciones, vivo, lectura=None):
+def aplicar(b, acciones, vivo, lectura=None, est=None):
     """Acepta lo que firmó el Guardia (primero: es lo que corre prisa) y manda los mensajes de duelo. En seco solo lo
     escribe (ya lo hace el diario)."""
     f = acciones.get("firma_duelo")
     if f and vivo:
-        ok, motivo = sigue_en_pie(b, f, lectura or {})
+        try:
+            ok, motivo = sigue_en_pie(b, f, lectura or {})
+        except Exception as e:                                    # si la comprobación falla, vale lo que firmó el Guardia
+            ok, motivo = True, f"no se pudo comprobar ({type(e).__name__})"
         if not ok:
             print(f"NO SE ACEPTA duelo {f.get('id')}: {motivo}")
             _linea("errores.jsonl", {"firma_duelo": f, "no_aceptado": motivo})
@@ -256,6 +265,8 @@ def aplicar(b, acciones, vivo, lectura=None):
             except Exception as e:                                # nunca se repite a ciegas: se relee en el tick siguiente
                 print(f"ERROR        aceptar duelo {f.get('id')}: {e}")
                 _linea("errores.jsonl", {"firma_duelo": f, "error": str(e)})
+                if est is not None:                               # el tick siguiente la firma es para otro duelo
+                    est.setdefault("rechazadas", {})[f.get("id")] = (lectura or {}).get("tick")
     for m in acciones["mensajes"]:
         if m.get("destino") != "duelo" or not vivo:
             continue
@@ -281,7 +292,7 @@ def un_tick(b, est, mem, tick, vivo, stop):
         for linea in acciones["diario"]:
             print(linea)
             _linea("diario.jsonl", {"linea": linea, "vivo": vivo})
-        aplicar(b, acciones, vivo, lectura)
+        aplicar(b, acciones, vivo, lectura, est)
         return True
     except Exception as e:
         print("ERROR       ", f"{type(e).__name__}: {e}")

@@ -250,6 +250,58 @@ class OfertaCambiada(unittest.TestCase):
         self.assertEqual(self.jugar(peor, tick=39), [4])
 
 
+class Revision(unittest.TestCase):
+    """Lo que encontró la revisión independiente del 4/10, para que no vuelva."""
+
+    def test_el_redondeo_no_hace_pasar_por_nueva_una_oferta_identica(self):
+        """Comprando con peso 1,12 y día 10, el precio efectivo cambiaba de 89,2 a 90 pero se escribía otra vez
+        78 a día 10: el mismo paquete cada tick, una ronda quemada cada vez."""
+        x = {"tick": 1002, "quedan": 10, "edad": 2, "turno": 0, "n_nos": 1, "n_riv": 2, "nos": [[1001, 89.2, 78, 10]],
+             "riv": [[1000, 271.2, 260, 10], [1001, 270.2, 259, 10]], "vigente": [270.2, 259, 10], "dos": True, "k": 1.12}
+        accion, e, dia, _ = duelo.decidir_vivo({"rol": "buyer", "limite": 150, "x": x}, ajustes())
+        if accion == "ofrecer":
+            self.assertNotEqual((duelo.precio_a_mandar("buyer", e, dia, 1.12, 150), dia), (78, 10))
+
+    def test_ningun_paquete_se_manda_dos_veces_seguidas(self):
+        hechos, _, _ = V.torneo(n=300, semilla=9, ajustes={})
+        for d in hechos:
+            nuestros = [(m["price"], m["days"]) for m in d["msgs"] if m["from"] == "you"]
+            for a_, b_ in zip(nuestros, nuestros[1:]):
+                self.assertNotEqual(a_, b_, f"duelo contra {d['nombre']}: {nuestros}")
+
+    def test_el_duelo_en_su_ultimo_tick_firma_antes_que_uno_que_da_mas(self):
+        """Una aceptación por tick: si a un duelo le queda un tick y a otro dos, firma el primero aunque dé menos
+        (el otro firma en el tick siguiente). Con el orden por ganancia a secas se perdía un trato."""
+        def d(numero, plazo, precio):
+            return {"duel": numero, "status": "live", "role": "seller", "your_limit": 100, "issues": ["price"],
+                    "deadline_tick": plazo, "rounds": 0, "rival_offer": {"price": precio, "days": 0},
+                    "messages": [{"tick": 30, "from": "Rival Oro", "text": "", "price": precio, "days": None}]}
+
+        class Juego:
+            def duels(self, done=False):
+                return {"duels": [d(1, 41, 150), d(2, 40, 130)]}          # el 2 acaba antes y da menos
+        lectura = duelos.leer(Juego(), {}, 39)
+        ac = cadena.tick(lectura, cadena.Memoria(), ajustes())
+        self.assertEqual(ac["firma_duelo"]["id"], 2)
+
+    def test_una_aceptacion_rechazada_deja_la_firma_a_otro_duelo_un_tick(self):
+        x = {"tick": 20, "quedan": 4, "edad": 8, "turno": 2, "n_nos": 0, "n_riv": 1, "nos": [],
+             "riv": [[12, 130, 130, None]], "vigente": [130, 130, None], "dos": False, "k": None}
+        self.assertEqual(duelo.decidir_vivo({"rol": "seller", "limite": 100, "x": x}, ajustes())[0], "aceptar")
+        self.assertEqual(duelo.decidir_vivo({"rol": "seller", "limite": 100, "x": dict(x, rechazada=True)}, ajustes())[0], "esperar")
+        ultimo = dict(x, rechazada=True, quedan=1)                         # en el último tick se intenta siempre
+        self.assertEqual(duelo.decidir_vivo({"rol": "seller", "limite": 100, "x": ultimo}, ajustes())[0], "aceptar")
+
+    def test_un_hoy_json_con_la_forma_equivocada_no_para_los_duelos(self):
+        for hoy in ({"duelo": 12}, {"duelo": "x", "ajustes": [1, 2]}, {"ajustes": {"duelo.paciencia": float("nan")}},
+                    {"ajustes": {"duelo.paciencia": "dos", 7: 1}}):
+            self.assertEqual(AJUSTES_DE_VERDAD(hoy)["duelo.paciencia"], AJUSTES_DE_VERDAD({})["duelo.paciencia"], hoy)
+
+    def test_un_texto_ambiguo_del_dia_no_cambia_el_signo(self):
+        self.assertEqual(duelo.k_dias("buyer", 3.0, "each day adds cost for you"), duelo.k_dias("buyer", 3.0, None))
+        self.assertGreater(duelo.k_dias("buyer", 3.0, "each delivery day costs you this much cash"), 0)   # efectivo sube
+
+
 class Ajustes(unittest.TestCase):
     def test_hoy_json_manda_sobre_parametros(self):
         p = duelos.ajustes({"duelo": {"rondas": 12, "descuento_ronda": 0.9},

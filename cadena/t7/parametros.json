@@ -425,7 +425,7 @@
   "min": 0,
   "max": 1,
   "estado": "simulado",
-  "por_que": "Duelista por ticks: 1 = el último duelo en cerrar espera un tick más (hasta el último) si el rival ha mejorado su oferta en el tick anterior. Gana con los rivales que ceden al final; a cambio, esa aceptación no tiene segundo intento. 0 = aceptar siempre con un tick de reserva."
+  "por_que": "Duelista por ticks: 1 = cuando el duelo es el ÚNICO en juego y el rival ha mejorado su oferta en el tick anterior, espera un tick más (hasta el último) antes de aceptar. Con varios duelos a la vez no se usa: el último tick solo tiene una aceptación para todo el equipo. 0 = aceptar siempre con un tick de reserva."
  },
  "duelo.ojo_por_ojo": {
   "valor": 0.2,

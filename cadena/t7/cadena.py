@@ -389,8 +389,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                            f"{precio if precio is not None else ''} · {por_que}")
         if accion == "aceptar":
             quedan = d.get("ticks_restantes")
-            cola.append({"tipo": "duelo", "urgente": quedan is not None and quedan <= 2, "destino": "duelo",
-                         "id": d["id"], "precio": precio, "rol": rol, "limite": lim})
+            cola.append({"tipo": "duelo", "urgente": quedan is not None and quedan <= 1, "destino": "duelo",
+                         "id": d["id"], "precio": precio, "rol": rol, "limite": lim,
+                         "neto": duelo.ganancia(rol, lim, precio)})   # una aceptación por tick: primero el duelo en
+            #                                                           su último tick; después, la que más da
         elif accion == "ofrecer":
             nuestras, rival = st["nuestras"], st["rival"]
             cedimos = bool(nuestras) and precio != nuestras[-1]
