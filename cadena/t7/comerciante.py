@@ -261,6 +261,7 @@ def precio_real(hist, tablon, ref, ahora):
     if hechos:
         return max(hechos, key=lambda x: x[0])[1]
     piden = [o["want"]["cash"] for o in tablon or [] if isinstance((o.get("want") or {}).get("cash"), (int, float))
+             and o["want"]["cash"] > 0 and not (o.get("want") or {}).get("cards")      # un cambio pide 0 P: no es precio
              and [a.get("ref") if isinstance(a, dict) else a for a in (o.get("give") or {}).get("assets") or []] == [ref]]
     return min(piden) if piden else None
 
