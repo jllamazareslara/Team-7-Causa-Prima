@@ -177,8 +177,8 @@ class NuncaFueraDelLimite(unittest.TestCase):
 
 class CierreATiempo(unittest.TestCase):
     def test_cuatro_duelos_que_acaban_a_la_vez_cierran_los_cuatro(self):
-        """El juego deja UNA aceptación por equipo y tick. El 3/10 se esperó al último tick con varios duelos a la
-        vez y cinco tratos dentro del límite se quedaron sin cerrar (2367, 2467, 2487, 2550, 2551)."""
+        """El juego deja UNA aceptación por equipo y tick. El 3/10 cinco duelos llegaron al plazo con una oferta del
+        rival dentro del límite y sin aceptar (2367, 2467, 2487, 2550, 2551); dos acababan en el mismo tick."""
         j = V.Juego(random.Random(2))
         tanda = [j.abrir("seller" if i % 2 == 0 else "buyer", 100, 150, 1.0, 1.0, "firme", V.firme(0.2, cede=1.0, politica="cinco"))
                  for i in range(4)]

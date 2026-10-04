@@ -221,7 +221,8 @@ def dia_preferido_rival(sus_ofertas):
 #      solo (duelo 2440: 16 rondas, 10 P convertidos en 3,7). Nuestra oferta sigue en pie sin repetirla.
 #   3. Muchos rivales caminan solos hacia nosotros tick a tick y luego se plantan. Mientras caminan, se les deja venir.
 #   4. El juego deja UNA aceptación por equipo y tick: con cuatro duelos que acaban a la vez no se puede esperar todos
-#      al último tick (el 3/10 se escaparon así cinco tratos que estaban dentro del límite). Cada duelo tiene su turno.
+#      al último tick. El 3/10 cinco duelos llegaron al plazo con una oferta del rival dentro del límite y sin aceptar
+#      (71 P en la mesa); dos de ellos acababan en el mismo tick. Cada duelo tiene su turno y un tick de reserva.
 #
 # Qué hace, en orden:
 #   a. Oferta del rival dentro de nuestro límite: aceptar si el tiempo se acaba, si ya nos da lo que pedíamos o si
@@ -350,7 +351,9 @@ def decidir_vivo(st, p):
     def oferta(m, motivo, dia=None):
         m = max(m, mmin)
         e = lim + s * m
-        e = math.ceil(e) if s > 0 else math.floor(e)
+        e = math.ceil(e) if s > 0 else max(1, math.floor(e))
+        if ganancia(rol, lim, e) <= 0:                      # límite tan bajo que no cabe pedir nada: no se ofrece
+            return ("esperar", None, None, "no cabe una oferta con ganancia dentro de nuestro límite")
         if con_dia:
             dia = _dia(rol, lim, x, p, m, n_r) if dia is None else _dia_posible(rol, lim, abs(x["k"]), m, dia)
         else:

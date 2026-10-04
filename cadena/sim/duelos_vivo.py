@@ -6,6 +6,8 @@ hace jugar al programa de verdad (duelos.un_tick: leer → cadena.tick → Guard
     python sim/duelos_vivo.py --cadena RUTA        juega el código de otra carpeta cadena/ (para comparar con main)
     python sim/duelos_vivo.py --ajustes '{"duelo.paciencia": 1}'     prueba otros ajustes sin tocar archivos
     python sim/duelos_vivo.py --precio             duelos solo de precio
+    python sim/duelos_vivo.py --reales             repite tick a tick los duelos reales grabados (suelo de lo que se saca)
+    python sim/duelos_vivo.py --reales --datos datos/duelos-reales-04-10.json     lo mismo con los de hoy
 
 Reglas del juego falso (las que salen de datos/duelos-reales-03-10.json, 83 duelos terminados sin excepción):
     ganancia   vendiendo precio − coste + peso × días · comprando valor − precio − peso × días
@@ -592,12 +594,13 @@ def main():
     ap.add_argument("--precio", action="store_true", help="duelos solo de precio")
     ap.add_argument("--json", action="store_true", help="salida en JSON")
     ap.add_argument("--reales", action="store_true", help="repite tick a tick los duelos reales del grabador")
+    ap.add_argument("--datos", default=None, help="archivo del grabador para --reales (por defecto, el del 3/10)")
     a = ap.parse_args()
     raiz = os.path.abspath(a.cadena) if a.cadena else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, raiz)
     sys.path.insert(0, os.path.dirname(raiz))
     if a.reales:
-        r = repetir_reales(json.loads(a.ajustes) if a.ajustes is not None else None)
+        r = repetir_reales(json.loads(a.ajustes) if a.ajustes is not None else None, ruta=a.datos)
         print(f"{r['duelos']} duelos reales en los que el rival escribió")
         print(f"  lo que pasó de verdad      {r['real']:7.1f} P · {r['tratos_real']} tratos")
         print(f"  repetidos con este código  {r['repetido']:7.1f} P · {r['tratos']} tratos · rondas medias "
