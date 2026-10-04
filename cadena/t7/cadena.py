@@ -382,13 +382,17 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             lr = visto.get("buyer" if rol == "seller" else "seller")
         st = {"rol": rol, "limite": lim, "rival": d.get("rival", []), "nuestras": d.get("nuestras", []),
               "ronda": d.get("ronda", len(d.get("nuestras", []))), "rondas": d.get("rondas"), "limite_rival": lr}
+        if isinstance(d.get("x"), dict):                     # estado por ticks (duelos.py en vivo): Duelista por ticks
+            st["x"] = d["x"]
         accion, precio, por_que = duelo.decidir(st, p)
         apunta("DUELISTA", f"{quien} · {rol} · rival {st['rival'][-1] if st['rival'] else '—'} · {accion} "
                            f"{precio if precio is not None else ''} · {por_que}")
         if accion == "aceptar":
             quedan = d.get("ticks_restantes")
-            cola.append({"tipo": "duelo", "urgente": quedan is not None and quedan <= 2, "destino": "duelo",
-                         "id": d["id"], "precio": precio, "rol": rol, "limite": lim})
+            cola.append({"tipo": "duelo", "urgente": quedan is not None and quedan <= 1, "destino": "duelo",
+                         "id": d["id"], "precio": precio, "rol": rol, "limite": lim,
+                         "neto": duelo.ganancia(rol, lim, precio)})   # una aceptación por tick: primero el duelo en
+            #                                                           su último tick; después, la que más da
         elif accion == "ofrecer":
             nuestras, rival = st["nuestras"], st["rival"]
             cedimos = bool(nuestras) and precio != nuestras[-1]
@@ -412,7 +416,10 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 # revela nuestra preferencia; el 5 fuerza al rival a mostrar la suya en su contrapropuesta y
                 # desbloquea `hacia` a partir de la ronda siguiente, cuando ya podemos ceder en el día que apenas
                 # nos cuesta a cambio de ganar en precio (la tarta crece ahí, según el PDF del juego).
-                if not nuestras and not paquetes_rival:
+                dia_vivo = duelo.dia_oferta(st, p)          # la Duelista por ticks elige el día con la oferta
+                if dia_vivo is not None:
+                    m["dias"], por_dia = dia_vivo, f"día {dia_vivo}: el de la oferta de la Duelista"
+                elif not nuestras and not paquetes_rival:
                     m["dias"], por_dia = DIA_POR_DEFECTO, f"día {DIA_POR_DEFECTO}: sonda inicial para medir preferencia del rival"
                 elif duelo.dia_bueno(rol, d.get("k_dias")) is not None:   # peso real: un número con su sentido
                     m["dias"] = duelo.dia_bueno(rol, d["k_dias"])
@@ -423,6 +430,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 if k is not None:                           # `precio` es efectivo: el que se escribe depende del día
                     m["precio"] = duelo.precio_a_mandar(rol, precio, m["dias"], k, lim)
                     por_dia += f" · se escribe {m['precio']} (vale {precio} con el día)"
+                    if m["precio"] != precio:               # el texto lleva el precio que se escribe, no el efectivo:
+                        m["texto"] = mem.portavoz.duelo(m["precio"], st["ronda"], cedimos, cerca, rival_firme, firme)[1]
                 if not nuestras or hacia or k is not None:
                     apunta("DUELISTA", f"{quien} · {por_dia}")
             quedan = d.get("ticks_restantes")
