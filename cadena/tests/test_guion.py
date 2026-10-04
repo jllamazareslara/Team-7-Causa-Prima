@@ -7,7 +7,7 @@ import unittest
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import guion, novedades, params  # noqa: E402
+from t7 import comerciante, guion, novedades, params  # noqa: E402
 
 P = params.cargar()
 
@@ -97,9 +97,9 @@ class Plan(unittest.TestCase):
         from t7 import cadena
         cuenta = {"SAL-01": 3, "MAL-02": 3}
         menus = {"abuela": {"compra": {"SAL-01": 6, "MAL-02": 4}}, "pilar": {"compra": {"SAL-01": 12}}}
-        antes = cadena.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": None})
+        antes = comerciante.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": None})
         self.assertNotIn("SAL-01", [o["carta"] for o in antes])                     # a nadie antes de la fiebre
-        durante = cadena.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": "pilar"},
+        durante = comerciante.cola_de_operaciones(cuenta, 200, menus, guardar={"SAL-01": "pilar"},
                                              niveles={"abuela": 1, "pilar": 3})
         self.assertEqual(durante[0], {"vendedor": "pilar", "lado": "venta", "carta": "SAL-01", "lista": 12})
         self.assertEqual(next(o for o in durante if o["vendedor"] == "abuela")["carta"], "MAL-02")
@@ -139,8 +139,8 @@ class Plan(unittest.TestCase):
         self.assertEqual(tabla[0][1]["automatico"], 13)                             # (30−20) + (25−22)
 
 
-class Ojeador(unittest.TestCase):
-    """Cuándo comprar y vender: historial, tendencia, momento, escasez."""
+class OjosYComerciante(unittest.TestCase):
+    """Sin Ojeador: los Ojos guardan el tablón, el feed y los descansos; el Comerciante elige canal con eso."""
 
     @staticmethod
     def tablon(precio, maker="t01", ref="LAT-09", lado="venta"):
@@ -148,130 +148,79 @@ class Ojeador(unittest.TestCase):
             return [{"id": 1, "maker": maker, "give": {"assets": [{"ref": ref}]}, "want": {"cash": precio}}]
         return [{"id": 2, "maker": maker, "give": {"cash": precio}, "want": {"cards": [ref]}}]
 
-    def hist_que_baja(self):
-        from t7 import ojeador
+    def test_historial_del_tablon(self):
+        from t7 import ojos
         h = {}
         for i, p in enumerate([60, 56, 52, 48, 44]):
-            ojeador.observar(h, self.tablon(p, maker=f"t0{i % 3}"), 10 * i)
-        return h
-
-    def test_historial_y_tendencia(self):
-        from t7 import ojeador
-        h = self.hist_que_baja()
-        ojeador.observar(h, self.tablon(44, maker="t01"), 40)                  # misma oferta, mismo tick: no se repite
+            ojos.observar(h, self.tablon(p, maker=f"t0{i % 3}"), 10 * i)
+        ojos.observar(h, self.tablon(44, maker="t01"), 40)                    # misma oferta, mismo tick: no se repite
         self.assertEqual(len(h["LAT-09"]), 5)
-        t = ojeador.tendencia(h, "LAT-09", 40)
-        self.assertEqual((t["sentido"], t["minimo"], t["vendedores"]), ("baja", 44, 3))
-        sube = {}
-        for i, p in enumerate([20, 24, 28, 32]):
-            ojeador.observar(sube, self.tablon(p, ref="RET-02"), 10 * i)
-        self.assertEqual(ojeador.tendencia(sube, "RET-02", 30)["sentido"], "sube")
-        self.assertEqual(ojeador.tendencia({}, "X-01", 0)["sentido"], "sin datos")
+        self.assertEqual(ojos.en_rastro(h, "LAT-09", 40), {"minimo": 44, "vendedores": 3, "compradores": 0})
+        self.assertIsNone(ojos.en_rastro(h, "LAT-09", 400)["minimo"])         # lo viejo no cuenta
+        self.assertEqual(ojos.en_rastro({}, "X-01", 0), {"minimo": None, "vendedores": 0, "compradores": 0})
 
     def test_feed_tolerante(self):
-        from t7 import ojeador
+        from t7 import ojos
         h = {}
-        ojeador.observar_feed(h, {"events": [{"type": "settlement", "ref": "LAV-10", "price": 50, "tick": 5},
-                                             {"type": "pack_opened", "ref": "LAV-01"}, "basura"]}, 6)
+        ojos.observar_feed(h, {"events": [{"type": "settlement", "ref": "LAV-10", "price": 50, "tick": 5},
+                                          {"type": "pack_opened", "ref": "LAV-01"}, "basura"]}, 6)
         self.assertEqual(h, {"LAV-10": [[5, 50, "trato", None]]})
 
-    def test_cuando_comprar(self):
-        from t7 import ojeador
-        h, normal = self.hist_que_baja(), {"comprar": "normal"}
-        t = ojeador.tendencia(h, "LAT-09", 40)
-        self.assertFalse(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal)[0])        # renta poco y baja: esperar
-        self.assertTrue(ojeador.comprar_ahora("LAT-09", 50, 112, t, normal)[0])          # margen grande: ya
-        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal, completa=True)[0])
-        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, normal, esc=0.9)[0])
-        self.assertTrue(ojeador.comprar_ahora("LAT-09", 100, 112, t, {"comprar": "ya"})[0])
-        self.assertFalse(ojeador.comprar_ahora("LAT-09", 120, 112, t, {"comprar": "ya"})[0])  # nunca por encima
-
-    def test_momentos_del_calendario(self):
-        from t7 import ojeador
-        self.assertEqual(ojeador.momento(EVS, 4.0)["fase"], "normal")
-        self.assertEqual(ojeador.momento(EVS, 15.5)["fase"], "antes_dinero")        # sábado noche: comprar
-        self.assertEqual(ojeador.momento(EVS, 17.0)["fase"], "dinero_nuevo")        # domingo tras los 150 P: vender
-        self.assertEqual(ojeador.momento(EVS, 22.0)["fase"], "final")
-        self.assertTrue(ojeador.inicio_de_hora(7.05) and not ojeador.inicio_de_hora(7.5))
-
-    def test_precio_de_venta_nunca_bajo_el_suelo(self):
-        from t7 import ojeador
-        quieto = {"sentido": "quieto", "compradores": 0, "vendedores": 0, "minimo": None}
-        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.0}), 20)
-        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.25}), 25)
-        baja = {"sentido": "baja", "compradores": 0, "vendedores": 4, "minimo": 15}
-        self.assertEqual(ojeador.precio_venta(20, 5, baja, {"vender": 1.0}), 14)     # justo debajo del más barato
-        self.assertEqual(ojeador.precio_venta(20, 18, baja, {"vender": 1.0}), 18)    # pero nunca bajo el suelo
-        self.assertEqual(ojeador.precio_venta(20, 5, quieto, {"vender": 1.25}, esc=0.95), 26)  # tope × 1,3
-
-    def test_escasez_y_compradores(self):
-        from t7 import ojeador
-        cat = {"sets": [{"id": "LAT", "cards": [{"id": "LAT-12", "print_run": 3, "minted": 3},
-                                                {"id": "LAT-01", "print_run": 300, "minted": 30}]}]}
-        self.assertEqual(ojeador.escasez(cat), {"LAT-12": 1.0, "LAT-01": 0.1})
-        h = {}
-        for i, (m, p) in enumerate([("t05", 30), ("t05", 34), ("t09", 40)]):
-            ojeador.observar(h, self.tablon(p, maker=m, ref="MAL-04", lado="compra"), i)
-        self.assertEqual(ojeador.compradores_probables(h, "MAL-04")[0], ("t05", 34, 2))
-
     def test_descanso_de_vendedores(self):
-        from t7 import ojeador
-        d = ojeador.descanso("persona_quota", h=5.4, tick=300)
+        from t7 import ojos
+        d = ojos.descanso("persona_quota", h=5.4, tick=300)
         self.assertEqual(d, {"hasta_h": 6.0})
-        self.assertTrue(ojeador.descansa(d, h=5.9) and not ojeador.descansa(d, h=6.01))
-        self.assertEqual(ojeador.descanso("cooloff", tick=300, until_tick=340), {"hasta_tick": 340})
-        self.assertEqual(ojeador.descanso("sold_out", tick=300), {"hasta_tick": 420})   # sin hora de juego: en ticks
-        self.assertIsNone(ojeador.descanso("walked", h=5.0, tick=300))                   # se fue: se puede volver
-        self.assertFalse(ojeador.descansa(None, h=5.0))
+        self.assertTrue(ojos.descansa(d, h=5.9) and not ojos.descansa(d, h=6.01))
+        self.assertEqual(ojos.descanso("cooloff", tick=300, until_tick=340), {"hasta_tick": 340})
+        self.assertEqual(ojos.descanso("sold_out", tick=300), {"hasta_tick": 420})   # sin hora de juego: en ticks
+        self.assertIsNone(ojos.descanso("walked", h=5.0, tick=300))                   # se fue: se puede volver
+        self.assertFalse(ojos.descansa(None, h=5.0))
 
-    def test_regateador_usa_al_ojeador(self):
-        from t7 import cadena, ojeador
+    def test_el_comerciante_elige_canal(self):
+        from t7 import ojos
         h = {}
-        ojeador.observar(h, self.tablon(5, ref="LAT-01"), 10)                          # en El Rastro: 5 → 7 con comisión
-        s = ojeador.senales_vendedor(h, ["LAT-01", "LAT-02", "LAT-12"], 20, {"LAT-12": 1.0})
-        self.assertEqual((s["LAT-01"]["rastro"], s["LAT-02"]["rastro"], s["LAT-12"]["escasa"]), (7, None, True))
+        ojos.observar(h, self.tablon(5, ref="LAT-01"), 10)                    # en El Rastro: 5 → 7 con comisión
+        self.assertEqual((comerciante.precio_rastro(h, "LAT-01", 20), comerciante.precio_rastro(h, "LAT-02", 20)), (7, None))
+        s = {ref: {"rastro": comerciante.precio_rastro(h, ref, 20)} for ref in ("LAT-01", "LAT-02", "LAT-03")}
         menus = {"abuela": {"vende": {"LAT-01": 10, "LAT-02": 10, "LAT-03": 10}}}
         cuenta = {"LAV-01": 1}
-        libre = cadena.cola_de_operaciones(cuenta, 300, menus, senales=s)
-        self.assertEqual(libre[0]["carta"], "LAT-01")                                   # sin escalera hecha, sigue
-        hecha = cadena.cola_de_operaciones(cuenta, 300, menus, tratos={"abuela": 3}, max_tratos=3, senales=s)
+        self.assertEqual(len(comerciante.cola_de_operaciones(cuenta, 300, menus, senales=s)), 1)   # sin escalera hecha, sigue
+        hecha = comerciante.cola_de_operaciones(cuenta, 300, menus, tratos={"abuela": 3}, max_tratos=3, senales=s)
         self.assertEqual(hecha, [])                    # escalera hecha: solo compraría lo que completa página
-        s2 = {"LAT-03": {"rastro": None, "escasa": True}}
-        self.assertEqual(cadena.cola_de_operaciones(cuenta, 300, menus, senales=s2)[0]["carta"], "LAT-03")
 
     def test_todo_vive_en_la_cadena(self):
-        """Quien lance la cadena solo pasa lecturas crudas: calendario, catálogo, feed, cierres de vendedores."""
+        """Quien lance la cadena solo pasa lecturas crudas: calendario, feed, tablón, cierres de vendedores."""
         from t7 import cadena
         mem = cadena.Memoria()
-        cat = {"sets": [{"id": "LAT", "cards": [{"id": "LAT-03", "print_run": 300, "minted": 290}]}]}
-        lectura = {"tick": 100, "t_hours": 10.0, "calendario": CAL, "catalogo": cat, "niveles": {"pilar": 3},
+        lectura = {"tick": 100, "t_hours": 10.0, "calendario": CAL, "niveles": {"pilar": 3},
                    "feed": {"events": [{"type": "settlement", "ref": "MAL-01", "price": 9}]},
+                   "tablon": self.tablon(7, ref="SAL-02"),
                    "vendedores": [{"vendedor": "abuela", "cerrado": "persona_quota", "suyas": [0], "nuestras": []}],
                    "cuenta": {"SAL-01": 2}, "efectivo": 300}
         cadena.ojear(lectura, mem)
-        self.assertEqual((lectura["hora"], mem.escasez["LAT-03"], mem.niveles), (10.0, 0.967, {"pilar": 3}))
+        self.assertEqual((lectura["hora"], mem.niveles), (10.0, {"pilar": 3}))
+        self.assertNotIn("momento", lectura)                                   # sin Ojeador: ni momento ni escasez
         self.assertEqual(mem.descansos["abuela"], {"hasta_h": 11.0})
         self.assertIn("MAL-01", mem.historial)
+        self.assertEqual(mem.mercado, {"SAL-02": [7]})
         menus = {"abuela": {"compra": {"SAL-01": 5}}, "pilar": {"compra": {"SAL-01": 12}}}
-        ops = cadena.operaciones({"SAL-01": 2}, 300, menus, mem, lectura)
+        ops = comerciante.operaciones({"SAL-01": 2}, 300, menus, mem, lectura)
         self.assertEqual([(o["vendedor"], o["carta"]) for o in ops], [("pilar", "SAL-01")])   # abuela descansa; fiebre
         sin_reloj = {"tick": 220, "tick_segundos": 30}                      # 120 ticks después, sin t_hours
         self.assertAlmostEqual(cadena.hora_de_juego(mem, sin_reloj), CAL["now_hours"] + 1.0)
         mem2 = cadena.Memoria.de_dict(mem.a_dict())
         self.assertEqual((mem2.descansos, mem2.niveles), (mem.descansos, mem.niveles))
-        anuncios = cadena.anuncios({"SAL-01": 2, "MAL-02": 3}, P, mem, lectura)
+        anuncios = comerciante.anuncios({"SAL-01": 2, "MAL-02": 3}, P, mem, lectura)
         self.assertNotIn("SAL-01", [a["carta"] for a in anuncios])                          # espera a la fiebre
         self.assertTrue(anuncios and all(a["precio"] >= a["pierde"] + 1 for a in anuncios))
 
-    def test_la_cadena_espera_si_el_ojeador_lo_dice(self):
+    def test_la_cadena_ya_no_espera(self):
+        """Antes el Ojeador hacía esperar una compra que rentaba si el precio bajaba. Ahora decide la Contable."""
         from t7 import cadena
         mem = cadena.Memoria()
-        mem.historial = self.hist_que_baja()
-        lectura = {"tick": 40, "efectivo": 300, "cuenta": {}, "tablon": self.tablon(94),        # renta ≥ 10 % (Guardia), margen < 25 %
-                   "momento": {"comprar": "normal"}}
-        acc = cadena.tick(lectura, mem)
-        self.assertTrue(any("OJEADOR" in d and "esperar" in d for d in acc["diario"]))
-        self.assertIsNone(acc["firma"])
+        acc = cadena.tick({"tick": 40, "efectivo": 300, "cuenta": {}, "tablon": self.tablon(94)}, mem)
+        self.assertFalse(any("OJEADOR" in d for d in acc["diario"]))
+        self.assertIn("LAT-09", mem.historial)
         self.assertIn("historial", cadena.Memoria.de_dict(mem.a_dict()).a_dict())
 
 

@@ -481,7 +481,7 @@
   "min": 0,
   "max": 20,
   "estado": "decisión",
-  "por_que": "Una común o poco común no se anuncia si en El Rastro nadie la pide y ya la venden al menos estos equipos (Ojeador, últimos 120 ticks): bajaría al suelo sin venderse (3/10: LAT-04 5 venden / 0 piden). Se guarda para cambios. 0 = anunciar siempre."
+  "por_que": "Una común o poco común no se anuncia si en El Rastro nadie la pide y ya la venden al menos estos equipos (lo que vieron los Ojos en los últimos 120 ticks): bajaría al suelo sin venderse (3/10: LAT-04 5 venden / 0 piden). Se guarda para cambios. 0 = anunciar siempre."
  },
  "cambista.caza_veces": {
   "valor": 2,

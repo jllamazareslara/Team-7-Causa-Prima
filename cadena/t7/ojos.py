@@ -29,7 +29,7 @@ Lo que falte en la lectura se salta: la vista sale con lo que haya.
 import re
 from collections import Counter
 
-from . import contable, ojeador
+from . import contable
 from . import valor as V
 
 TIPOS_TRATO = ("settle", "trade", "deal", "sale")
@@ -153,7 +153,7 @@ def oportunidades(ofertas, est):
 def eventos(feed):
     """Los eventos del feed, planos. El juego los da como {"id", "tick", "type", "payload": {...}}; un trato
     ("settlement") lleva payload.items[] (las cartas) y payload.price. Se sube lo del payload al evento y, si el trato
-    es de UNA carta, su ref, para que el Ojeador lo entienda."""
+    es de UNA carta, su ref, para que observar_feed() lo entienda."""
     planos = []
     for e in _lista(feed, "events", "feed", "items"):
         pl = e.get("payload") if isinstance(e.get("payload"), dict) else {}
@@ -252,7 +252,7 @@ def mirar(lectura, mem, apunta=None, p=None):
     comprar, vender = oportunidades(ofertas, est)
 
     tratos = {}
-    ojeador.observar_feed(tratos, eventos(lectura.get("feed")), lectura.get("tick"))
+    observar_feed(tratos, eventos(lectura.get("feed")), lectura.get("tick"))
     precios = {r: [x[1] for x in v][-MAX_PRECIOS:] for r, v in sorted(tratos.items())}
     nuevos = avisos(lectura.get("feed"), mem)
 
@@ -285,3 +285,129 @@ def mirar(lectura, mem, apunta=None, p=None):
                             + (f" ({descartadas[0]['carta']}: {descartadas[0]['motivo']})" if descartadas else ""))
     return {"estado": est, "comprar": comprar, "vender": vender, "precios": precios, "avisos": nuevos,
             "para_nosotros": para_nosotros, "abiertas": abiertas, "propuestas": propuestas, "descartadas": descartadas}
+
+
+# ---------------------------------------------------------------- memoria de El Rastro y del feed (dentro de la cadena)
+#
+# historial = {ref: [[tick, precio, lado, maker]]}: lado "venta" (alguien vende la carta por efectivo), "compra"
+# (alguien ofrece efectivo por ella) o "trato" (trato hecho en el feed). Lo guarda cadena.ojear() en cada tick.
+
+GUARDA = 40                 # observaciones por carta que se recuerdan
+
+
+def _ref_de(x):
+    if isinstance(x, dict):
+        x = x.get("ref") or x.get("card")
+    return x if isinstance(x, str) else None
+
+
+def observar(hist, tablon, tick):
+    """Apunta en hist = {ref: [[tick, precio, lado, maker]]} lo que hay en el tablón. lado: "venta" (alguien vende
+    una carta por efectivo) o "compra" (alguien ofrece efectivo por una carta). Una misma oferta vista varias veces
+    se apunta una vez por tick como mucho."""
+    for o in tablon or []:
+        if not isinstance(o, dict):
+            continue
+        give, want = o.get("give") or {}, o.get("want") or {}
+        cartas, pide = give.get("assets") or [], want.get("cards") or want.get("types") or []
+        maker = o.get("maker")
+        if len(cartas) == 1 and not pide and isinstance(want.get("cash"), (int, float)) and want["cash"] > 0:
+            ref, lado, precio = _ref_de(cartas[0]), "venta", want["cash"]
+        elif len(pide) == 1 and not cartas and isinstance(give.get("cash"), (int, float)) and give["cash"] > 0:
+            ref, lado, precio = _ref_de(str(pide[0]).replace("card:", "")), "compra", give["cash"]
+        else:
+            continue
+        if not ref:
+            continue
+        lista = hist.setdefault(ref, [])
+        if not any(x[0] == tick and x[2] == lado and x[3] == maker and x[1] == precio for x in lista[-6:]):
+            lista.append([tick, precio, lado, maker])
+            del lista[:-GUARDA]
+
+
+def observar_feed(hist, feed, tick):
+    """Tratos hechos del feed público (lo más fiable: alguien pagó ese precio). Forma tolerante: cada evento con
+    una carta (ref / card / asset.ref) y un precio (price / cash / amount). Lo que no se entiende se ignora."""
+    if isinstance(feed, dict):
+        eventos = feed.get("events") or feed.get("feed") or feed.get("items") or []
+    else:
+        eventos = feed or []
+    for e in eventos if isinstance(eventos, list) else []:
+        if not isinstance(e, dict):
+            continue
+        tipo = str(e.get("type") or e.get("kind") or "").lower()
+        if tipo and not any(k in tipo for k in ("settle", "trade", "deal", "sale")):
+            continue
+        ref = _ref_de(e.get("ref") or e.get("card") or e.get("asset"))
+        precio = next((e[k] for k in ("price", "cash", "amount") if isinstance(e.get(k), (int, float))), None)
+        t = e.get("tick") if isinstance(e.get("tick"), (int, float)) else tick
+        if ref and precio and precio > 0:
+            lista = hist.setdefault(ref, [])
+            if [t, precio, "trato", None] not in lista:
+                lista.append([t, precio, "trato", None])
+                del lista[:-GUARDA]
+
+
+def en_rastro(hist, ref, ahora, ventana=120):
+    """Lo que los Ojos han visto de esa carta en los últimos `ventana` ticks: {"minimo": lo más barato que piden o el
+    último trato (o None), "vendedores": equipos que la venden, "compradores": equipos que la piden}."""
+    obs = [x for x in hist.get(ref, []) if isinstance(x[0], (int, float)) and ahora - x[0] <= ventana]
+    precios = [p for _, p, lado, _ in obs if lado in ("venta", "trato")]
+    return {"minimo": min(precios) if precios else None,
+            "vendedores": len({m for _, _, lado, m in obs if lado == "venta"}),
+            "compradores": len({m for _, _, lado, m in obs if lado == "compra"})}
+
+
+MERCADO_RECUERDA = 12      # precios vistos por carta que guardan los Ojos
+
+
+def _apunta(d, ref, precio):
+    vistos = d.setdefault(ref, [])
+    vistos.append(precio)
+    del vistos[:-MERCADO_RECUERDA]
+
+
+def apuntar_mercado(mercado, tablon, demanda=None):
+    """Los Ojos apuntan los precios del tablón de El Rastro (los últimos MERCADO_RECUERDA por carta):
+    mercado  ← anuncios que venden UNA carta por efectivo: la lista de la compra espera pagar lo más barato visto
+    demanda  ← peticiones que ofrecen efectivo por UNA carta: si otro equipo compite por una carta que queremos,
+               nuestra petición pide 1 P más que él (mientras quepa en el tope)"""
+    for o in tablon:
+        give, want = o.get("give") or {}, o.get("want") or {}
+        cartas = give.get("assets") or []
+        pide = [x.replace("card:", "") if isinstance(x, str) else x for x in want.get("cards") or want.get("types") or []]
+        if len(cartas) == 1 and not give.get("cash") and not pide and isinstance(want.get("cash"), (int, float))                 and want["cash"] > 0:
+            ref = cartas[0].get("ref") if isinstance(cartas[0], dict) else cartas[0]
+            if isinstance(ref, str):
+                _apunta(mercado, ref, want["cash"])
+        elif demanda is not None and len(pide) == 1 and not cartas and isinstance(give.get("cash"), (int, float))                 and give["cash"] > 0 and isinstance(pide[0], str):
+            _apunta(demanda, pide[0], give["cash"])
+
+
+# ---------------------------------------------------------------- vendedores que descansan
+
+def descanso(motivo, h=None, tick=None, until_tick=None, ticks_por_hora=120):
+    """Hasta cuándo no se vuelve a abrir con un vendedor que cerró. {"hasta_h": x} o {"hasta_tick": n}, o None.
+      persona_quota / sold_out  cupo de la hora agotado: hasta la hora de juego siguiente (los cupos son por hora)
+      cooloff                   enfadado: hasta su until_tick (o media hora de juego si no lo dice)
+    Sin hora de juego conocida, se cuenta en ticks (120 por hora a 30 s el tick)."""
+    if motivo in ("persona_quota", "sold_out"):
+        if isinstance(h, (int, float)):
+            return {"hasta_h": int(h) + 1.0}
+        return {"hasta_tick": (tick or 0) + ticks_por_hora} if isinstance(tick, (int, float)) else None
+    if motivo == "cooloff":
+        if isinstance(until_tick, (int, float)):
+            return {"hasta_tick": until_tick}
+        return {"hasta_tick": tick + ticks_por_hora // 2} if isinstance(tick, (int, float)) else None
+    return None
+
+
+def descansa(info, h=None, tick=None):
+    """¿Sigue descansando este vendedor? info = lo que devolvió descanso()."""
+    if not info:
+        return False
+    if "hasta_h" in info and isinstance(h, (int, float)):
+        return h < info["hasta_h"]
+    if "hasta_tick" in info and isinstance(tick, (int, float)):
+        return tick < info["hasta_tick"]
+    return False

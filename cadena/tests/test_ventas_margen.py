@@ -8,7 +8,7 @@ from collections import Counter
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import cadena, params  # noqa: E402
+from t7 import cadena, comerciante, params  # noqa: E402
 
 P = params.cargar()
 C = Counter({"MAL-01": 3, "LAT-03": 2, "LAT-08": 1})
@@ -27,45 +27,45 @@ def refs(an):
 class SinDemanda(unittest.TestCase):
     def test_nadie_la_pide_y_muchos_la_venden_no_se_anuncia(self):
         hist = {"MAL-01": [[95, 6, "venta", "m1"], [96, 5, "venta", "m2"], [97, 5, "venta", "m3"]]}
-        an = cadena.anuncios(C, P, mem_con(hist), {"tick": 100})
+        an = comerciante.anuncios(C, P, mem_con(hist), {"tick": 100})
         self.assertNotIn("MAL-01", refs(an))
         self.assertIn("LAT-03", refs(an))                                  # la otra repetida sí
 
     def test_con_un_comprador_si_se_anuncia(self):
         hist = {"MAL-01": [[95, 6, "venta", "m1"], [96, 5, "venta", "m2"], [97, 4, "compra", "m4"]]}
-        self.assertIn("MAL-01", refs(cadena.anuncios(C, P, mem_con(hist), {"tick": 100})))
+        self.assertIn("MAL-01", refs(comerciante.anuncios(C, P, mem_con(hist), {"tick": 100})))
 
     def test_con_el_ajuste_a_cero_se_anuncia_siempre(self):
         hist = {"MAL-01": [[95, 6, "venta", "m1"], [96, 5, "venta", "m2"]]}
         p = dict(P, **{"cambista.sin_demanda_vendedores": 0})
-        self.assertIn("MAL-01", refs(cadena.anuncios(C, p, mem_con(hist), {"tick": 100})))
+        self.assertIn("MAL-01", refs(comerciante.anuncios(C, p, mem_con(hist), {"tick": 100})))
 
     def test_lo_viejo_no_cuenta(self):
         hist = {"MAL-01": [[1, 6, "venta", "m1"], [2, 5, "venta", "m2"]]}         # hace más de 120 ticks
-        self.assertIn("MAL-01", refs(cadena.anuncios(C, P, mem_con(hist), {"tick": 400})))
+        self.assertIn("MAL-01", refs(comerciante.anuncios(C, P, mem_con(hist), {"tick": 400})))
 
 
 class CazadorDePaginas(unittest.TestCase):
     def test_quien_la_pide_varias_veces_paga_lo_que_ofrecio(self):
         hist = {"LAT-03": [[90, 18, "compra", "m9"], [95, 22, "compra", "m9"]]}
-        an = {a["carta"]: a for a in cadena.anuncios(C, P, mem_con(hist), {"tick": 100})}
+        an = {a["carta"]: a for a in comerciante.anuncios(C, P, mem_con(hist), {"tick": 100})}
         self.assertGreaterEqual(an["LAT-03"]["precio"], 22)
         self.assertIn("cazador", an["LAT-03"])
 
     def test_una_sola_vez_no_es_cazador(self):
         hist = {"LAT-03": [[95, 40, "compra", "m9"]]}
-        an = {a["carta"]: a for a in cadena.anuncios(C, P, mem_con(hist), {"tick": 100})}
+        an = {a["carta"]: a for a in comerciante.anuncios(C, P, mem_con(hist), {"tick": 100})}
         self.assertNotIn("cazador", an["LAT-03"])
 
     def test_el_cazador_salta_el_filtro_sin_demanda(self):
         hist = {"MAL-01": [[90, 6, "venta", "m1"], [91, 5, "venta", "m2"],
                            [92, 15, "compra", "m9"], [93, 16, "compra", "m9"]]}
-        an = {a["carta"]: a for a in cadena.anuncios(C, P, mem_con(hist), {"tick": 100})}
+        an = {a["carta"]: a for a in comerciante.anuncios(C, P, mem_con(hist), {"tick": 100})}
         self.assertGreaterEqual(an["MAL-01"]["precio"], 16)
 
     def test_nunca_por_debajo_de_lo_que_nos_vale(self):
         hist = {"LAT-03": [[90, 1, "compra", "m9"], [95, 1, "compra", "m9"]]}
-        for a in cadena.anuncios(C, P, mem_con(hist), {"tick": 100}):
+        for a in comerciante.anuncios(C, P, mem_con(hist), {"tick": 100}):
             self.assertGreaterEqual(a["precio"], a["pierde"] + 1)
 
 

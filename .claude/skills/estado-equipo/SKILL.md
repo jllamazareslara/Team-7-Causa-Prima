@@ -62,7 +62,7 @@ de página): se vende o se cambia a quien le falta.
 - **Reglas por miembro**: cada uno en `rules/<nombre>` (dealer, broker, duel), medidas offline con `bench/`
   (skill `aportar-reglas`). `main` no se toca para reglas.
 - **La cadena** (`cadena/`, ver `cadena/LEEME.md` y `ESTRUCTURA.md`): `jugar.py` juega vendedores y El Rastro
-  (Ojos → Contable → Cambista / Regateador → Guardia, con Guion y Ojeador). En seco por defecto; `--live` solo desde
+  (Ojos → Contable → Comerciante → Guardia, con el Guion al lado). En seco por defecto; `--live` solo desde
   el ordenador con la clave. `duelos.py` juega los duelos por separado. `vigia.py` y `grabador.py` solo leen.
 - **Una aceptación por tick para todo el equipo.** Quien acepte en vivo toma el candado
   (`t7/candado.py`, archivo `%TEMP%\team7-acepta.lock`); los duelos usan su propio candado

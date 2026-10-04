@@ -9,7 +9,7 @@ from collections import Counter
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import valor as V, cadena, contable, ojeador, ojos, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
+from t7 import valor as V, cadena, comerciante, contable, ojos, guardia, tienda, duelo, params, sondas, defensa, portavoz, cambista, prioridad, perfiles, situacion  # noqa
 from sim import vendedores as SV, duelos as SD  # noqa: E402
 
 P = params.cargar()
@@ -490,7 +490,7 @@ class CambistaCompras(unittest.TestCase):
 
     def test_el_mercado_se_aprende_del_tablon(self):
         mercado = {}
-        cadena.apuntar_mercado(mercado, [
+        ojos.apuntar_mercado(mercado, [
             {"id": 1, "give": {"assets": [{"ref": "LAT-09"}]}, "want": {"cash": 70}},
             {"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}},                   # una petición: no es precio de venta
             {"id": 3, "give": {"assets": [{"ref": "MAL-01"}, {"ref": "MAL-02"}]}, "want": {"cash": 12}}])   # lote: no
@@ -535,7 +535,7 @@ class CambistaCompras(unittest.TestCase):
 
     def test_la_demanda_se_aprende_del_tablon(self):
         mercado, demanda = {}, {}
-        cadena.apuntar_mercado(mercado, [{"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}}], demanda)
+        ojos.apuntar_mercado(mercado, [{"id": 2, "give": {"cash": 9}, "want": {"cards": ["LAT-03"]}}], demanda)
         self.assertEqual((mercado, demanda), ({}, {"LAT-03": [9]}))
 
 class Situacion(unittest.TestCase):
@@ -800,16 +800,16 @@ class Cadena(unittest.TestCase):
 
     def test_anuncios_de_el_rastro(self):
         c = Counter({"MAL-01": 3, "LAT-03": 2, "LAT-08": 1})
-        an = cadena.anuncios_rastro(c, P)
+        an = comerciante.anuncios_rastro(c, P)
         refs = [a["carta"] for a in an]
         self.assertNotIn("LAT-08", refs)                                   # protegida
         self.assertEqual(refs.count("LAT-03"), 1)                          # la repetida sí, la primera copia no
         self.assertTrue(all(a["precio"] >= a["pierde"] + 1 for a in an))   # nunca perdiendo valor
         self.assertEqual(an[0]["precio"], 13)                              # común: lista 10 × 1,3
-        self.assertNotIn("LAT-03", [a["carta"] for a in cadena.anuncios_rastro(c, P, activos={"LAT-03": 1})])
-        self.assertNotIn("LAT-03", [a["carta"] for a in cadena.anuncios_rastro(c, P, ocupadas=["LAT-03"])])
-        self.assertNotIn("MAL-01", [a["carta"] for a in cadena.anuncios_rastro(c, P, excluidas={"MAL-01"})])
-        barato = cadena.anuncios_rastro(c, P, caducidades={"MAL-01": 2}, maximo=1)
+        self.assertNotIn("LAT-03", [a["carta"] for a in comerciante.anuncios_rastro(c, P, activos={"LAT-03": 1})])
+        self.assertNotIn("LAT-03", [a["carta"] for a in comerciante.anuncios_rastro(c, P, ocupadas=["LAT-03"])])
+        self.assertNotIn("MAL-01", [a["carta"] for a in comerciante.anuncios_rastro(c, P, excluidas={"MAL-01"})])
+        barato = comerciante.anuncios_rastro(c, P, caducidades={"MAL-01": 2}, maximo=1)
         self.assertEqual(barato[0]["precio"], 11)                          # dos caducidades: 2 P menos
 
     def test_memoria_se_guarda_y_se_recupera(self):
@@ -824,12 +824,12 @@ class Cadena(unittest.TestCase):
         c, _ = coleccion()
         menus = {"abuela": {"vende": {"RET-01": 10, "MAL-09": 70}, "compra": {"LAT-03": 4, "LAT-08": 9}},
                  "chato": {"vende": {"RET-02": 10}, "compra": {}}}
-        ops = cadena.cola_de_operaciones(c, 300, menus)
+        ops = comerciante.cola_de_operaciones(c, 300, menus)
         self.assertEqual((ops[0]["vendedor"], ops[0]["lado"], ops[0]["carta"]), ("abuela", "venta", "LAT-03"))
         self.assertEqual((ops[1]["vendedor"], ops[1]["lado"], ops[1]["carta"]), ("chato", "compra", "RET-02"))
-        seco = cadena.cola_de_operaciones(c, 65, menus, {"compras": "ninguna"})
+        seco = comerciante.cola_de_operaciones(c, 65, menus, {"compras": "ninguna"})
         self.assertEqual([o["lado"] for o in seco], ["venta"])
-        self.assertEqual(cadena.cola_de_operaciones(c, 300, menus, abiertas=("abuela", "chato")), [])
+        self.assertEqual(comerciante.cola_de_operaciones(c, 300, menus, abiertas=("abuela", "chato")), [])
 
 
 class ValoresDelJuego(unittest.TestCase):
@@ -920,11 +920,11 @@ class Robustez(unittest.TestCase):
     def test_calidad_antes_que_cantidad(self):
         c, _ = coleccion()
         menus = {"chato": {"vende": {"RET-02": 10}, "compra": {}}, "roto": "basura"}
-        self.assertEqual(len(cadena.cola_de_operaciones(c, 300, menus, tratos={"chato": 2}, max_tratos=3)), 1)
-        self.assertEqual(cadena.cola_de_operaciones(c, 300, menus, tratos={"chato": 3}, max_tratos=3), [])
+        self.assertEqual(len(comerciante.cola_de_operaciones(c, 300, menus, tratos={"chato": 2}, max_tratos=3)), 1)
+        self.assertEqual(comerciante.cola_de_operaciones(c, 300, menus, tratos={"chato": 3}, max_tratos=3), [])
         mem = cadena.Memoria()
         mem.capturas = {"abuela": [{"dia": "hoy"}, {"dia": "ayer"}, {"dia": "hoy"}]}
-        self.assertEqual(cadena.tratos_de_hoy(mem, "hoy"), {"abuela": 2})
+        self.assertEqual(comerciante.tratos_de_hoy(mem, "hoy"), {"abuela": 2})
 
     def test_el_trato_se_apunta_con_su_dia(self):
         c, _ = coleccion()
@@ -933,7 +933,7 @@ class Robustez(unittest.TestCase):
                 "nuestras": [1, 3], "final": True, "oferta_id": 11}
         ac = cadena.tick({"tick": 5, "dia": "2026-10-03", "efectivo": 300, "cuenta": c, "vendedores": [conv]}, mem, P)
         self.assertEqual(ac["firma"]["id"], 1)
-        self.assertEqual(cadena.tratos_de_hoy(mem, "2026-10-03"), {"abuela": 1})
+        self.assertEqual(comerciante.tratos_de_hoy(mem, "2026-10-03"), {"abuela": 1})
         json.dumps(mem.a_dict())                                                      # se puede guardar en disco
 
 
@@ -1016,7 +1016,7 @@ class Vigia(unittest.TestCase):
             self.assertNotIn("me", json.load(f))                           # nuestros datos y claves no se vuelcan
 
 class Estructura(unittest.TestCase):
-    """Ojos (+ Escudo) → Contable → Cambista / Duelista / Regateador → Guardia, con Guion y Ojeador al lado."""
+    """Ojos (+ Escudo) → Contable → Comerciante / Duelista → Guardia, con Guion al lado."""
 
     CALENDARIO = {"now_hours": 4.8, "upcoming": [{"at_hours": 5.0, "action": "duels", "params": {"name": "Duels I"}}]}
 
@@ -1037,7 +1037,6 @@ class Estructura(unittest.TestCase):
         self.assertLess(primera("CONTABLE"), primera("TIENDA"))
         self.assertLess(primera("TIENDA"), primera("GUARDIA"))
         self.assertTrue(any("GUION" in linea and "Duels I" in linea for linea in diario))
-        self.assertTrue(any("OJEADOR" in linea and "piden 60" in linea for linea in diario))
 
     def test_el_guion_avisa_una_vez_y_no_cambia_nada(self):
         mem = cadena.Memoria()
@@ -1136,15 +1135,15 @@ class Estructura(unittest.TestCase):
     def test_el_cambista_anuncia_y_pide_con_el_ultimo_trato(self):
         mem = cadena.Memoria()
         lista = [{"carta": "RET-10", "rareza": "common", "tope": 30, "apertura": 20, "nos_vale": 40, "motivo": "x"}]
-        sin = cadena.peticiones_rastro(lista, Counter(), 300, P)
-        con = cadena.peticiones_rastro(lista, Counter(), 300, P, tratos={"RET-10": 5})
+        sin = comerciante.peticiones_rastro(lista, Counter(), 300, P)
+        con = comerciante.peticiones_rastro(lista, Counter(), 300, P, tratos={"RET-10": 5})
         if sin:
             self.assertEqual(con[0]["precio"], min(sin[0]["precio"], 5))           # nunca más que el último trato
         c, _ = coleccion()
-        sale = cadena.anuncios(c, P, mem, {"tick": 5})
+        sale = comerciante.anuncios(c, P, mem, {"tick": 5})
         if sale:
             mem.historial[sale[0]["carta"]] = [[4, sale[0]["precio"] + 50, "trato", None]]
-            otra = cadena.anuncios(c, P, mem, {"tick": 5})
+            otra = comerciante.anuncios(c, P, mem, {"tick": 5})
             self.assertEqual(next(x for x in otra if x["carta"] == sale[0]["carta"])["precio"], sale[0]["precio"] + 50)
 
     def test_los_ojos_no_proponen_nada_al_guardia(self):
@@ -1166,12 +1165,12 @@ class Estructura(unittest.TestCase):
         self.assertIsNone(lect["feed"])                                         # una lectura rota no tira las otras
         self.assertEqual(lect["me"]["starter_broker_key"], "<OCULTA>")
 
-    def test_el_ojeador_vigila_los_precios(self):
+    def test_los_ojos_apuntan_los_precios_del_tablon(self):
         mem = cadena.Memoria()
         ac = cadena.tick(self.lectura(), mem, P, forzar={"rastro": "apagado"})
         self.assertEqual(mem.mercado, {"RET-01": [60]})                      # aunque el Cambista esté apagado
         self.assertNotEqual((ac["firma"] or {}).get("destino"), "rastro")
-        self.assertEqual(ojeador.precios({"mercado": mem.mercado}, "RET-01"), {"piden": 60, "ofrecen": None})
+        self.assertEqual(comerciante.precio_rastro(mem.historial, "RET-01", 5), 64)   # 60 + 5 % de comisión + 1
 
     def test_el_observador_ayuda_al_regateador(self):
         mem = cadena.Memoria()

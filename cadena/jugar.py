@@ -1,19 +1,18 @@
-"""Jugar: conecta la cadena con el juego, para los VENDEDORES (el Regateador) y EL RASTRO (el Cambista).
+"""Jugar: conecta la cadena con el juego, para los VENDEDORES y EL RASTRO (los dos canales del Comerciante).
 
 No es un agente ni un paso del flujo: son las flechas con EL JUEGO. Lee el juego, llama a cadena.tick()
-(Ojos → Contable → Cambista / Regateador → Guardia, con el Guion y el Ojeador al lado) y aplica lo que devuelve:
-los precios del Regateador, los cierres y la ÚNICA firma del tick (de un vendedor o de El Rastro).
+(Ojos → Contable → Comerciante → Guardia, con el Guion al lado) y aplica lo que devuelve:
+los precios del Comerciante con los vendedores, los cierres y la ÚNICA firma del tick (de un vendedor o de El Rastro).
 
     python jugar.py                mira y escribe lo que haría. NO manda ni acepta nada (modo seco).
     python jugar.py --live         juega de verdad. Solo desde el ordenador que tiene la clave, y un solo proceso.
     python jugar.py --ticks 3      para tras 3 ticks (para la primera prueba en seco)
 
-Vendedores (el Regateador): una conversación por vendedor, todos a la vez (hasta MAX_HILOS), según menus.json
-(`python revisar.py --menus`). Qué abrir lo dice cadena.operaciones(): primero vender, luego comprar, con los consejos
-del Guion (cartas guardadas para una fiebre) y del Ojeador (vendedores que descansan, El Rastro más barato, cartas que
-se agotan). Los precios solo se mueven en un sentido y nunca se repiten; la oferta final se acepta si está dentro del
+Vendedores: una conversación por vendedor, todos a la vez (hasta MAX_HILOS), según menus.json
+(`python revisar.py --menus`). Qué abrir lo dice comerciante.operaciones(): primero vender, luego comprar, con los consejos
+del Guion (cartas guardadas para una fiebre) y de los Ojos (vendedores que descansan, El Rastro más barato). Los precios solo se mueven en un sentido y nunca se repiten; la oferta final se acepta si está dentro del
 límite. Toda firma pasa por el Guardia.
-El Rastro (el Cambista): acepta lo que firme el Guardia, y lo que ningún vendedor puede comprarnos hoy se anuncia
+El Rastro: acepta lo que firme el Guardia, y lo que ningún vendedor puede comprarnos hoy se anuncia
 (rastro.publicar = 1); peticiones y cambios carta por carta con cambista.pedir = 1 (solo los cambios, que no gastan
 efectivo, con cambista.cambiar = 1). Lo barato se publica en el mercado sin comisión de "mercado_barato" (t7/hoy.json)
 y también se leen sus tablones. No abre mercado propio.
@@ -39,7 +38,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, candado, contable, guardia, ojeador, ojos, params, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, comerciante, contable, guardia, ojos, params, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -48,7 +47,7 @@ for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) n
 
 RUNS = os.path.join(AQUI, "runs")
 RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peticiones al juego
-CALENDARIO_CADA = 20     # vendedores, calendario y catálogo (El Guion y El Ojeador) cada 20 ticks
+CALENDARIO_CADA = 20     # vendedores, calendario y catálogo cada 20 ticks
 MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
 MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
 OCUPADO_TICKS = 10       # thread_exists: otra ejecución tiene ya una conversación con ese vendedor; no se reintenta en N ticks
@@ -189,7 +188,7 @@ def vendedores_nuevos(b, est, menus):
 
 
 def leer_calendario(b, est):
-    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y El Ojeador (t7/cadena.py, ojear)."""
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y los Ojos (t7/cadena.py, ojear)."""
     try:
         cal = b.schedule()
         if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
@@ -280,10 +279,10 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
         else:
             abiertas.add(v)
     tope = plan["p"].get("tienda.tratos_por_vendedor_y_dia")
-    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
-        ops = cadena.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
+    if mem is not None:                                          # con sus consejeros (Guion, Ojos): en t7/comerciante.py
+        ops = comerciante.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
     else:
-        ops = cadena.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
+        ops = comerciante.cola_de_operaciones(cuenta, me.get("cash", 0), menus, plan["ordenes"], abiertas, tratos, tope)
     ops = [op for op in ops if not (op["lado"] == "compra" and op["carta"] in pedidas)]   # ya se pide en El Rastro
     for op in ops[:huecos]:
         if op["vendedor"] in ocupados:
@@ -391,11 +390,11 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
     cuenta = Counter(a["ref"] for a in ids.values())
     maximo = max(0, min(MAX_ANUNCIOS_TICK, MAX_OFERTAS - len(vivos)))
     activos = Counter(x["ref"] for x in vivos.values())
-    if mem is not None:                                          # con sus consejeros (Guion, Ojeador): en t7/cadena.py
-        nuevos = cadena.anuncios(cuenta, p, mem, lectura or {"tick": tick}, activos, ocupadas, guardadas, listas,
+    if mem is not None:                                          # con sus consejeros (Guion, Ojos): en t7/comerciante.py
+        nuevos = comerciante.anuncios(cuenta, p, mem, lectura or {"tick": tick}, activos, ocupadas, guardadas, listas,
                                  caducidades, maximo)
     else:
-        nuevos = cadena.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
+        nuevos = comerciante.anuncios_rastro(cuenta, p, activos, ocupadas, guardadas, listas, caducidades, maximo=maximo)
     mercado = mercado_de_venta()
     margen = p.get("guardia.margen_venta", 0.10)
     puestas = Counter()
@@ -413,7 +412,7 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         venue = mercado["venue"] if mercado["venue"] != "rastro" else mercado_para(n["precio"])   # vender_en manda
         donde = "El Rastro" if venue == "rastro" else f"el mercado {venue}"
         print(f"ANUNCIO      {n['carta']} a {n['precio']} P en {donde} (nos vale {n['pierde']})"
-              + (f" · Ojeador {n['ojeador']}" if n.get("ojeador") else "")
+              + (f" · Ojos {n['ojos']}" if n.get("ojos") else "")
               + ("" if mandar else " · no se publica: " + ("en seco" if publicar else "rastro.publicar = 0")))
         if not mandar:
             continue
@@ -602,7 +601,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
             listas.update({r: x for r, x in (menu.get("vende") or {}).items() if isinstance(x, (int, float))})
     quedan = minutos_al_final(ahora)
     final = quedan is not None and 0 < quedan <= p["cambista.minutos_final"]
-    lista = cadena.lista_compra(cuenta, efectivo, p, getattr(mem, "mercado", None), listas, pagado, final)
+    lista = comerciante.lista_compra(cuenta, efectivo, p, getattr(mem, "mercado", None), listas, pagado, final)
     if primero:
         for linea in cambista.resumen_compras(lista):
             print(linea)
@@ -613,7 +612,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     anunciadas = [x["ref"] for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < _dura(est)]
     en_venta = [h["carta"] for h in (est.get("hilos") or {}).values() if h.get("lado") == "venta"]
     comprometidas = [r for x in trus_vivos.values() for r in x["doy"]]
-    cambios = cadena.trueques_rastro(lista, cuenta, p, anunciadas + en_venta + comprometidas, set(trus), len(trus_vivos))
+    cambios = comerciante.trueques_rastro(lista, cuenta, p, anunciadas + en_venta + comprometidas, set(trus), len(trus_vivos))
     usados = {aid for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < _dura(est)}
     usados |= {aid for x in trus_vivos.values() for aid in x.get("ids", [])}
     usados |= set(est.get("ocupadas_juego") or [])
@@ -643,7 +642,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     # 2. peticiones con efectivo, solo de lo que eligió la mochila (solo con cambista.pedir = 1)
     if (ordenes.get("compras") == "ninguna" and not ordenes.get("pedir_completar")) or not (publicar or primero):
         return cambios                                          # caja seca: no se compromete efectivo
-    nuevas = cadena.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades,
+    nuevas = comerciante.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades,
                                       getattr(mem, "demanda", None), final, tratos=ojos.tratos(mem) if mem is not None else None)
     if ordenes.get("compras") == "ninguna":                     # solo vender: solo las páginas a completar
         nuevas = [n for n in nuevas if contable.para_completar(n["carta"], ordenes)]
@@ -734,7 +733,7 @@ def leer(b, est, tick, con_tablon=True):
         if estado in ("deal", "walked", "closed", "cooloff") or vigente is None:
             if estado in ("deal", "walked", "closed", "cooloff"):
                 hilos.pop(hid)
-                if estado != "deal":                             # el motivo y until_tick: el Ojeador decide el descanso
+                if estado != "deal":                             # el motivo y until_tick: los Ojos deciden el descanso
                     lectura["vendedores"].append(dict(h, id=int(hid), suyas=h["suyas"] or [0],
                                                       cerrado=crudo.get("closed_reason") or estado,
                                                       until_tick=crudo.get("until_tick")))
@@ -795,12 +794,12 @@ def leer(b, est, tick, con_tablon=True):
             _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
         except Exception as e:
             _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})
-        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para el Ojeador
+        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para los Ojos
             try:
                 lectura["feed"] = b.feed(limit=100)
             except Exception as e:
                 _linea("errores.jsonl", {"tick": tick, "feed": str(e)})
-    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para el Guion y el Ojeador
+    lectura["calendario"] = est.pop("calendario_nuevo", None)    # lecturas crudas para el Guion y los Ojos
     lectura["catalogo"] = est.pop("catalogo_nuevo", None)
     lectura["niveles"] = est.get("niveles")
     return lectura, me
@@ -923,7 +922,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
         lectura, me = leer(b, est, tick, con_tablon=toca)
         lectura["dia"] = dia
-        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para el Ojeador
+        lectura["t_hours"], lectura["tick_segundos"] = t_horas, tick_segundos   # la hora de juego, para los Ojos
         plan = situacion.plan({"efectivo": lectura["efectivo"], "cuenta": lectura["cuenta"],
                                "tick_segundos": tick_segundos}, precios_venta=precios_de_venta(menus) or None)
         if primero:
@@ -942,17 +941,11 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         if toca and not stop:                                    # lo publicado se revisa con las cartas de ahora
             revisar_publicadas(b, me, est, plan["p"], tick, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: al tick siguiente
-            tratos = cadena.tratos_de_hoy(mem, dia)
+            tratos = comerciante.tratos_de_hoy(mem, dia)
             if toca:                                             # El Rastro primero: un cambio puntúa a nuestro valor;
                 anunciar(b, me, est, plan, tick, vivo, menus, tratos, primero, mem=mem, lectura=lectura)
                 pedir(b, me, est, plan, tick, vivo, mem, menus, primero)
             abrir(b, me, est, plan, vivo, menus, tratos, mem=mem, lectura=lectura)   # los vendedores, con lo que queda
-        if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
-            mom = lectura.get("momento") or {}
-            if mom.get("fase", "normal") != "normal":
-                print(f"MOMENTO      {mom['fase']}: {mom.get('motivo', '')}")
-            for linea in ojeador.informe(mem.historial, tick if isinstance(tick, int) else 0):
-                print(linea)
         return True
     except Exception as e:
         print("ERROR       ", f"{type(e).__name__}: {e}")

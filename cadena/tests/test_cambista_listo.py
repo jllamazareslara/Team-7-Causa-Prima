@@ -7,7 +7,7 @@ import unittest
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
-from t7 import cambista, candado, guardia, params, situacion  # noqa: E402
+from t7 import cambista, candado, comerciante, guardia, ojos, params, situacion  # noqa: E402
 
 P = params.cargar()
 
@@ -81,8 +81,8 @@ class Hoy(unittest.TestCase):
         cuenta = {f"RET-0{i}": 1 for i in range(1, 10)}                       # falta solo RET-10
         menus = {"picaros": {"vende": {"RET-10": 63}, "compra": {}}}
         ordenes = {"compras": "ninguna", "completar": ["RET"], "reserva": 0, "margen_completar": 1.2}
-        con = cadena.cola_de_operaciones(cuenta, 500, menus, ordenes)
-        sin = cadena.cola_de_operaciones(cuenta, 500, menus, dict(ordenes, cerrar_en_rastro=True))
+        con = comerciante.cola_de_operaciones(cuenta, 500, menus, ordenes)
+        sin = comerciante.cola_de_operaciones(cuenta, 500, menus, dict(ordenes, cerrar_en_rastro=True))
         self.assertEqual(([o["carta"] for o in con], sin), (["RET-10"], []))
 
     def test_sin_solo_vender_se_compra(self):
@@ -103,10 +103,10 @@ class Hoy(unittest.TestCase):
         from t7 import cadena
         menus = {"chato": {"vende": {"LAV-06": 26, "LAV-09": 77}, "compra": {}}}
         ordenes = {"compras": "ninguna", "escalera": True, "tope_escalera": 30, "reserva": 0}
-        ops = cadena.cola_de_operaciones({}, 300, menus, ordenes)
+        ops = comerciante.cola_de_operaciones({}, 300, menus, ordenes)
         self.assertEqual([(o["vendedor"], o["lado"], o["carta"]) for o in ops], [("chato", "compra", "LAV-06")])
-        self.assertEqual(cadena.cola_de_operaciones({}, 300, menus, ordenes, tratos={"chato": 3}, max_tratos=3), [])
-        self.assertEqual(cadena.cola_de_operaciones({}, 300, menus, dict(ordenes, escalera=False)), [])
+        self.assertEqual(comerciante.cola_de_operaciones({}, 300, menus, ordenes, tratos={"chato": 3}, max_tratos=3), [])
+        self.assertEqual(comerciante.cola_de_operaciones({}, 300, menus, dict(ordenes, escalera=False)), [])
 
     def test_datos_reales_en_el_repositorio(self):
         self.assertTrue(os.path.exists(os.path.join(RAIZ, "datos", "estado-actual.json")))
@@ -218,10 +218,9 @@ class CambioCartaPorCarta(unittest.TestCase):
         raro = dict(self.OFERTA, want={"cash": 0, "types": ["pack:LAV"]})
         self.assertEqual(cambista.oportunidades([raro], cuenta, 78, reserva=60, p=P), [])
 
-    def test_el_ojeador_ve_la_demanda(self):
-        from t7 import ojeador
+    def test_los_ojos_ven_la_demanda(self):
         mercado, demanda = {}, {}
-        ojeador.apuntar_mercado(mercado, [{"id": 1, "maker": "mab", "give": {"cash": 10, "assets": [], "types": []},
+        ojos.apuntar_mercado(mercado, [{"id": 1, "maker": "mab", "give": {"cash": 10, "assets": [], "types": []},
                                           "want": {"cash": 0, "assets": [], "types": ["card:RET-02"]}}], demanda)
         self.assertEqual(demanda, {"RET-02": [10]})
 

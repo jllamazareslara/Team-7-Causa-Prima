@@ -13,15 +13,15 @@ python sim/informe.py                        # simulaciones con los ajustes actu
 
 ## La estructura
 
-Ver [`ESTRUCTURA.md`](ESTRUCTURA.md). En cada tick: **Ojos** → **Contable** → **Cambista / Duelista /
-Regateador** → **Guardia**, el único que firma. **El Guion** (el futuro: calendario) y **El Ojeador** (precios en el
-tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
+Ver [`ESTRUCTURA.md`](ESTRUCTURA.md). En cada tick: **Ojos** → **Contable** → **Comerciante / Duelista** →
+**Guardia**, el único que firma. **El Guion** (el futuro: calendario) va al lado y solo aconseja. Sin Director ni Ojeador.
 
 ## Qué hay
 
 | Archivo | Quién | Qué hace |
 |---|---|---|
-| `t7/cadena.py` | **La cadena** | Encadena a todos en un tick: `tick(lectura, memoria)` devuelve los mensajes, UNA firma como mucho, los cierres y el diario. Sin red. `cola_de_operaciones()` dice qué abrir con cada vendedor libre (primero vender) · `ojear()` al empezar cada tick (Guion y Ojeador); `operaciones()` (Regateador) y `anuncios()` (Cambista) con sus consejos |
+| `t7/cadena.py` | **La cadena** | Encadena a todos en un tick: `tick(lectura, memoria)` devuelve los mensajes, UNA firma como mucho, los cierres y el diario. Sin red. `ojear()` al empezar cada tick: los Ojos guardan lo que llegó del juego |
+| `t7/comerciante.py` | **El Comerciante** | UNA decisión de qué comprar y vender, y por qué canal: vendedores (regatea `tienda.py`) o El Rastro (`cambista.py`). No paga más ni vende por menos que el último trato del feed; si los Ojos lo ven mejor en El Rastro, no se hace con el vendedor. `operaciones()` y `cola_de_operaciones()` dicen qué abrir con cada vendedor libre (primero vender); `anuncios()`, `lista_compra()`, `peticiones_rastro()` y `trueques_rastro()`, qué publicar en El Rastro |
 | `vigia.py` | El Vigía | Va aparte. Avisa de lo nuevo en el juego y propone qué hacer. Solo lee (siete lecturas por pasada), así que puede ir a la vez que el programa que juega. `python vigia.py` una pasada; `python vigia.py --cada 60` sin parar, con pitido. Vigila ritmo y límites, calendario, niveles, vendedores, barrios nuevos, mercados y lo nuestro (efectivo, nivel, sobres, puesto), y avisa una vez de lo que empieza en 20 ticks o menos. Escribe `runs/novedades.jsonl`. Las reglas están en `t7/novedades.py`. **Probado solo contra un juego de mentira: la forma real del calendario y de los niveles no se ha visto** |
 | `t7/guion.py` | El Guion | El futuro del juego: lee el calendario y tiene la jugada preparada para cada evento antes de que llegue (duelos, vendedores que abren, fiebre de un barrio, cierres). Guarda las cartas que esperan una fiebre (`reservadas()`) y comprueba rumores contra el calendario (`rumor()`) · En la cadena avisa en el diario de lo que viene, una vez por evento |
 | `jugar.py` | — (programa, no es un agente) | Juega la cadena con los vendedores (el Regateador: una conversación por vendedor, todos a la vez) y en El Rastro (el Cambista): aplica los precios y la única firma del Guardia, abre sobres y publica anuncios, peticiones y cambios (si sus interruptores están a 1). No juega duelos. En seco por defecto; `--live` para jugar. **Nadie lo ha lanzado contra el juego real** |
@@ -30,20 +30,19 @@ tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 | `t7/parametros.json` | — | Todos los ajustes: valor, rango permitido, estado (medido / simulado / supuesto / decisión) y por qué |
 | `t7/hoy.json` | — | Las noticias del día: duración del tick, lo visto en un duelo real, vendedores que se enfadan, categorías que se apagan, decisiones del equipo. Se cambia aquí, sin tocar código |
 | `t7/situacion.py` | El plan del día | Con el efectivo del juego y `hoy.json` saca el modo de caja (holgado, justo, seco) y los ajustes de todos los agentes. `plan(estado)` devuelve los ajustes (`["p"]`) y lo forzado (`["forzar"]`) que se pasan a los agentes y al guardia; `resumen()` lo escribe para la pantalla. |
-| `t7/ojos.py` | Los Ojos | Primer paso de cada tick: cómo estamos (`/api/me`, como la skill estado-equipo) y las mejores oportunidades (`/api/feed`, `/api/me/offers`, tablón): cartas que faltan a la venta, compradores de repetidas, precios de tratos, avisos del juego. Solo miran: sin Escudo ni Guardia |
-| `t7/ojeador.py` | El Ojeador | El vigilante de precios: historial en el tiempo (El Rastro y feed), tendencia, momento del juego, escasez, compradores probables. Dice cuándo comprar y vender; vendedores que descansan tras cupo agotado o enfado · Al lado de la cadena: pasa los precios al Regateador y al Cambista (`vigilar`, `precios`) |
+| `t7/ojos.py` | Los Ojos | Primer paso de cada tick: cómo estamos (`/api/me`, como la skill estado-equipo) y las mejores oportunidades (`/api/feed`, `/api/me/offers`, tablón): cartas que faltan a la venta, compradores de repetidas, precios de tratos, avisos del juego. También guardan la memoria del mercado (tablón y tratos del feed) y los vendedores que descansan tras cupo agotado o enfado. Solo miran: sin Escudo ni Guardia |
 | `t7/contable.py` | La Contable | Segundo paso, ¿renta? ¿cuánto?: con la calculadora hace las cuentas para el Regateador (tope o suelo, caja) y la ficha del Guardia (y la ganancia de cada duelo). Jugando (`jugar.py`), solo con el your_value del juego (/api/me, /api/me/value): sin él no hay número y no se opera; la calculadora queda para el simulador y las pruebas. No decide |
 | `t7/valor.py` | La Contable | Calculadora. Coincide con el juego al céntimo (679,12 frente a 679,1; cada carta). `liquidez()` dice qué cartas pequeñas vender cuando el efectivo baja del colchón |
 | `t7/guardia.py` | El Guardia | Única puerta antes de `accept`. Último paso: confirma con la ficha de la Contable. Cinco comprobaciones y firma solo, sin aprobación humana |
-| `t7/tienda.py` | El Regateador | Comprar y vender a vendedores |
+| `t7/tienda.py` | El Comerciante (canal vendedores) | El regateo con un vendedor: pasos, imitación, oferta final |
 | `t7/duelo.py` | La Duelista | Duelos de precio (y utilidades para precio + día). Con día de entrega manda siempre un día: el que más nos vale según `your_days_weight` si llega como lista o diccionario por día (`mejor_dia`), y el día 5 si no se entiende. El precio todavía no se ajusta según el día |
-| `t7/cambista.py` | El Cambista | El Rastro, mapa de deseos, cazador de páginas. Vender: `cadena.anuncios_rastro()` dice qué anunciar y a cuánto (lista × 1,3, 1 P menos por caducidad, nunca por debajo de lo que nos vale + 1) y el programa que juega lo tendría que publicar (`jugar.py`, con `rastro.publicar` = 1). **Viene apagado (`rastro.publicar` = 0): enseña lo que anunciaría y no manda nada. Publicar no se ha probado contra el juego.** Lo que un vendedor aún puede comprarnos hoy para su escalera no se anuncia. **Comprar (3/10):** `cambista.lista_compra()` ordena las cartas que faltan por lo que hacen ganar, con el bono de página (25 %) repartido entre las que faltan cuando quedan 1 o 2; el tope de cada compra es lo que esa carta nos vale hoy × 0,85. Las peticiones en El Rastro (`jugar.py` las publica con `cambista.pedir` = 1) (abren a 0,45 × base, suben 0,10 × base por caducidad, 4 a la vez, se cancelan si la carta ya llegó). Usa los precios del tablón que apuntan los Ojos (`memoria.mercado`). **Viene apagado (`cambista.pedir` = 0)** |
+| `t7/cambista.py` | El Comerciante (canal El Rastro) | El Rastro, mapa de deseos, cazador de páginas. Vender: `comerciante.anuncios_rastro()` dice qué anunciar y a cuánto (lista × 1,3, 1 P menos por caducidad, nunca por debajo de lo que nos vale + 1) y el programa que juega lo tendría que publicar (`jugar.py`, con `rastro.publicar` = 1). **Viene apagado (`rastro.publicar` = 0): enseña lo que anunciaría y no manda nada. Publicar no se ha probado contra el juego.** Lo que un vendedor aún puede comprarnos hoy para su escalera no se anuncia. **Comprar (3/10):** `cambista.lista_compra()` ordena las cartas que faltan por lo que hacen ganar, con el bono de página (25 %) repartido entre las que faltan cuando quedan 1 o 2; el tope de cada compra es lo que esa carta nos vale hoy × 0,85. Las peticiones en El Rastro (`jugar.py` las publica con `cambista.pedir` = 1) (abren a 0,45 × base, suben 0,10 × base por caducidad, 4 a la vez, se cancelan si la carta ya llegó). Usa los precios del tablón que apuntan los Ojos (`memoria.mercado`). **Viene apagado (`cambista.pedir` = 0)** |
 | `t7/broker.py` | El Casamentero | Market Test (no supera al puesto gratuito en nuestro simulador) |
 | `t7/prioridad.py` | La cadena (parte) | Qué aceptar primero; los 3 tratos de la escalera |
 | `t7/sondas.py` | El Espía | Gandalf al revés: sacar información a vendedores; detector de mala fe. Añadido el 3/10: sondas transformadas (¿me acerco o me alejo?, ¿par o impar?, etiqueta), termómetro del tono, cuaderno que ordena las sondas por lo medido, y canario + pregunta directa para duelos. La cadena usa el termómetro, el canario y una pregunta directa por duelo. **Cambiado el 3/10 tras `feedback-agentes-team7.md`:** lo que sale de un texto solo se apunta, nunca cambia un precio; con vendedores pregunta en una sola conversación de prueba al día y solo con los tres tratos de ese vendedor ya hechos (`espia.tras_tratos`, `espia.conversaciones_por_dia`; poner el segundo a 0 lo apaga) |
-| `t7/defensa.py` | El Escudo | Ayudante del Regateador y la Duelista (`mirar_textos()`). Filtro de entrada, tres avisos, filtro de salida, y el detector de incoherencias (el texto dice 15, la oferta pide 25), que antes estaba en el Espía |
+| `t7/defensa.py` | El Escudo | Ayudante del Comerciante y la Duelista (`mirar_textos()`). Filtro de entrada, tres avisos, filtro de salida, y el detector de incoherencias (el texto dice 15, la oferta pide 25), que antes estaba en el Espía |
 | `t7/portavoz.py` | El Portavoz | Mensajes con tácticas; nunca otro número que el precio |
-| `t7/perfiles.py` | El Observador | Ayudante del Regateador. Con quién ser duro; clasificar vendedores nuevos |
+| `t7/perfiles.py` | El Observador | Ayudante del Comerciante con los vendedores. Con quién ser duro; clasificar vendedores nuevos |
 | `sim/` | — | Vendedores, duelos y Market Test simulados, y los torneos |
 | `grabador.py` | El Grabador | Market Test: guarda los libros (solo lee) y `--rejugar` compara el automático con El Casamentero sin red |
 | `datos/calendario-03-10.json` | — | El calendario real del sábado, para las pruebas |
@@ -53,9 +52,9 @@ tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 
 ```
 el juego → (programa que juega: play.py) → lectura (números; el texto va aparte)
-        → cadena.tick():  Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario
-                          Ojos (sin Escudo) · Escudo con los negociadores · al lado Guion y Ojeador (precios → Regateador y Cambista)
-                          Cambista + Portavoz · Duelista + Portavoz, Espía · Regateador + Portavoz, Observador, Espía
+        → cadena.tick():  Ojos → Contable → Comerciante / Duelista → Guardia (una firma) → diario
+                          Ojos (sin Escudo; guardan tablón, feed y descansos) · Escudo con los negociadores · al lado el Guion
+                          Comerciante + Portavoz, Observador, Espía · Duelista + Portavoz, Espía
         → (programa que juega) aplica las acciones → el juego
 ```
 
