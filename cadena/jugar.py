@@ -39,7 +39,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, candado, contable, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, contable, ojeador, ojos, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -630,7 +630,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     if (ordenes.get("compras") == "ninguna" and not ordenes.get("pedir_completar")) or not (publicar or primero):
         return cambios                                          # caja seca: no se compromete efectivo
     nuevas = cadena.peticiones_rastro(lista, cuenta, efectivo, p, {r: x["precio"] for r, x in vivas.items()}, caducidades,
-                                      getattr(mem, "demanda", None), final)
+                                      getattr(mem, "demanda", None), final, tratos=ojos.tratos(mem) if mem is not None else None)
     if ordenes.get("compras") == "ninguna":                     # solo vender: solo las páginas a completar
         nuevas = [n for n in nuevas if contable.para_completar(n["carta"], ordenes)]
     for n in nuevas:
@@ -702,7 +702,8 @@ def leer(b, est, tick, con_tablon=True):
     V.configurar(cartas=cartas)                                  # la rareza de lo que tenemos, tal como la dice el juego
     V.valores_del_juego(cartas=cartas)                           # su your_value: el suelo del Regateador al vender
     lectura = {"tick": tick, "efectivo": me.get("cash", 0), "cuenta": Counter(a["ref"] for a in cartas),
-               "vendedores": [], "duelos": [], "tablon": None, "mudos": []}
+               "vendedores": [], "duelos": [], "tablon": None, "mudos": [],
+               "me": ojos.tapar(me)}                             # los Ojos: cómo estamos (como la skill estado-equipo)
     hilos = est.setdefault("hilos", {})
 
     for hid, h in list(hilos.items()):                           # el Regateador: cada conversación que abrimos
@@ -757,7 +758,8 @@ def leer(b, est, tick, con_tablon=True):
             mias = {aid for aid, x in (est.get("anuncios") or {}).items()     # las cartas que tenemos anunciadas ahora
                     if not isinstance(tick, int) or tick - x.get("tick", tick) < _dura(est)}
             try:                                                 # nuestras ofertas, dichas por el juego: las ponga quien las ponga
-                en_juego = [o for o in (b.my_offers() or {}).get("offers") or []          # también trae las que nos hacen a nosotros
+                lectura["mis_ofertas"] = b.my_offers() or {}                               # los Ojos miran también las que nos hacen
+                en_juego = [o for o in lectura["mis_ofertas"].get("offers") or []          # también trae las que nos hacen a nosotros
                             if isinstance(o, dict) and str(o.get("maker")) in somos]
                 propias = {o.get("id") for o in en_juego}
                 # cartas ya comprometidas por CUALQUIER programa del equipo: no se tocan

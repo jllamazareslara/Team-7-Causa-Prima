@@ -1031,14 +1031,124 @@ class Estructura(unittest.TestCase):
         self.assertEqual(sum("GUION" in linea for linea in otra["diario"]), 0)
         self.assertEqual(con["firma"], cadena.tick(sin, cadena.Memoria(), P)["firma"])
 
-    def test_los_ojos_leen_y_el_escudo_mira_el_texto(self):
+    def test_el_escudo_mira_el_texto_en_los_negociadores(self):
         mem = cadena.Memoria()
         lect = {"tick": 1, "vendedores": [{"id": 4, "vendedor": "abuela", "suyas": [25], "texto": "Te la dejo por 15, trato hecho"},
                                           "basura"],
                 "duelos": [{"id": 8}]}
-        vista = ojos.mirar(lect, mem)
-        self.assertEqual((vista["textos_nuevos"], len(vista["mala_fe"])), ({"4"}, 1))
-        self.assertEqual(ojos.mirar(lect, mem)["textos_nuevos"], set())      # el mismo texto no se lee dos veces
+        textos = defensa.mirar_textos(lect, mem)
+        self.assertEqual((textos["textos_nuevos"], len(textos["mala_fe"])), ({"4"}, 1))
+        self.assertEqual(defensa.mirar_textos(lect, mem)["textos_nuevos"], set())   # el mismo texto no se lee dos veces
+        self.assertNotIn("textos_nuevos", ojos.mirar(lect, cadena.Memoria()))      # los Ojos ya no leen texto
+
+    ME = {"id": "t07", "cash": 241, "score": {"score": 21.95, "rank": 16, "negotiating": 12.6, "market": 9.35},
+          "starter_broker_key": "bk_secreto",
+          "assets": [{"kind": "card", "ref": f"RET-0{i}", "your_value": 20} for i in range(1, 10)]
+                    + [{"kind": "card", "ref": "LAT-03", "your_value": 30}, {"kind": "card", "ref": "LAT-03", "your_value": 4}],
+          "album": {"pages": [{"set": "RET", "have": 9, "of": 10, "complete": False},
+                              {"set": "LAT", "have": 10, "of": 10, "complete": True}]}}
+
+    def test_los_ojos_ven_como_estamos_y_las_oportunidades(self):
+        mem = cadena.Memoria()
+        lect = {"tick": 50, "me": ojos.tapar(self.ME),
+                "tablon": [{"id": 1, "maker": "m1", "give": {"assets": [{"ref": "RET-10"}]}, "want": {"cash": 40}},
+                           {"id": 2, "maker": "m2", "give": {"assets": [{"ref": "RET-10"}]}, "want": {"cash": 35}},
+                           {"id": 3, "maker": "m3", "give": {"cash": 12}, "want": {"types": ["card:LAT-03"]}},
+                           {"id": 4, "maker": "m4", "give": {"cash": 50}, "want": {"types": ["card:RET-01"]}}],
+                "mis_ofertas": {"offers": [{"id": 9, "maker": "t03", "to": "t07", "give": {"cash": 15}, "want": {"cards": ["LAT-03"]}},
+                                           {"id": 5, "maker": "t07", "status": "open", "give": {"assets": [{"ref": "LAT-03"}]}, "want": {"cash": 30}}]},
+                "feed": {"events": [{"id": 70, "tick": 48, "type": "settlement",                       # la forma real del feed
+                                     "payload": {"kind": "trade", "items": [{"kind": "card", "ref": "RET-10"}], "price": 33}},
+                                    {"id": 77, "type": "limits_changed", "text": "Ahora 2 aceptaciones por tick", "tick": 49}]}}
+        diario = []
+        vista = ojos.mirar(lect, mem, lambda q, t: diario.append(t))
+        e = vista["estado"]
+        self.assertEqual((e["efectivo"], e["puntos"], e["puesto"]), (241, 21.95, 16))
+        self.assertEqual((e["faltan"], e["casi"], e["repetidas"]), ({"RET": ["RET-10"]}, ["RET"], {"LAT-03": 2}))
+        self.assertEqual([(c["oferta"], c["completa_pagina"]) for c in vista["comprar"]], [(2, True), (1, True)])  # la más barata primero
+        self.assertEqual([(v["oferta"], v["nos_vale"], v["margen"]) for v in vista["vender"]], [(9, 4, 11), (3, 4, 8)])
+        self.assertEqual(([o["oferta"] for o in vista["para_nosotros"]], vista["abiertas"]), ([9], 1))
+        self.assertEqual(vista["precios"], {"RET-10": [33]})
+        self.assertEqual([a["tipo"] for a in vista["avisos"]], ["limits_changed"])
+        self.assertEqual(ojos.mirar(lect, mem)["avisos"], [])                   # cada aviso una vez
+        self.assertNotIn("bk_secreto", " ".join(diario) + str(lect["me"]))      # las claves, tapadas
+
+    def test_los_ojos_validan_con_la_contable_y_proponen(self):
+        V.valores_del_juego(cartas=self.ME["assets"])                       # el your_value del juego, como en vivo
+        lect = {"tick": 50, "me": self.ME,
+                "tablon": [{"id": 1, "maker": "m1", "give": {"assets": [{"ref": "RET-10"}]}, "want": {"cash": 40}},
+                           {"id": 3, "maker": "m3", "give": {"cash": 12}, "want": {"types": ["card:LAT-03"]}},
+                           {"id": 4, "maker": "m4", "give": {"assets": [{"ref": "RET-10"}]}, "want": {"cash": 900}}]}
+        diario = []
+        vista = ojos.mirar(lect, cadena.Memoria(), lambda q, t: diario.append(q), P)
+        self.assertEqual([(x["aceptar"], x["lado"]) for x in vista["propuestas"]], [(1, "compra"), (3, "venta")])
+        self.assertEqual(vista["propuestas"][1]["neto"], 12 - 4 - 2)        # precio − your_value − comisión de El Rastro
+        self.assertIn("reserva", vista["descartadas"][0]["motivo"])         # 900 P no caben en la caja
+        self.assertIn("PROPUESTA", diario)
+        self.assertEqual(ojos.mirar(lect, cadena.Memoria())["propuestas"], [])   # sin parámetros, la Contable no valida
+
+    def test_el_feed_real_llega_al_historial(self):
+        mem = cadena.Memoria()
+        feed = {"events": [{"id": 1, "tick": 40, "type": "settlement",
+                            "payload": {"items": [{"kind": "card", "ref": "RET-01"}], "price": 7}}]}
+        cadena.tick(dict(self.lectura(), feed=feed), mem, P)
+        self.assertEqual(ojos.tratos(mem), {"RET-01": 7})
+
+    def test_el_regateador_no_paga_mas_que_el_ultimo_trato(self):
+        mem = cadena.Memoria()
+        mem.historial["RET-01"] = [[1, 6, "trato", None]]
+        diario = cadena.tick(dict(self.lectura(), tablon=[]), mem, P)["diario"]
+        self.assertTrue(any("OJOS" in linea and "último trato 6" in linea and "tope" in linea for linea in diario), diario)
+        self.assertTrue(any("CONTABLE" in linea and "abuela" in linea and "tope 6" in linea for linea in diario))
+
+    def test_el_regateador_no_compra_si_los_ojos_la_ven_mas_barata(self):
+        lect = dict(self.lectura(), me=self.ME, efectivo=241,
+                    tablon=[{"id": 3, "maker": "t03", "give": {"assets": [{"ref": "RET-10"}]}, "want": {"cash": 2}}])
+        lect["vendedores"] = [dict(lect["vendedores"][0], carta="RET-10", suyas=[12, 9, 8])]
+        ac = cadena.tick(lect, cadena.Memoria(), P)
+        self.assertTrue(any(x["id"] == 1 and "más barata" in x["motivo"] for x in ac["cerrar"]), ac["cerrar"])
+
+    def test_el_cambista_manda_al_guardia_las_propuestas_de_los_ojos(self):
+        V.valores_del_juego(cartas=self.ME["assets"])
+        oferta = {"id": 9, "maker": "t03", "to": "t07", "give": {"cash": 15}, "want": {"cards": ["LAT-03"]}}
+        lect = dict(self.lectura(), me=self.ME, efectivo=241, vendedores=[], tablon=None,
+                    mis_ofertas={"offers": [oferta]}, cuenta=Counter(a["ref"] for a in self.ME["assets"]))
+        ac = cadena.tick(lect, cadena.Memoria(), P)
+        self.assertTrue(any("CAMBISTA" in linea and "propuesta de los Ojos" in linea for linea in ac["diario"]))
+        self.assertEqual((ac["firma"] or {}).get("oferta_id"), 9)                # el Guardia firma: lo acepta quien juega
+
+    def test_el_cambista_anuncia_y_pide_con_el_ultimo_trato(self):
+        mem = cadena.Memoria()
+        lista = [{"carta": "RET-10", "rareza": "common", "tope": 30, "apertura": 20, "nos_vale": 40, "motivo": "x"}]
+        sin = cadena.peticiones_rastro(lista, Counter(), 300, P)
+        con = cadena.peticiones_rastro(lista, Counter(), 300, P, tratos={"RET-10": 5})
+        if sin:
+            self.assertEqual(con[0]["precio"], min(sin[0]["precio"], 5))           # nunca más que el último trato
+        c, _ = coleccion()
+        sale = cadena.anuncios(c, P, mem, {"tick": 5})
+        if sale:
+            mem.historial[sale[0]["carta"]] = [[4, sale[0]["precio"] + 50, "trato", None]]
+            otra = cadena.anuncios(c, P, mem, {"tick": 5})
+            self.assertEqual(next(x for x in otra if x["carta"] == sale[0]["carta"])["precio"], sale[0]["precio"] + 50)
+
+    def test_los_ojos_no_proponen_nada_al_guardia(self):
+        lect = dict(self.lectura(), me=self.ME, tablon=[])
+        con, sin = cadena.tick(lect, cadena.Memoria(), P), cadena.tick(dict(lect, me=None), cadena.Memoria(), P)
+        self.assertEqual((con["firma"], con["mensajes"]), (sin["firma"], sin["mensajes"]))   # ver no cambia ninguna decisión
+        self.assertIn("estado", con["ojos"])
+
+    def test_los_ojos_leen_solo_con_get(self):
+        hechas = []
+        class Juego:
+            def __getattr__(self, nombre):
+                hechas.append(nombre)
+                if nombre == "feed":
+                    raise RuntimeError("sin feed")
+                return lambda *a, **k: {"offers": []} if nombre in ("board", "my_offers") else dict(Estructura.ME)
+        lect = ojos.leer(Juego())
+        self.assertEqual(sorted(hechas), ["board", "feed", "me", "my_offers"])
+        self.assertIsNone(lect["feed"])                                         # una lectura rota no tira las otras
+        self.assertEqual(lect["me"]["starter_broker_key"], "<OCULTA>")
 
     def test_el_ojeador_vigila_los_precios(self):
         mem = cadena.Memoria()

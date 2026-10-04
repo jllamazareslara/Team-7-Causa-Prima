@@ -5,7 +5,7 @@ y todas las pruebas. Desde `cadena/`: `python -m unittest discover -s tests -v` 
 
 Orden en cada tick: Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario. Guion y Ojeador van al lado.
 
-1. **Ojos** (`t7/ojos.py`): leen el juego y pasan los números a la Contable. Ayudante: **Escudo** (texto sospechoso).
+1. **Ojos** (`t7/ojos.py`): miran cómo estamos (`/api/me`, como la skill estado-equipo) y las mejores oportunidades (`/api/feed`, `/api/me/offers`, tablón). No pasan por el Escudo ni por el Guardia.
 2. Al lado: **Guion** (`t7/guion.py`) anticipa lo que viene del calendario; **Ojeador** (`t7/ojeador.py`) vigila los
    precios de El Rastro y se los pasa al Regateador y al Cambista.
 3. **Contable** (`t7/contable.py` con la calculadora `t7/valor.py`): ¿renta? ¿cuánto? Da los números a los
@@ -22,7 +22,7 @@ puesto gratuito en el simulador.
 | Agente | Rama | Lugar en la cadena |
 |---|---|---|
 | Los Ojos | `infra/t7` (`t7/ojos.py`) | 1 · leen el juego |
-| El Escudo | `infra/t7-escudo` | 1 · ayudante de los Ojos: texto sospechoso |
+| El Escudo | `infra/t7-escudo` | 3 · ayudante del Regateador y la Duelista: texto sospechoso |
 | El Guion | `infra/t7` (`t7/guion.py`) | al lado · anticipa lo que viene |
 | El Ojeador | `infra/t7` (`t7/ojeador.py`) | al lado · vigila los precios para el Regateador y el Cambista |
 | La Contable | `infra/t7-contable` | 2 · ¿renta? ¿cuánto? para los negociadores y el Guardia |
@@ -53,11 +53,16 @@ Pruebas:
 - `python -m unittest tests.test_revisar`
 - `python -m unittest tests.test_todo.Estructura`
 
-## Los Ojos · `t7/ojos.py` (con el Escudo)
+## Los Ojos · `t7/ojos.py`
 
 - [ ] Van primero en cada tick: antes de la Contable, de los negociadores y del Guardia.
-- [ ] Su ayudante, el Escudo, lee cada texto nuevo una sola vez: avisos por contraparte y candidatos a mala fe.
-- [ ] Solo miran: no deciden nada y una pieza rota de la lectura no tira el tick.
+- [ ] Dicen cómo estamos (dinero, puntos, puesto, qué falta en cada página, repetidas) desde `/api/me`, con las claves tapadas.
+- [ ] Sacan lo más importante de `/api/feed` y de las ofertas: cartas que nos faltan a la venta (las que completan página
+      primero), quién paga por nuestras repetidas (más margen sobre su your_value primero), precios de los tratos,
+      avisos del juego (cada uno una vez) y ofertas que nos hacen a nosotros.
+- [ ] Solo miran: no deciden nada, no pasan por el Escudo ni por el Guardia, y una lectura rota no tira el tick.
+- [ ] El Escudo (ahora con el Regateador y la Duelista) lee cada texto nuevo una sola vez: avisos por contraparte y
+      candidatos a mala fe.
 
 ## El Guion y El Ojeador · al lado de la cadena
 

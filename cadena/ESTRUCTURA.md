@@ -6,9 +6,9 @@ Sin Director. Tres capas. El dibujo está en el artefact Team 7, pestaña «Los 
                               EL JUEGO  ◄──────────────── firma ─────────────┐
             ┌──────────────────┬──┴───────────────┬──────────────────┐        │
           Ojos  ──────────►  Contable            Guion            Ojeador     │   ← 1 · leen y miden
-     (leen el juego)      (¿renta? ¿cuánto?)  (anticipa lo      (vigila los   │
-      + Escudo: texto                          que viene)        precios)     │
-        sospechoso             │                          ┊ precios ┊         │
+  (cómo estamos y las     (¿renta? ¿cuánto?)  (anticipa lo      (vigila los   │
+   mejores oportunidades)                     que viene)        precios)     │
+                               │                          ┊ precios ┊         │
           ┌────────────────────┼────────────────────┐   ┊         ┊          │
        Cambista             Duelista            Regateador ◄┄┄┄┄┄┄┄┘          │   ← 2 · negocian
    El Rastro, equipos        duelos              vendedores                   │
@@ -27,7 +27,7 @@ Fuera de la cadena: El Vigía (solo lee, enseña en pantalla lo que viene) · El
 
 | Papel | Nombre | Archivo |
 |---|---|---|
-| El presente: leen el juego y pasan los números a la Contable; su ayudante, el Escudo, mira el texto sospechoso | Los Ojos | `t7/ojos.py` (`mirar()`): la vista de cada tick |
+| El presente: cómo estamos (`/api/me`) y las mejores oportunidades (`/api/feed`, `/api/me/offers`, tablón). Sin Escudo ni Guardia | Los Ojos | `t7/ojos.py` (`leer()` y `mirar()`): la vista de cada tick |
 | Cuánto vale y cuánto renta | La Contable | `t7/contable.py`, con la calculadora `t7/valor.py` |
 | El pasado del mercado · el vigilante de precios | El Ojeador | `t7/ojeador.py` |
 | El futuro del juego · anticipar la estrategia según lo que viene | El Guion | `t7/guion.py` |
