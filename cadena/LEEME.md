@@ -13,7 +13,7 @@ python sim/informe.py                        # simulaciones con los ajustes actu
 
 ## La estructura
 
-Ver [`ESTRUCTURA.md`](ESTRUCTURA.md). En cada tick: **Ojos** (+ Escudo) → **Contable** → **Cambista / Duelista /
+Ver [`ESTRUCTURA.md`](ESTRUCTURA.md). En cada tick: **Ojos** → **Contable** → **Cambista / Duelista /
 Regateador** → **Guardia**, el único que firma. **El Guion** (el futuro: calendario) y **El Ojeador** (precios en el
 tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 
@@ -30,7 +30,7 @@ tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 | `t7/parametros.json` | — | Todos los ajustes: valor, rango permitido, estado (medido / simulado / supuesto / decisión) y por qué |
 | `t7/hoy.json` | — | Las noticias del día: duración del tick, lo visto en un duelo real, vendedores que se enfadan, categorías que se apagan, decisiones del equipo. Se cambia aquí, sin tocar código |
 | `t7/situacion.py` | El plan del día | Con el efectivo del juego y `hoy.json` saca el modo de caja (holgado, justo, seco) y los ajustes de todos los agentes. `plan(estado)` devuelve los ajustes (`["p"]`) y lo forzado (`["forzar"]`) que se pasan a los agentes y al guardia; `resumen()` lo escribe para la pantalla. |
-| `t7/ojos.py` | Los Ojos | Primer paso de cada tick: leen el juego y pasan los números a la Contable. Su ayudante, el Escudo, mira el texto sospechoso. Solo miran |
+| `t7/ojos.py` | Los Ojos | Primer paso de cada tick: cómo estamos (`/api/me`, como la skill estado-equipo) y las mejores oportunidades (`/api/feed`, `/api/me/offers`, tablón): cartas que faltan a la venta, compradores de repetidas, precios de tratos, avisos del juego. Solo miran: sin Escudo ni Guardia |
 | `t7/ojeador.py` | El Ojeador | El vigilante de precios: historial en el tiempo (El Rastro y feed), tendencia, momento del juego, escasez, compradores probables. Dice cuándo comprar y vender; vendedores que descansan tras cupo agotado o enfado · Al lado de la cadena: pasa los precios al Regateador y al Cambista (`vigilar`, `precios`) |
 | `t7/contable.py` | La Contable | Segundo paso, ¿renta? ¿cuánto?: con la calculadora hace las cuentas para el Regateador (tope o suelo, caja) y la ficha del Guardia (y la ganancia de cada duelo). Jugando (`jugar.py`), solo con el your_value del juego (/api/me, /api/me/value): sin él no hay número y no se opera; la calculadora queda para el simulador y las pruebas. No decide |
 | `t7/valor.py` | La Contable | Calculadora. Coincide con el juego al céntimo (679,12 frente a 679,1; cada carta). `liquidez()` dice qué cartas pequeñas vender cuando el efectivo baja del colchón |
@@ -41,7 +41,7 @@ tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 | `t7/broker.py` | El Casamentero | Market Test (no supera al puesto gratuito en nuestro simulador) |
 | `t7/prioridad.py` | La cadena (parte) | Qué aceptar primero; los 3 tratos de la escalera |
 | `t7/sondas.py` | El Espía | Gandalf al revés: sacar información a vendedores; detector de mala fe. Añadido el 3/10: sondas transformadas (¿me acerco o me alejo?, ¿par o impar?, etiqueta), termómetro del tono, cuaderno que ordena las sondas por lo medido, y canario + pregunta directa para duelos. La cadena usa el termómetro, el canario y una pregunta directa por duelo. **Cambiado el 3/10 tras `feedback-agentes-team7.md`:** lo que sale de un texto solo se apunta, nunca cambia un precio; con vendedores pregunta en una sola conversación de prueba al día y solo con los tres tratos de ese vendedor ya hechos (`espia.tras_tratos`, `espia.conversaciones_por_dia`; poner el segundo a 0 lo apaga) |
-| `t7/defensa.py` | El Escudo | Filtro de entrada, tres avisos, filtro de salida, y el detector de incoherencias (el texto dice 15, la oferta pide 25), que antes estaba en el Espía |
+| `t7/defensa.py` | El Escudo | Ayudante del Regateador y la Duelista (`mirar_textos()`). Filtro de entrada, tres avisos, filtro de salida, y el detector de incoherencias (el texto dice 15, la oferta pide 25), que antes estaba en el Espía |
 | `t7/portavoz.py` | El Portavoz | Mensajes con tácticas; nunca otro número que el precio |
 | `t7/perfiles.py` | El Observador | Ayudante del Regateador. Con quién ser duro; clasificar vendedores nuevos |
 | `sim/` | — | Vendedores, duelos y Market Test simulados, y los torneos |
@@ -54,7 +54,7 @@ tiempo, momento del juego, escasez) van al lado y solo aconsejan. Sin Director.
 ```
 el juego → (programa que juega: play.py) → lectura (números; el texto va aparte)
         → cadena.tick():  Ojos → Contable → Cambista / Duelista / Regateador → Guardia (una firma) → diario
-                          Ojos + Escudo · al lado Guion y Ojeador (precios → Regateador y Cambista)
+                          Ojos (sin Escudo) · Escudo con los negociadores · al lado Guion y Ojeador (precios → Regateador y Cambista)
                           Cambista + Portavoz · Duelista + Portavoz, Espía · Regateador + Portavoz, Observador, Espía
         → (programa que juega) aplica las acciones → el juego
 ```

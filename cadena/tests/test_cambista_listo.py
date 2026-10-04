@@ -89,6 +89,25 @@ class Hoy(unittest.TestCase):
         pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"ajustes": {"cambista.pedir": 1}})
         self.assertEqual((pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, "todas"))
 
+    def test_escalera_con_solo_vender(self):
+        """Domingo: con solo_vender y escalera, a cada vendedor se le compra lo barato que falta, hasta el tope."""
+        pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"solo_vender": True, "escalera": True, "tope_escalera": 30})
+        self.assertEqual((pl["ordenes"]["compras"], pl["ordenes"]["escalera"], pl["ordenes"]["tope_escalera"]),
+                         ("ninguna", True, 30))
+        sin_tope = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"escalera": True})
+        self.assertEqual(sin_tope["ordenes"]["tope_escalera"], (300 - sin_tope["p"]["guardia.reserva_efectivo"]) // 3)
+        seco = situacion.plan({"efectivo": 20, "cuenta": {}}, hoy={"escalera": True})
+        self.assertFalse(seco["ordenes"]["escalera"])
+
+    def test_escalera_compra_dentro_del_tope_y_del_cupo(self):
+        from t7 import cadena
+        menus = {"chato": {"vende": {"LAV-06": 26, "LAV-09": 77}, "compra": {}}}
+        ordenes = {"compras": "ninguna", "escalera": True, "tope_escalera": 30, "reserva": 0}
+        ops = cadena.cola_de_operaciones({}, 300, menus, ordenes)
+        self.assertEqual([(o["vendedor"], o["lado"], o["carta"]) for o in ops], [("chato", "compra", "LAV-06")])
+        self.assertEqual(cadena.cola_de_operaciones({}, 300, menus, ordenes, tratos={"chato": 3}, max_tratos=3), [])
+        self.assertEqual(cadena.cola_de_operaciones({}, 300, menus, dict(ordenes, escalera=False)), [])
+
     def test_datos_reales_en_el_repositorio(self):
         self.assertTrue(os.path.exists(os.path.join(RAIZ, "datos", "estado-actual.json")))
 

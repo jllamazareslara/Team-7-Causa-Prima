@@ -6,16 +6,20 @@ Sin red y sin azar: no llama al juego, no lee la clave y no acepta nada. Quien h
 repositorio u otro programa) solo tiene que hacer dos cosas: construir `lectura` y aplicar `acciones`.
 
 Orden dentro de un tick (cada paso es un agente):
-    1. Ojos          leen el juego y pasan los números a la Contable. Ayudante: el Escudo (texto sospechoso: avisos por
-                     contraparte, modo firme, candidatos a mala fe). Ver `ojos.py`.
+    1. Ojos          miran cómo estamos (/api/me, como la skill estado-equipo) y las mejores oportunidades (/api/feed,
+                     /api/me/offers y el tablón). Solo miran: no pasan por el Escudo ni por el Guardia. Ver `ojos.py`.
        Al lado:      Guion    anticipa lo que viene (calendario): lo apunta en el diario, no cambia ninguna decisión.
                      Ojeador  vigila los precios de El Rastro y se los pasa al Regateador y al Cambista. Ver `ojeador.py`.
     2. Contable      ¿renta? ¿cuánto?: hace las cuentas con la calculadora y se las da a los negociadores (tope o suelo,
                      caja) y, con cada trato, la ficha que mira el Guardia. No decide. Ver `contable.py`.
     3. Negociadores  hacen el trámite, cada uno con sus números y sus ayudantes:
-                       Cambista    El Rastro y equipos            + Portavoz
-                       Duelista    duelos                         + Portavoz · Espía
-                       Regateador  vendedores                     + Portavoz · Observador · Espía
+                       Cambista    El Rastro y equipos            + Portavoz · Ojos
+                       Duelista    duelos                         + Portavoz · Escudo · Espía
+                       Regateador  vendedores                     + Portavoz · Escudo · Observador · Espía · Ojos
+                     Ojos como referencia: el Regateador no paga más (ni vende por menos) que el último trato del feed
+                     y no compra/vende al vendedor si los Ojos proponen algo mejor en El Rastro; el Cambista manda al
+                     Guardia las propuestas de los Ojos y no anuncia por menos ni pide por más que el último trato.
+                     Escudo: lee cada texto nuevo una vez (avisos por contraparte, modo firme, mala fe). Ver `defensa.py`.
                      Espía: lee pistas del texto y solo las apunta; pregunta en una conversación de prueba al día; en
                      duelos manda un canario y, si el rival lee el texto, una pregunta directa.
                      REGLA: lo que sale de un texto va al diario y a las palabras, nunca a un precio.
@@ -33,6 +37,7 @@ lectura = {
   "duelos":     [{"id", "rol": "seller"|"buyer", "limite", "rival": [...], "nuestras": [...], "ronda", "rondas",
                   "ticks_restantes", "texto", "escenario", "dias": bool}],
   "tablon":     ofertas de El Rastro tal como las da board("rastro"), o None si este tick no se ha leído,
+  "me":         /api/me con las claves tapadas (Ojos), "mis_ofertas": /api/me/offers (Ojos), "feed": /api/feed (opcional),
   "calendario": la respuesta de schedule() para el Guion (opcional), "hora": horas de juego ahora (opcional)
 }
 """
@@ -131,7 +136,7 @@ def ojear(lectura, mem):
     if isinstance(lectura.get("niveles"), dict):
         mem.niveles.update(lectura["niveles"])
     if lectura.get("feed"):                              # tratos hechos del feed público: precios reales pagados
-        ojeador.observar_feed(mem.historial, lectura["feed"], t)
+        ojeador.observar_feed(mem.historial, ojos.eventos(lectura["feed"]), t)
     h = hora_de_juego(mem, lectura)
     for c in lectura.get("vendedores") or []:            # cupo agotado o enfado: ese vendedor descansa
         if isinstance(c, dict) and c.get("cerrado") and c.get("vendedor"):
@@ -193,6 +198,7 @@ def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), l
                 if tend["compradores"] == 0 and tend["vendedores"] >= minimo_vend:
                     sin_demanda.add(ref)
     out = anuncios_rastro(cuenta, p, activos, ocupadas, excluidas | sin_demanda, listas, caducidades, maximo)
+    tratos_feed = ojos.tratos(mem)
     mom = lectura.get("momento") or {"fase": "normal", "vender": 1.0}
     for n in out:
         antes = n["precio"]
@@ -204,6 +210,10 @@ def anuncios(cuenta, p, mem, lectura, activos=None, ocupadas=(), excluidas=(), l
             n["cazador"] = f"la pide varias veces, hasta {caza[n['carta']]} P"
         if n["precio"] != antes:
             n["ojeador"] = f"{antes} → {n['precio']} ({mom.get('fase', 'normal')})"
+        trato = tratos_feed.get(n["carta"])
+        if trato is not None and n["precio"] < trato:    # los Ojos: no se anuncia por menos que el último trato
+            n["ojos"] = f"último trato {trato}: {n['precio']} → {math.ceil(trato)}"
+            n["precio"] = math.ceil(trato)
     return out
 
 
@@ -214,7 +224,7 @@ def _propuesta_vendedor(c, precio):
 
 
 def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
-    """Un tick entero. Devuelve acciones = {"mensajes", "firma", "cerrar", "diario", "mala_fe"}."""
+    """Un tick entero. Devuelve acciones = {"mensajes", "firma", "cerrar", "diario", "mala_fe", "ojos"}."""
     p = p or params.cargar()
     forzar, ordenes = forzar or {}, ordenes or {}
     t = lectura.get("tick")
@@ -238,9 +248,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             apunta("ERROR", f"{nombre} {ident}: {type(e).__name__}: {e} · se salta, el resto sigue")
             return None
 
-    # ---------- 1. Ojos (con el Escudo): leen el juego ----------
-    vista = ojos.mirar(lectura, mem, apunta)
-    mala_fe.extend(vista["mala_fe"])
+    # ---------- 1. Ojos: cómo estamos y las mejores oportunidades (solo miran: ni Escudo ni Guardia) ----------
+    vista = ojos.mirar(lectura, mem, apunta, p)
 
     # ---------- al lado: Guion (lo que viene) y Ojeador (los precios) ----------
     def paso_guion(cal):                                 # el calendario y la hora ya los guardó ojear()
@@ -257,11 +266,16 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         aislado(paso_guion, mem.calendario, "guion")
     precios = ojeador.vigilar(lectura, mem)
 
+    # ---------- el Escudo, ayudante del Regateador y la Duelista: el texto nuevo, una vez ----------
+    textos = defensa.mirar_textos(lectura, mem, apunta)
+    mala_fe.extend(textos["mala_fe"])
+    tratos_feed = ojos.tratos(mem)                       # referencia de los Ojos para el Regateador
+
     # ---------- vendedores: Contable → Regateador (con Portavoz, Observador y Espía) ----------
     def paso_vendedor(c):
         hilo, quien, texto = str(c["id"]), c["vendedor"], c.get("texto") or ""
         cuentas = contable.para_vendedor(c, cuenta, efectivo, p, ordenes)
-        es_nuevo = hilo in vista["textos_nuevos"]
+        es_nuevo = hilo in textos["textos_nuevos"]
         def sin_acuerdo(motivo):                         # con Pilar no se insiste: esa carta, ese día, ya no
             if quien in NO_INSISTIR:
                 mem.sin_acuerdo[f"{quien}|{c['carta']}|{lectura.get('dia')}"] = motivo
@@ -298,6 +312,21 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                 apunta("TIENDA", f"{quien} · {c['carta']}: no hay caja para comprar sin tocar la reserva, se cierra")
                 return
             limite = min(limite, caja)
+        trato = tratos_feed.get(c["carta"])               # los Ojos: el último trato hecho por esa carta en el feed
+        if trato is not None:
+            antes = limite
+            limite = min(limite, math.floor(trato)) if c["lado"] == "compra" else max(limite, math.ceil(trato))
+            if limite != antes:
+                apunta("OJOS", f"{quien} · {c['carta']}: último trato {trato} → {'tope' if c['lado'] == 'compra' else 'suelo'} "
+                               f"{antes} → {limite}")
+        mejor = ojos.mejor_propuesta(vista, c["lado"], c["carta"])
+        if mejor and (mejor["precio"] + mejor["comision"] < suya if c["lado"] == "compra"
+                      else mejor["precio"] - mejor["comision"] > suya):
+            motivo = (f"los Ojos la ven {'más barata' if c['lado'] == 'compra' else 'mejor pagada'} en El Rastro "
+                      f"({mejor['precio']}, oferta {mejor['aceptar']})")
+            cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": motivo})
+            apunta("TIENDA", f"{quien} · {c['lado']} {c['carta']} · él {suya}: {motivo}, se cierra")
+            return
         apunta("CONTABLE", f"{quien} · {c['lado']} {c['carta']} · nos vale {cuentas['nos_vale']:.1f} · "
                            f"{'tope' if c['lado'] == 'compra' else 'suelo'} {limite}")
         pr = ojeador.precios(precios, c["carta"])
@@ -358,7 +387,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     # ---------- duelos: Contable → Duelista (con Portavoz y Espía) ----------
     def paso_duelo(d):
         quien = f"duelo-{d['id']}"
-        if quien in vista["textos_nuevos"]:
+        if quien in textos["textos_nuevos"]:
             if quien not in mem.leen and d.get("nuestras"):
                 lee = sondas.lee_texto(d["texto"])
                 if lee is not None:
@@ -431,8 +460,14 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
 
     for d in lectura.get("duelos") or []:
         aislado(paso_duelo, d, "duelo")
-    if ofertas_duelo:                        # una sola oferta de duelo por tick: la de plazo más corto
-        mensajes.append(min(ofertas_duelo, key=lambda x: x[0])[1])
+    # Una oferta por duelo por tick (lo que permite el servidor: `messages_per_side_per_tick: 1` por lado del duelo,
+    # no un total global). Antes el agente se auto-limitaba a UNA oferta de duelo por tick, lo que con 10-14 duelos
+    # simultáneos en Duels II dejaba varios sin oferta (visto en vivo el 3/10 en d5820, d5821, d5765, d5764, d5998,
+    # d5810 con `mios=[]` todo el duelo, aunque el rival ofrecía precios dentro del límite). Se mandan todas,
+    # ordenadas por plazo (urgentes primero por si la cola de red tira del rate_limit del SDK).
+    if ofertas_duelo:
+        for _, m in sorted(ofertas_duelo, key=lambda x: x[0]):
+            mensajes.append(m)
 
     # ---------- El Rastro: Contable → Cambista (con los precios del Ojeador y el Portavoz) ----------
     def paso_rastro(tablon):
@@ -463,6 +498,21 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
     tablon = lectura.get("tablon")
     if tablon and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
         aislado(paso_rastro, tablon, "El Rastro")
+
+    def paso_propuestas_ojos(props):                     # el Cambista manda al Guardia lo que validaron los Ojos
+        en_cola = {o.get("oferta_id") for o in cola}
+        for x in props[:3]:
+            compra = x["lado"] == "compra"
+            if x["aceptar"] in en_cola or (compra and ordenes.get("compras") == "ninguna"
+                                           and not contable.para_completar(x["carta"], ordenes)):
+                continue
+            apunta("CAMBISTA", f"propuesta de los Ojos · oferta {x['aceptar']} · {x['lado']} {x['carta']} a {x['precio']} · "
+                               f"neto {x['neto']:+.1f}")
+            cola.append({"tipo": "equipo", "destino": "rastro", "id": x["aceptar"], "oferta_id": x["aceptar"],
+                         "neto": x["neto"], "propuesta": x["propuesta"], "oferta_juego": x.get("oferta_juego")})
+
+    if vista.get("propuestas") and forzar.get("equipo") != "apagado" and forzar.get("rastro") != "apagado":
+        aislado(paso_propuestas_ojos, vista["propuestas"], "propuestas de los Ojos")
 
     # ---------- la firma: la Contable hace la ficha, el Guardia confirma ----------
     # El PDF oficial de Causa Prima lo confirma: "Duel messages and accepts have their own limits: they never
@@ -510,7 +560,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
 
     mem.mala_fe.extend(mala_fe)
     return {"mensajes": mensajes, "firma": firmado["tienda"], "firma_duelo": firmado["duelo"],
-            "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe}
+            "cerrar": cerrar, "diario": diario, "mala_fe": mala_fe, "ojos": vista}
 
 
 def lista_compra(cuenta, efectivo, p, mercado=None, listas=None, pagado=None, final=False):
@@ -518,9 +568,19 @@ def lista_compra(cuenta, efectivo, p, mercado=None, listas=None, pagado=None, fi
     return cambista.lista_compra(cuenta, efectivo, p, mercado=mercado, listas=listas, pagado=pagado, final=final)
 
 
-def peticiones_rastro(lista, cuenta, efectivo, p, activas=None, caducidades=None, demanda=None, final=False):
-    """El Cambista compra: qué peticiones publicar en El Rastro ahora (ver cambista.peticiones)."""
-    return cambista.peticiones(lista, cuenta, efectivo, p, activas, caducidades, demanda=demanda, final=final)
+def peticiones_rastro(lista, cuenta, efectivo, p, activas=None, caducidades=None, demanda=None, final=False, tratos=None):
+    """El Cambista compra: qué peticiones publicar en El Rastro ahora (ver cambista.peticiones).
+    tratos = {carta: último trato visto por los Ojos} (ojos.tratos): no se ofrece más que eso."""
+    out = []
+    for n in cambista.peticiones(lista, cuenta, efectivo, p, activas, caducidades, demanda=demanda, final=final):
+        trato = (tratos or {}).get(n["carta"])
+        if trato is not None and n["precio"] > trato:
+            if math.floor(trato) < 1:
+                continue
+            n = dict(n, precio=math.floor(trato), motivo=n["motivo"] + f" · los Ojos: último trato {trato}")
+            n["gana"] = round(n["nos_vale"] - n["precio"], 1)
+        out.append(n)
+    return out
 
 
 def trueques_rastro(lista, cuenta, p, ocupadas=(), activas=(), vivos=None):
@@ -580,6 +640,8 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
     evitar = {(vendedor, carta)} que hoy ya acabaron sin acuerdo con un vendedor de NO_INSISTIR: no se repiten.
     ordenes["completar"] = páginas a completar (hoy.json): sus cartas van delante, también con solo_vender y sin cupo,
     al vendedor más barato y solo con margen_completar × la lista libre sobre la reserva (si no, se espera a las ventas).
+    ordenes["escalera"] = comprar para la escalera (hoy.json): también con solo_vender, a cada vendedor que aún no tiene
+    max_tratos tratos hoy se le compra una carta que nos falte con lista ≤ ordenes["tope_escalera"].
     """
     ordenes, tratos, guardar = ordenes or {}, tratos or {}, guardar or {}
     urgentes = set(ordenes.get("vender") or [])
@@ -604,7 +666,7 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             usadas.add(ref)
             pendientes.append({"vendedor": vendedor, "lado": "venta", "carta": ref, "lista": menu["compra"][ref]})
             continue
-        if ordenes.get("compras") == "ninguna" and not ordenes.get("completar"):
+        if ordenes.get("compras") == "ninguna" and not ordenes.get("completar") and not ordenes.get("escalera"):
             continue
         cupo_lleno = max_tratos is not None and tratos.get(vendedor, 0) >= max_tratos
         compras = []
@@ -612,8 +674,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
             if cuenta.get(ref, 0) > 0 or ref in usadas or not V.conocida(ref) or (vendedor, ref) in evitar:
                 continue
             objetivo = contable.para_completar(ref, ordenes)     # página que el equipo quiere completar (hoy.json)
-            if ordenes.get("compras") == "ninguna" and not objetivo:
-                continue
+            escalera = ordenes.get("escalera") and not cupo_lleno and lista <= (ordenes.get("tope_escalera") or 0)
+            if ordenes.get("compras") == "ninguna" and not (objetivo or escalera):
+                continue                                  # solo vender: salvo páginas a completar y la escalera
             if objetivo and lista > mas_barato.get(ref, lista):
                 continue                                  # una página a completar se compra al vendedor más barato
             if objetivo:                                  # primero la más cara: las baratas guardan caja para las que cuestan más

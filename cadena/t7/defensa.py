@@ -70,6 +70,49 @@ def incoherencia(texto, oferta_estructurada):
     return None
 
 
+def _nuevo(mem, clave, texto):
+    """True solo la primera vez que vemos este texto de esta contraparte."""
+    if not texto or mem.vistos.get(clave) == texto:
+        return False
+    mem.vistos[clave] = texto
+    return True
+
+
+def mirar_textos(lectura, mem, apunta=None):
+    """El Escudo, antes de que negocien el Regateador y la Duelista: lee cada texto nuevo de vendedores y rivales de
+    duelo una sola vez, cuenta avisos por contraparte (modo firme) y apunta candidatos a mala fe. No decide nada.
+    Devuelve {"textos_nuevos": {hilo o "duelo-<id>"}, "mala_fe": [...]}; los textos nuevos los usa el Espía."""
+    apunta = apunta or (lambda *_: None)
+    t = lectura.get("tick")
+    nuevos, mala_fe = set(), []
+    for c in lectura.get("vendedores") or []:
+        if not isinstance(c, dict) or "id" not in c:
+            continue
+        hilo, quien, texto = str(c["id"]), c.get("vendedor"), c.get("texto") or ""
+        if not _nuevo(mem, hilo, texto):
+            continue
+        nuevos.add(hilo)
+        motivos, _ = mem.escudo.anotar(quien, texto)
+        if motivos:
+            apunta("ESCUDO", f"{quien}: {', '.join(motivos)}")
+        suyas = c.get("suyas") or []
+        motivo = incoherencia(texto, suyas[-1]) if suyas and not c.get("cerrado") else None
+        if motivo:
+            mala_fe.append({"hilo": c["id"], "vendedor": quien, "motivo": motivo, "tick": t})
+            apunta("ESCUDO", f"{quien} · candidato a mala fe: {motivo}. Lo decide el equipo.")
+    for d in lectura.get("duelos") or []:
+        if not isinstance(d, dict) or "id" not in d:
+            continue
+        quien = f"duelo-{d['id']}"
+        if not _nuevo(mem, quien, d.get("texto") or ""):
+            continue
+        nuevos.add(quien)
+        motivos, _ = mem.escudo.anotar(quien, d["texto"])
+        if motivos:
+            apunta("ESCUDO", f"{quien}: {', '.join(motivos)}" + (" · modo firme" if mem.escudo.firme(quien) else ""))
+    return {"textos_nuevos": nuevos, "mala_fe": mala_fe}
+
+
 PROHIBIDO_SALIDA = re.compile(r"(l[ií]mite|limit|coste|cost|valor|value|multiplic|reserva|m[aá]ximo|minimum|m[ií]nimo)", re.I)
 
 

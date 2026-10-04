@@ -128,6 +128,16 @@ def plan(estado, hoy=None, precios_venta=None):
     if ordenes["completar"]:
         motivos.append(f"completar {', '.join(ordenes['completar'])}: se compran a vendedores las cartas que faltan, "
                        f"cuando sobran {MARGEN_COMPLETAR} × su lista por encima de la reserva")
+    # 5. Escalera (hoy.json "escalera"): compras a vendedores solo para sus tres tratos regateados, también con
+    #    solo_vender. El Rastro no cambia. Con la caja seca no hay escalera.
+    ordenes["escalera"] = bool(hoy.get("escalera")) and modo != "seco"
+    if ordenes["escalera"]:
+        tope = hoy.get("tope_escalera")
+        if not isinstance(tope, (int, float)) or isinstance(tope, bool) or tope <= 0:
+            tope = max(0, libre // TRATOS_ESCALERA)
+        ordenes["tope_escalera"] = min(tope, max(0, libre))
+        motivos.append(f"escalera: a cada vendedor se le compra lo que nos falte hasta {ordenes['tope_escalera']:.0f} P, "
+                       f"con {p.get('tienda.tratos_por_vendedor_y_dia')} tratos por vendedor y día como mucho")
     return {"modo_caja": modo, "efectivo": efectivo, "libre": libre, "cambios": cambios, "motivos": motivos,
             "forzar": forzar, "ordenes": ordenes, "ventas": ventas, "avisos": avisos, "p": p}
 
