@@ -494,7 +494,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             apunta("CONTABLE", f"{o['destino']} {o['id']} · recibo {ev['recibo']:.1f} · entrego {ev['entrego']:.1f} · "
                                f"comisión {ev['comision']} · neto {ev['neto']:+.1f}")
             ok, motivo, ev, _ = guardia.revisar(o["propuesta"], o.get("oferta_juego"), cuenta, efectivo, p,
-                                                ya_firmado_este_tick=firma is not None, stop=stop, forzar=forzar,
+                                                ya_firmado_este_tick=ya_firmado, stop=stop, forzar=forzar,
                                                 tope_por_trato=tope, ev=ev, para_completar=completar)
         apunta("GUARDIA", f"{o['destino']} {o['id']} · {'FIRMA' if ok else 'no firma'} · {motivo}")
         if not ok:
