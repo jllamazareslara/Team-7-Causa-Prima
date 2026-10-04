@@ -1,0 +1,612 @@
+{
+ "_como_leer": "Cada ajuste tiene valor, mínimo, máximo, estado (medido / simulado / supuesto / decisión) y por qué. Se cambia aquí, sin tocar código. Un valor fuera de [min, max] se recorta al límite y se avisa.",
+ "guardia.reserva_efectivo": {
+  "valor": 60,
+  "min": 0,
+  "max": 400,
+  "estado": "decisión",
+  "por_que": "Efectivo que nunca se toca: ninguna compra puede dejarnos por debajo (las ventas sí pasan, la rellenan). 60 ≈ la mitad de los 123 P del viernes; sin efectivo no hay más tratos. 270 si se quiere abrir mercado propio."
+ },
+ "guardia.colchon_efectivo": {
+  "valor": 100,
+  "min": 0,
+  "max": 400,
+  "estado": "decisión",
+  "por_que": "Efectivo que queremos tener. Por debajo, valor.liquidez() dice qué cartas pequeñas vender (repetidas y barrios flojos) sin perder valor."
+ },
+ "guardia.margen_compra": {
+  "valor": 0.1,
+  "min": 0,
+  "max": 0.5,
+  "estado": "decisión",
+  "por_que": "Buen negocio comprando: ganar al menos este tanto del valor de las cartas que recibimos. 0,10 = pagar como mucho el 90 % de lo que nos vale (LAT-09, 112 → 100 P)."
+ },
+ "guardia.margen_venta": {
+  "valor": 0.1,
+  "min": 0,
+  "max": 0.5,
+  "estado": "decisión",
+  "por_que": "Buen negocio vendiendo: cobrar, después de comisión, al menos el valor de las cartas que damos más este tanto (carta de 40 → 44 P)."
+ },
+ "guardia.protegida_factor": {
+  "valor": 1.5,
+  "min": 1.0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "Una carta protegida solo sale si lo que recibimos, sin comisión, llega a este múltiplo de lo que perdemos al darla (LAV-01 que rompe página, 83,9 → 126 P)."
+ },
+ "valor.bono_pagina": {
+  "valor": 0.25,
+  "min": 0.25,
+  "max": 0.25,
+  "estado": "medido",
+  "por_que": "Lavapiés completa: cada carta vale su valor + 25 % de la suma de la página (83,9 / 100,4 / 149,9). Comprobado al céntimo."
+ },
+ "valor.bono_epica_legendaria": {
+  "valor": 0.1,
+  "min": 0.1,
+  "max": 0.1,
+  "estado": "supuesto",
+  "por_que": "Catálogo: un 10 % más con la épica y la legendaria. Sin comprobar."
+ },
+ "valor.comision_rastro_pct": {
+  "valor": 0.05,
+  "min": 0.05,
+  "max": 0.05,
+  "estado": "medido",
+  "por_que": "Reglas del juego."
+ },
+ "valor.comision_rastro_carta": {
+  "valor": 1,
+  "min": 1,
+  "max": 1,
+  "estado": "medido",
+  "por_que": "Reglas del juego."
+ },
+ "tienda.abuela.apertura_compra": {
+  "valor": 0.1,
+  "min": 0.05,
+  "max": 0.6,
+  "estado": "simulado",
+  "por_que": "Fracción de lo que pide. El simulador elige 0,05; usamos 0,10 (pierde < 0,01 de nota) por si un vendedor real se ofende más de lo simulado. El ancla explica casi toda la mejora."
+ },
+ "tienda.abuela.paciencia_estimada": {
+  "valor": 10,
+  "min": 4,
+  "max": 20,
+  "estado": "simulado",
+  "por_que": "Rondas en que planeamos llegar a su precio. Elegido en el simulador; se corrige con el diario (ronda en que da su oferta final)."
+ },
+ "tienda.abuela.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "simulado",
+  "por_que": "Rondas de margen: planeamos llegar antes de que se le acabe la paciencia."
+ },
+ "tienda.abuela.imitacion_inicial": {
+  "valor": 0.7,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Cuánto cede ella por cada prima nuestra, antes de medirlo. Sobre 30→26→25→24 con pasos nuestros de 2: ≈ 0,5–1."
+ },
+ "tienda.abuela.sondas_max": {
+  "valor": 2,
+  "min": 0,
+  "max": 3,
+  "estado": "decisión",
+  "por_que": "Preguntas tipo Gandalf por conversación, dentro de la conversación de prueba del día (ver espia.tras_tratos). Las reglas lo permiten con vendedores; Abuela perdona."
+ },
+ "espia.tras_tratos": {
+  "valor": 3,
+  "min": 0,
+  "max": 6,
+  "estado": "decisión",
+  "por_que": "El Espía solo pregunta a un vendedor que ya lleva hoy estos tratos regateados. Cuentan los tres mejores: con ellos hechos, si se enfada no cuesta puntos. 0 = pregunta desde el primer trato (como antes del 3/10)."
+ },
+ "espia.conversaciones_por_dia": {
+  "valor": 1,
+  "min": 0,
+  "max": 5,
+  "estado": "decisión",
+  "por_que": "Conversaciones por vendedor y día en las que el Espía pregunta. Una basta para el diario y el jurado; la pista vale 1–2 P por trato y el vendedor recuerda cómo se le trató. 0 = Espía apagado con vendedores."
+ },
+ "tienda.abuela.k_reciproco": {
+  "valor": 0.0,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "simulado",
+  "por_que": "Si él cede menos que esto por cada prima nuestra, cedemos como mucho lo que él cedió (reciprocidad). Solo ayudó con vendedores desconocidos."
+ },
+ "tienda.abuela.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.chato.apertura_compra": {
+  "valor": 0.1,
+  "min": 0.05,
+  "max": 0.7,
+  "estado": "simulado",
+  "por_que": "Ídem con Chato: 0,05 es lo óptimo simulado, 0,10 casi igual y más prudente. Primera conversación = sondeo."
+ },
+ "tienda.chato.paciencia_estimada": {
+  "valor": 7,
+  "min": 3,
+  "max": 12,
+  "estado": "simulado",
+  "por_que": "Rondas en que planeamos llegar a su precio. Elegido en el simulador; se corrige con el diario (ronda en que da su oferta final)."
+ },
+ "tienda.chato.margen_rondas": {
+  "valor": 0,
+  "min": 0,
+  "max": 6,
+  "estado": "simulado",
+  "por_que": "Ídem."
+ },
+ "tienda.chato.imitacion_inicial": {
+  "valor": 0.6,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Sin datos todavía."
+ },
+ "tienda.chato.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "Rencoroso: no se le prueba nada."
+ },
+ "tienda.chato.k_reciproco": {
+  "valor": 0.0,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "simulado",
+  "por_que": "Si él cede menos que esto por cada prima nuestra, cedemos como mucho lo que él cedió (reciprocidad). Solo ayudó con vendedores desconocidos."
+ },
+ "tienda.chato.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.pilar.apertura_compra": {
+  "valor": 0.15,
+  "min": 0.05,
+  "max": 0.7,
+  "estado": "supuesto",
+  "por_que": "Pilar no vende cartas (solo el sobre de oro): no le compramos. Igual que un vendedor nuevo."
+ },
+ "tienda.pilar.paciencia_estimada": {
+  "valor": 10,
+  "min": 3,
+  "max": 12,
+  "estado": "supuesto",
+  "por_que": "Ficha del juego: paciencia 0,6, entre Chato (0,35 → 7 rondas) y Abuela (0,85 → 13). Se corrige con el diario."
+ },
+ "tienda.pilar.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor nuevo."
+ },
+ "tienda.pilar.imitacion_inicial": {
+  "valor": 0.7,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Sin datos todavía."
+ },
+ "tienda.pilar.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "Memoria 0,7 y astucia 0,75: se acuerda de los trucos. No se le prueba nada."
+ },
+ "tienda.pilar.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor nuevo."
+ },
+ "tienda.pilar.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.pilar.venta_multiplo_oferta": {
+  "valor": 2.0,
+  "min": 1.5,
+  "max": 5.0,
+  "estado": "supuesto",
+  "por_que": "Vendiéndole, primera petición = este múltiplo de su oferta (en vez de tienda.venta.multiplo_oferta, 3). Coleccionista que ya paga bien y desprecia lo que no le gusta: un ancla de 3× la puede echar."
+ },
+ "tienda.desconocido.apertura_compra": {
+  "valor": 0.15,
+  "min": 0.05,
+  "max": 0.7,
+  "estado": "simulado",
+  "por_que": "Vendedor nuevo: 0,05 es lo óptimo simulado; 0,15 hasta ver en el sondeo si se ofende."
+ },
+ "tienda.desconocido.paciencia_estimada": {
+  "valor": 10,
+  "min": 3,
+  "max": 16,
+  "estado": "simulado",
+  "por_que": "Rondas en que planeamos llegar a su precio. Elegido en el simulador; se corrige con el diario (ronda en que da su oferta final)."
+ },
+ "tienda.desconocido.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "simulado",
+  "por_que": "Ídem."
+ },
+ "tienda.desconocido.imitacion_inicial": {
+  "valor": 0.7,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Ídem."
+ },
+ "tienda.desconocido.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 2,
+  "estado": "decisión",
+  "por_que": "Primero ver si perdona."
+ },
+ "tienda.desconocido.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "simulado",
+  "por_que": "Si él cede menos que esto por cada prima nuestra, cedemos como mucho lo que él cedió (reciprocidad). Solo ayudó con vendedores desconocidos."
+ },
+ "tienda.desconocido.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.picaros.apertura_compra": {
+  "valor": 0.5,
+  "min": 0.15,
+  "max": 0.8,
+  "estado": "supuesto",
+  "por_que": "Pícaros (Paco y Nando, nivel 4, trickster): visto 4/10 que una rara de 73 baja a ~62-64 y CHA-09 no bajó de 60 con nosotros subiendo 42 → 52. Abrir a la mitad de lo que piden: un ancla extrema no aporta si su suelo está en ~0,82 de su precio."
+ },
+ "tienda.picaros.paciencia_estimada": {
+  "valor": 6,
+  "min": 3,
+  "max": 12,
+  "estado": "supuesto",
+  "por_que": "Visto 4/10: dieron su «final» (60) a la cuarta oferta (73 → 67 → 63 → 60)."
+ },
+ "tienda.picaros.margen_rondas": {
+  "valor": 1,
+  "min": 0,
+  "max": 4,
+  "estado": "supuesto",
+  "por_que": "Ídem."
+ },
+ "tienda.picaros.imitacion_inicial": {
+  "valor": 0.5,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Ceden a saltos (6 y 4 P) y luego se paran en su suelo."
+ },
+ "tienda.picaros.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 2,
+  "estado": "decisión",
+  "por_que": "Con ellos no se pregunta nada: sus palabras no valen (bio del juego: «their deadlines never are»)."
+ },
+ "tienda.picaros.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor desconocido: si cede poco, cedemos lo que él cedió."
+ },
+ "tienda.picaros.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.picaros.final_es_farol": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = su «oferta final» no se cree (4/10: «final» a 60 y luego seguían vendiendo; farol de «agotado» con CHA-12, que nadie tenía). Una final dentro del tope no se acepta sin más: se sigue regateando y se acepta solo si su precio ya alcanza nuestra siguiente oferta. Fuera del tope, nos vamos y se puede volver a abrir más tarde. El cambio de carta lo para el Guardia (comprobación 4)."
+ },
+ "tienda.banco.apertura_compra": {
+  "valor": 0.4,
+  "min": 0.15,
+  "max": 0.8,
+  "estado": "supuesto",
+  "por_que": "Don Ernesto (banco, nivel 5, banker): rasgos del juego estricto 1,0, memoria 1,0, astucia 0,95, generosidad 0,1. Un ancla extrema con alguien estricto y que no olvida puede cerrar la puerta: abrir al 40 %."
+ },
+ "tienda.banco.paciencia_estimada": {
+  "valor": 12,
+  "min": 4,
+  "max": 16,
+  "estado": "supuesto",
+  "por_que": "Paciencia del juego 0,95 («never once been in a hurry»): muchas rondas, pasos pequeños."
+ },
+ "tienda.banco.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "supuesto",
+  "por_que": "Ídem."
+ },
+ "tienda.banco.imitacion_inicial": {
+  "valor": 0.3,
+  "min": 0.1,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Generosidad 0,1 y astucia 0,95: cede poco por cada prima nuestra."
+ },
+ "tienda.banco.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 2,
+  "estado": "decisión",
+  "por_que": "Estricto 1,0 y memoria 1,0: nada de preguntas ni trucos."
+ },
+ "tienda.banco.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Reciprocidad: si cede poco, cedemos lo que él cedió."
+ },
+ "tienda.banco.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.banco.venta_multiplo_oferta": {
+  "valor": 2.0,
+  "min": 1.5,
+  "max": 5.0,
+  "estado": "supuesto",
+  "por_que": "Vendiéndole (compra épicas y legendarias), primera petición = 2 × su oferta, como con Pilar: con memoria 1,0 un ancla de 3× lo puede echar."
+ },
+ "tienda.venta.multiplo_oferta": {
+  "valor": 3.0,
+  "min": 1.5,
+  "max": 5.0,
+  "estado": "supuesto",
+  "por_que": "Vendiendo, primera petición = este múltiplo de lo que ofrece el vendedor (equipo que va ganando)."
+ },
+ "tienda.venta.multiplo_lista": {
+  "valor": 2.0,
+  "min": 1.0,
+  "max": 3.0,
+  "estado": "supuesto",
+  "por_que": "O este múltiplo del precio de lista, lo que sea mayor."
+ },
+ "tienda.venta.paso_fijo": {
+  "valor": 0.11,
+  "min": 0.05,
+  "max": 0.35,
+  "estado": "simulado",
+  "por_que": "Vendiendo, cada paso baja este porcentaje de la diferencia inicial. Ganó al paso planificado en los mundos difíciles."
+ },
+ "tienda.compra.apertura_minima": {
+  "valor": 0.15,
+  "min": 0.05,
+  "max": 0.6,
+  "estado": "simulado",
+  "por_que": "Comprando, se abre como poco a esta fracción de su precio. Simulador 3/10 (800 por mundo): 0,15 captura 0,535 / 0,550 / 0,554 (Abuela / Chato / nuevo) y 0,40 solo 0,436 / 0,431 / 0,429; los enfados de Chato bajan del 7,6 % al 5,2 % con 0,40, pero en los diarios en vivo no hay ninguno."
+ },
+ "tienda.tratos_por_vendedor_y_dia": {
+  "valor": 3,
+  "min": 3,
+  "max": 6,
+  "estado": "medido",
+  "por_que": "Reglas: cuentan los tres mejores tratos por nivel y ronda. Un cuarto solo sirve si supera al peor de los tres."
+ },
+ "duelo.apertura_vendedor": {
+  "valor": 1.6,
+  "min": 1.1,
+  "max": 2.5,
+  "estado": "medido",
+  "por_que": "Vendiendo, primera cifra = coste × esto. Era 2,0 porque gana a 1,6 en el simulador, pero el propio comentario ya avisaba: los bots de bench/sims.py nunca se van y un rival real sí. En vivo el 3/10 (runs/juan/duel.jsonl, Duelos I) 23 de 38 duelos acabaron sin trato, y en varios el rival no contestó nunca a una apertura al doble de nuestro coste (duelo 2466 límite 112 abriendo 181, duelo 2468 límite 108 abriendo 173: rival_offers vacío hasta el final). Un duelo sin trato vale cero para los dos. 1,6 sigue siendo agresivo pero contestable."
+ },
+ "duelo.apertura_comprador": {
+  "valor": 0.6,
+  "min": 0.3,
+  "max": 0.95,
+  "estado": "medido",
+  "por_que": "Comprando, primera cifra = valor × esto. Misma corrección que arriba y por los mismos duelos en vivo."
+ },
+ "duelo.descuento_ronda": {
+  "valor": 0.94,
+  "min": 0.85,
+  "max": 1.0,
+  "estado": "supuesto",
+  "por_que": "Lo que queda del trato tras cada ronda (6 % según la página del equipo)."
+ },
+ "duelo.dureza_beta": {
+  "valor": 0.6,
+  "min": 0.1,
+  "max": 3.0,
+  "estado": "simulado",
+  "por_que": "Forma de la curva: < 1 duro hasta el final (Boulware). 0,6 fue el mejor con 5, 8 y 12 rondas."
+ },
+ "duelo.rondas": {
+  "valor": 8,
+  "min": 3,
+  "max": 20,
+  "estado": "supuesto",
+  "por_que": "Rondas que suponemos que dura un duelo si el juego no lo dice."
+ },
+ "duelo.cuota_minima": {
+  "valor": 0.05,
+  "min": 0.0,
+  "max": 0.5,
+  "estado": "simulado",
+  "por_que": "Parte mínima de la tarta estimada que pedimos hasta la última ronda."
+ },
+ "broker.holgura_inicial": {
+  "valor": 0.25,
+  "min": 0.0,
+  "max": 0.6,
+  "estado": "simulado",
+  "por_que": "Cuánto suponemos que un comerciante esconde de su límite al llegar."
+ },
+ "broker.tick_cierre": {
+  "valor": 12,
+  "min": 6,
+  "max": 16,
+  "estado": "simulado",
+  "por_que": "Desde este tick se empareja todo lo que cruce."
+ },
+ "rastro.precio_inicial_lista": {
+  "valor": 1.3,
+  "min": 0.5,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Anuncio de venta: múltiplo del precio de lista del vendedor. Era 0,9; la revisión del 3/10 dice que dejaba valor en la mesa. Con 1,3 una común sale a 13 P y una poco común a 33 P: quien tiene ese barrio a × 1,6 (le valen 16 y 40) todavía gana pagando la comisión. Con 1,4 ya no ganaría con la común. Baja 1 P cada vez que caduca."
+ },
+ "rastro.publicar": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "medido",
+  "por_que": "1 = jugar.py publica en vivo los anuncios de venta en El Rastro. 0 = solo enseña una vez lo que anunciaría. Encendido el 3/10 a las 16:25 (main-v2 03fcc7a): con 0 solo reaccionábamos al tablón y nunca publicábamos, con rank 17/18 y ladder_points 0,081 pese a 35 tratos. Comprobado en vivo después: las cuatro ofertas abiertas son todas de copias repetidas y por encima de lo que nos valen (LAV-03 7 P sobre 2,8; RET-04 12 P sobre 3,2; LAT-01 6 P sobre 4,0)."
+ },
+ "rastro.bajada_por_caducidad": {
+  "valor": 1,
+  "min": 0,
+  "max": 5,
+  "estado": "supuesto",
+  "por_que": "Primas que baja un anuncio cada vez que caduca sin venderse."
+ },
+ "cambista.pedir": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = jugar.py publica en vivo peticiones de compra en El Rastro (\"pago X por esta carta\") siguiendo la lista de la compra. 0 = solo enseña una vez lo que pediría. Encendido el 3/10 a las 16:25 (main-v2 03fcc7a) junto con rastro.publicar. El tope real de gasto lo sigue poniendo guardia.reserva_efectivo."
+ },
+ "cambista.apertura_peticion": {
+  "valor": 0.45,
+  "min": 0.2,
+  "max": 1.0,
+  "estado": "supuesto",
+  "por_que": "Primera oferta de una petición: fracción de la base de la rareza (común 10, poco común 25, rara 70). Con 0,45 una rara se pide a 31 P: a un equipo que la tiene repetida le vale 7 a 28, así que vender le renta, y a nosotros (La Latina ×1,6) nos vale 112. Si nadie contesta, sube sola en cada caducidad."
+ },
+ "cambista.subida_por_caducidad": {
+  "valor": 0.1,
+  "min": 0.0,
+  "max": 0.5,
+  "estado": "supuesto",
+  "por_que": "Cuánto sube una petición cada vez que caduca sin respuesta: fracción de la base de la rareza (una rara sube 7 P, una común 1 P). Nunca pasa del tope."
+ },
+ "cambista.tope_pct_valor": {
+  "valor": 0.85,
+  "min": 0.5,
+  "max": 1.0,
+  "estado": "decisión",
+  "por_que": "Lo máximo que pagamos por una carta, como parte de lo que nos vale HOY (con el bono si es la última de su página). 0,85 deja siempre al menos un 15 % de ganancia, que es lo que puntúa con los equipos."
+ },
+ "cambista.peticiones_max": {
+  "valor": 4,
+  "min": 0,
+  "max": 12,
+  "estado": "decisión",
+  "por_que": "Peticiones nuestras vivas a la vez en El Rastro. Pocas: cada una enseña qué nos falta y compromete efectivo hasta que caduca."
+ },
+ "cambista.peticion_dura_ticks": {
+  "valor": 10,
+  "min": 2,
+  "max": 40,
+  "estado": "supuesto",
+  "por_que": "Ticks que vive una petición antes de caducar y volver a publicarse más cara: 5 minutos a 30 s por tick, 2,5 minutos el domingo."
+ },
+ "cambista.bono_si_faltan": {
+  "valor": 2,
+  "min": 0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "A una página a la que le faltan como mucho estas cartas, cada carta que falta sube en la lista con su parte del bono de página. Solo ordena: el tope de cada compra sigue siendo lo que esa carta nos vale hoy."
+ },
+ "cambista.tope_pct_final": {
+  "valor": 0.98,
+  "min": 0.5,
+  "max": 1.0,
+  "estado": "decisión",
+  "por_que": "En el tramo final del juego el efectivo ya no puntúa: se paga hasta el 98 % de lo que vale una carta y las peticiones salen directamente al tope. Cada carta que entra sigue sumando valor."
+ },
+ "cambista.minutos_final": {
+  "valor": 30,
+  "min": 0,
+  "max": 240,
+  "estado": "decisión",
+  "por_que": "Minutos antes del fin del juego (domingo 15:00, o \"fin_juego\" en hoy.json) en los que empieza el tramo final. 0 = nunca."
+ },
+ "cambista.trueques_max": {
+  "valor": 4,
+  "min": 0,
+  "max": 10,
+  "estado": "decisión",
+  "por_que": "Cambios carta por carta vivos a la vez en El Rastro (damos repetidas por cartas que nos faltan, sin gastar efectivo). 0 = apagado. Se publican con cambista.cambiar = 1 (o cambista.pedir = 1). Era 2; el 3/10 por la tarde un cambio rindió +5,9 y una venta suelta +1,8: las repetidas valen más cambiadas que vendidas."
+ },
+ "cambista.trueque_ratio": {
+  "valor": 0.8,
+  "min": 0.3,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Lo que damos en un cambio tiene que sumar al menos esta parte de la base de lo que pedimos (una poco común, 25, pide 20 de base: una poco común o dos comunes). Por debajo, nadie lo aceptaría."
+ },
+ "cambista.cambiar": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = publica en vivo los cambios carta por carta aunque cambista.pedir = 0. No gastan efectivo y la Contable los pasa uno a uno. 0 = solo con cambista.pedir = 1, como antes."
+ },
+ "cambista.sin_demanda_vendedores": {
+  "valor": 2,
+  "min": 0,
+  "max": 20,
+  "estado": "decisión",
+  "por_que": "Una común o poco común no se anuncia si en El Rastro nadie la pide y ya la venden al menos estos equipos (lo que vieron los Ojos en los últimos 120 ticks): bajaría al suelo sin venderse (3/10: LAT-04 5 venden / 0 piden). Se guarda para cambios. 0 = anunciar siempre."
+ },
+ "cambista.caza_veces": {
+  "valor": 2,
+  "min": 1,
+  "max": 10,
+  "estado": "supuesto",
+  "por_que": "Si un mismo equipo pide la misma carta al menos estas veces, probablemente le falta para completar página: nuestro anuncio de esa carta no baja de lo mejor que ha ofrecido por ella."
+ },
+ "ataque.inyeccion_equipos": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "0 = apagado. Inyección de instrucciones contra agentes de otros equipos: solo si la mesa de organización lo confirma."
+ }
+}

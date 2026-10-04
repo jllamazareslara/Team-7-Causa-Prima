@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 runs/
 results/
+*.log
+*.lock
+menus.borrador.json
+resultados/
