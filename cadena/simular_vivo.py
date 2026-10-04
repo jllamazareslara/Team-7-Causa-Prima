@@ -43,14 +43,23 @@ from t7 import valor as V  # noqa: E402
 
 NOSOTROS = "t07"
 EQUIPOS = [f"t{n:02d}" for n in range(1, 17) if n != 7]
-TICK_SEGUNDOS = 30
+TICK_SEGUNDOS = 15                  # el domingo 4/10 el tick dura 15 s
 COOLOFF_TICKS = 60
 
 
 class JuegoSimulado:
     """Lo que jugar.py usa del SDK (bazaar_sdk.Bazaar), sin red."""
 
+    SDK = {"clock", "me", "value", "catalog", "schedule", "dealers", "venues", "feed", "open_pack", "my_threads",
+           "open_thread", "thread", "say", "close_thread", "board", "my_offers", "list_offer", "cancel", "accept"}
+
+    def __getattribute__(self, nombre):
+        if nombre in JuegoSimulado.SDK:                          # cuántas llamadas al juego hace jugar.py
+            object.__getattribute__(self, "llamadas")[nombre] += 1
+        return object.__getattribute__(self, nombre)
+
     def __init__(self, cartas, efectivo, menus, semilla, log):
+        self.llamadas, self.tick = Counter(), 0
         self.rng = random.Random(semilla)
         self.tick, self.siguiente_id, self.log = 0, 1000, log
         self.efectivo, self.menus = float(efectivo), menus or {}
@@ -115,7 +124,15 @@ class JuegoSimulado:
         return {"now_hours": self.tick * TICK_SEGUNDOS / 3600, "upcoming": []}
 
     def dealers(self):
-        return {"personas": [{"id": v, "level": 1} for v in self.menus]}
+        """Con su menú, en una forma que t7/menus.py entiende: así jugar.py usa los menús «del juego»."""
+        return {"personas": [{"id": v, "level": 1,
+                              "menu": {"sells": [{"card": r, "price": x} for r, x in (m.get("vende") or {}).items()],
+                                       "buys": [{"card": r, "price": x} for r, x in (m.get("compra") or {}).items()]}}
+                             for v, m in self.menus.items()]}
+
+    def venues(self):
+        return {"venues": [{"id": "rastro", "fee_bps": 500, "fee_per_card": 1}] +
+                          [{"id": v, "fee_bps": 0, "fee_per_card": 0} for v in ("v01", "v02", "v07")]}
 
     def feed(self, limit=100):
         return {"events": self.eventos[-limit:]}
@@ -327,6 +344,14 @@ def main():
         inicio = {"efectivo": round(b.efectivo, 1), "coleccion": b.valor_coleccion(), "cartas": len(b.activos)}
         pantalla = io.StringIO()
         est, mem = {"hilos": {}}, cadena.Memoria()
+        por_tick, un_tick = [], jugar.un_tick
+
+        def contando(juego, *args, **kw):                        # cuántas llamadas al juego hace cada tick
+            antes = sum(juego.llamadas.values())
+            r = un_tick(juego, *args, **kw)
+            por_tick.append(sum(juego.llamadas.values()) - antes)
+            return r
+        jugar.un_tick = contando
         with redirect_stdout(pantalla):
             try:
                 jugar._jugar(b, est, mem, argparse.Namespace(live=True, ticks=a.ticks))
@@ -338,6 +363,9 @@ def main():
     fin = {"efectivo": round(b.efectivo, 1), "coleccion": b.valor_coleccion(), "cartas": len(b.activos)}
     resumen = {"ticks": a.ticks, "semilla": a.semilla, "inicio": inicio, "fin": fin,
                "ganancia": round((fin["efectivo"] + fin["coleccion"]) - (inicio["efectivo"] + inicio["coleccion"]), 1),
+               "llamadas_por_tick": {"mediana": sorted(por_tick)[len(por_tick) // 2] if por_tick else 0,
+                                     "max": max(por_tick or [0]),
+                                     "mas_de_20": sum(1 for n in por_tick if n > 20)},
                "tratos": len(tratos), "por_canal": dict(Counter(t["canal"] for t in tratos)),
                "errores": sum(1 for _ in open(os.path.join(carpeta, "errores.jsonl"), encoding="utf-8"))
                if os.path.exists(os.path.join(carpeta, "errores.jsonl")) else 0}
@@ -352,6 +380,9 @@ def main():
     print(f"COLECCIÓN    {inicio['coleccion']} → {fin['coleccion']}  ({inicio['cartas']} → {fin['cartas']} cartas)")
     print(f"GANANCIA     {resumen['ganancia']:+} (efectivo + colección)")
     print(f"ERRORES      {resumen['errores']} (errores.jsonl)")
+    ll = resumen["llamadas_por_tick"]
+    print(f"LLAMADAS     al juego por tick: mediana {ll['mediana']}, como mucho {ll['max']}, "
+          f"{ll['mas_de_20']} ticks con más de 20 (tick de {TICK_SEGUNDOS} s)")
     print(f"LOG          {os.path.relpath(carpeta, AQUI)}/tratos.jsonl · pantalla.txt · diario.jsonl")
 
 

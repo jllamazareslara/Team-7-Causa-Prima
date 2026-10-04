@@ -411,3 +411,23 @@ def descansa(info, h=None, tick=None):
     if "hasta_tick" in info and isinstance(tick, (int, float)):
         return tick < info["hasta_tick"]
     return False
+
+
+# ---------------------------------------------------------------- comisiones reales de cada mercado
+
+def comisiones(venues):
+    """{mercado: (pct, por_carta)} con lo que dice /api/venues (fee_bps y fee_per_card). Lo que no trae comisión
+    no sale: quien lo use cuenta la de El Rastro (de más, nunca de menos)."""
+    lista = venues.get("venues") or venues.get("items") or [] if isinstance(venues, dict) else venues
+    out = {}
+    for v in lista if isinstance(lista, list) else []:
+        if not isinstance(v, dict):
+            continue
+        vid = v.get("id", v.get("venue", v.get("slug")))
+        bps = v.get("fee_bps")
+        if vid is None or _numero(bps) is None:                # 0 es una comisión válida: gratis
+            continue
+        por_carta = v.get("fee_per_card", 0)
+        out[str(vid)] = (bps / 10000, por_carta if _numero(por_carta) is not None else 0)
+    return out
+

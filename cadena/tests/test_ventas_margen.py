@@ -75,5 +75,48 @@ class Ajustes(unittest.TestCase):
         self.assertEqual(P["cambista.trueques_max"], 4)
 
 
+class MejorCanal(unittest.TestCase):
+    """Antes de abrir una venta: oferta del tablón, vendedor o anuncio, solo con valores reales (la API)."""
+    CUENTA = Counter({"MAL-01": 3})
+
+    def canales(self, tablon=(), menus=None, hist=None, comisiones=None, **kw):
+        return comerciante.canales_de_venta(self.CUENTA, menus or {}, list(tablon), mem_con(hist or {}), {"tick": 100},
+                                            comisiones=comisiones, **kw)["MAL-01"]
+
+    def test_gana_el_neto_mas_alto(self):
+        pide = {"id": 5, "maker": "t05", "venue": "rastro", "give": {"cash": 20}, "want": {"cards": ["MAL-01"]}}
+        menus = {"abuela": {"compra": {"MAL-01": 12}}}
+        c = self.canales([pide], menus, comisiones={"rastro": (0.05, 1)})
+        self.assertEqual((c["canal"], c["donde"], c["neto"]), ("oferta", 5, 18))     # 20 - (1 + 1)
+        c = self.canales([dict(pide, give={"cash": 13})], menus, comisiones={"rastro": (0.05, 1)})
+        self.assertEqual((c["canal"], c["donde"]), ("vendedor", "abuela"))           # 13 - 2 = 11 < 12
+
+    def test_la_comision_es_la_del_juego(self):
+        pide = {"id": 5, "maker": "t05", "venue": "v02", "give": {"cash": 12}, "want": {"cards": ["MAL-01"]}}
+        menus = {"abuela": {"compra": {"MAL-01": 11}}}
+        self.assertEqual(self.canales([pide], menus, comisiones={"v02": (0, 0)})["canal"], "oferta")      # gratis: 12
+        self.assertEqual(self.canales([pide], menus, comisiones={})["canal"], "vendedor")                 # sin dato: como El Rastro
+
+    def test_el_anuncio_solo_con_precio_real(self):
+        menus = {"abuela": {"compra": {"MAL-01": 8}}}
+        self.assertEqual(self.canales(menus=menus)["canal"], "vendedor")             # sin trato ni anuncio ajeno
+        c = self.canales(menus=menus, hist={"MAL-01": [[90, 15, "trato", None]]}, comisiones={"rastro": (0.05, 1)})
+        self.assertEqual((c["canal"], c["neto"]), ("anuncio", 13))                   # el último trato del feed
+        viejo = {"MAL-01": [[-100, 15, "trato", None]]}                                 # hace más de una hora: no cuenta
+        self.assertEqual(self.canales(menus=menus, hist=viejo)["canal"], "vendedor")
+        self.assertEqual(self.canales()["donde"], "sin precio real")                 # sin ningún dato: se anuncia y se dice
+
+    def test_vendedor_que_descansa_no_cuenta(self):
+        menus = {"abuela": {"compra": {"MAL-01": 30}}, "chato": {"compra": {"MAL-01": 20}}}
+        self.assertEqual(self.canales(menus=menus, descansan={"abuela"})["donde"], "chato")
+        self.assertEqual(self.canales(menus=menus, cupo_lleno={"abuela", "chato"})["donde"], "sin precio real")
+
+    def test_comisiones_de_venues(self):
+        from t7 import ojos
+        r = ojos.comisiones({"venues": [{"id": "rastro", "fee_bps": 500, "fee_per_card": 1}, {"id": "v02", "fee_bps": 0},
+                                        {"id": "raro"}]})
+        self.assertEqual(r, {"rastro": (0.05, 1), "v02": (0.0, 0)})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -38,7 +38,8 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, candado, comerciante, contable, guardia, ojos, params, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, comerciante, contable, guardia, ojos, params, situacion
+from t7 import menus as M  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -49,6 +50,7 @@ RUNS = os.path.join(AQUI, "runs")
 RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peticiones al juego
 CALENDARIO_CADA = 20     # vendedores, calendario y catálogo cada 20 ticks
 MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
+VALORES_POR_TICK = 10    # preguntas nuevas a /api/me/value por tick (el tick dura 15 s): lo demás, al tick siguiente
 MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
 OCUPADO_TICKS = 10       # thread_exists: otra ejecución tiene ya una conversación con ese vendedor; no se reintenta en N ticks
 ANUNCIO_DURA = 40        # ticks que pedimos al juego para un anuncio nuestro en El Rastro
@@ -136,6 +138,11 @@ def _ultimo_texto(hilo, nosotros):
     return ""
 
 
+def _en_venta(est):
+    """Los ids (como texto) de las copias que estamos vendiendo a un vendedor ahora mismo."""
+    return {h["aid"] for h in (est.get("hilos") or {}).values() if h.get("lado") == "venta" and h.get("aid")}
+
+
 def _cartas(me):
     """{id de la carta como texto: la carta} de lo que tenemos (solo cartas con código)."""
     return {str(a["id"]): a for a in me.get("assets") or []
@@ -172,6 +179,7 @@ def vendedores_nuevos(b, est, menus):
         _linea("errores.jsonl", {"vendedores": str(e)})
         return []
     lista = (res.get("dealers") or res.get("in_play") or res.get("personas") or []) if isinstance(res, dict) else res
+    est["menus_juego"], _ = M.del_juego(res)                     # los menús de ahora, tal como los da el juego
     # el juego real responde {"personas": [...]} (visto el 3/10); los anunciados traen "status": "announced"
     nuevos = []
     for d in lista if isinstance(lista, list) else []:
@@ -187,8 +195,25 @@ def vendedores_nuevos(b, est, menus):
     return nuevos
 
 
+def menus_de_ahora(est, menus):
+    """Los menús con los que se juega: los del juego (dealers(), est["menus_juego"]) mandan sobre menus.json, lado
+    por lado; menus.json solo cubre lo que el juego no da o no se entiende."""
+    out = {v: dict(m) for v, m in (menus or {}).items() if isinstance(m, dict)}
+    for v, m in (est.get("menus_juego") or {}).items():
+        base = out.setdefault(v, {"vende": {}, "compra": {}})
+        for lado in ("vende", "compra"):
+            if m.get(lado):
+                base[lado] = dict(m[lado])
+    return out
+
+
 def leer_calendario(b, est):
-    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y los Ojos (t7/cadena.py, ojear)."""
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y los Ojos (t7/cadena.py, ojear).
+    Y las comisiones reales de cada mercado (/api/venues), para elegir dónde vender."""
+    try:
+        est["comisiones"] = ojos.comisiones(b.venues())
+    except Exception as e:
+        _linea("errores.jsonl", {"venues": str(e)})
     try:
         cal = b.schedule()
         if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
@@ -241,11 +266,18 @@ def precios_de_venta(menus):
     return precios
 
 
+_preguntas = {"quedan": VALORES_POR_TICK}                     # se rellena al empezar cada tick (un_tick)
+
+
 def valor_de_compra(b, carta):
     """your_value de una copia más de `carta` (GET /api/me/value), una vez mientras no cambien nuestras cartas.
-    Lo usa la Contable como tope del Regateador. None si el juego no responde: se sigue con el valor calculado."""
+    Lo usa la Contable como tope del Regateador. Como mucho VALORES_POR_TICK preguntas nuevas por tick: sin respuesta
+    del juego (o sin preguntas este tick) devuelve None y esa carta no se opera hasta tener su valor real."""
     if carta in V.VALOR_RECIBIR:
         return V.VALOR_RECIBIR[carta]
+    if _preguntas["quedan"] <= 0:
+        return None
+    _preguntas["quedan"] -= 1
     try:
         V.valores_del_juego(recibir={carta: b.value(carta)})
     except Exception as e:
@@ -279,6 +311,11 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
         else:
             abiertas.add(v)
     tope = plan["p"].get("tienda.tratos_por_vendedor_y_dia")
+    canales = est.get("canales")
+    if canales is not None:                                      # vender: solo al vendedor que eligió el Comerciante
+        menus = {v: dict(m, compra={r: x for r, x in (m.get("compra") or {}).items()
+                                    if (canales.get(r) or {}).get("canal") == "vendedor" and canales[r]["donde"] == v})
+                 for v, m in menus.items() if isinstance(m, dict)}
     if mem is not None:                                          # con sus consejeros (Guion, Ojos): en t7/comerciante.py
         ops = comerciante.operaciones(cuenta, me.get("cash", 0), menus, mem, lectura or {}, plan["ordenes"], abiertas, tratos, tope)
     else:
@@ -288,10 +325,14 @@ def abrir(b, me, est, plan, vivo, menus=None, tratos=None, mem=None, lectura=Non
         if op["vendedor"] in ocupados:
             continue
         if op["lado"] == "venta":
-            ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"])
+            ocupadas = set(est.get("anuncios") or {}) | set(est.get("ocupadas_juego") or []) | _en_venta(est)
+            ocupadas |= {aid for x in (est.get("trueques") or {}).values() for aid in x.get("ids", [])}
+            ids = sorted(a["id"] for a in me["assets"] if a.get("kind") == "card" and a.get("ref") == op["carta"]
+                         and str(a["id"]) not in ocupadas)
             if not ids:
                 continue
             tema = {"sell": {"assets": [ids[-1]]}}
+            op = dict(op, aid=str(ids[-1]))                      # esa copia queda comprometida con el vendedor
         else:
             nos_suma = valor_de_compra(b, op["carta"])
             if nos_suma is not None and nos_suma < 1:            # el juego dice que no nos suma nada: no se abre
@@ -354,6 +395,31 @@ def otros_mercados(hoy=None):
     return [v for v in leer if isinstance(v, str) and v and v != "rastro"][:4]
 
 
+def elegir_canales(me, est, plan, mem, lectura, menus, tratos):
+    """Antes de abrir una venta: dónde se saca más por cada carta (una oferta que ya está en El Rastro o en otro
+    mercado, un vendedor, o anunciarla), con comerciante.canales_de_venta(). Se guarda en est["canales"] y lo usan
+    anunciar() y abrir(): cada carta se propone solo en su mejor canal. Escribe en pantalla cada cambio de decisión."""
+    cuenta = Counter(a["ref"] for a in _cartas(me).values())
+    p = plan["p"]
+    tope = p.get("tienda.tratos_por_vendedor_y_dia")
+    cupo = {v for v, n in (tratos or {}).items() if tope is not None and n >= tope}
+    t = lectura.get("tick")
+    descansan = {v for v, d in mem.descansos.items() if ojos.descansa(d, lectura.get("hora"), t)}
+    canales = comerciante.canales_de_venta(cuenta, menus, lectura.get("tablon") or [], mem, lectura,
+                                           descansan=descansan, cupo_lleno=cupo, comisiones=est.get("comisiones"),
+                                           venue_anuncio=lambda precio: mercado_de_venta()["venue"]
+                                           if mercado_de_venta()["venue"] != "rastro" else mercado_para(precio))
+    antes = est.get("canales") or {}
+    for ref, c in sorted(canales.items()):
+        if (antes.get(ref) or {}).get("canal") == c["canal"] and (antes.get(ref) or {}).get("donde") == c["donde"]:
+            continue
+        ops = " · ".join(f"{canal} {donde} {neto:g}" for canal, donde, neto in c["opciones"][:4]) or "sin precio real"
+        print(f"VENTA        {ref} (nos vale {c['perdida']:g}): {ops} → "
+              + ("no se vende" if c["canal"] == "ninguno" else f"{c['canal']} {c['donde']}"))
+    est["canales"] = canales
+    return canales
+
+
 def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=False, mem=None, lectura=None):
     """El Cambista vende: anuncia en El Rastro lo que podemos dar sin perder valor (qué y a cuánto lo dice la cadena).
 
@@ -384,6 +450,8 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
         listas.update({r: x for r, x in (menu.get("vende") or {}).items() if isinstance(x, (int, float))})
         if tope is None or tratos.get(vendedor, 0) < tope:
             guardadas.update(menu.get("compra") or {})
+    if est.get("canales") is not None:                           # el Comerciante ya eligió: solo lo que va a anuncio
+        guardadas = {ref for ref, c in est["canales"].items() if c["canal"] != "anuncio"}
     ocupadas = [h["carta"] for h in (est.get("hilos") or {}).values() if h.get("lado") == "venta"]
     ocupadas += [r for x in (est.get("trueques") or {}).values()                 # ya ofrecidas en un cambio
                  if tick - x["tick"] < p.get("cambista.peticion_dura_ticks", 10) for r in x["doy"]]
@@ -403,7 +471,7 @@ def anunciar(b, me, est, plan, tick, vivo, menus=None, tratos=None, primero=Fals
             continue                                             # solo repetidas: la última copia no se vende
         n["precio"] = max(n["precio"], V.suelo_venta_rastro(n["pierde"], margen, mercado["pct"], mercado["por_carta"]))
         libres = sorted(aid for aid, a in ids.items() if a["ref"] == n["carta"] and aid not in vivos
-                        and aid not in (est.get("ocupadas_juego") or []))
+                        and aid not in (est.get("ocupadas_juego") or []) and aid not in _en_venta(est))
         if not libres:
             continue
         aid = libres[0]
@@ -615,7 +683,7 @@ def pedir(b, me, est, plan, tick, vivo, mem, menus=None, primero=False, ahora=No
     cambios = comerciante.trueques_rastro(lista, cuenta, p, anunciadas + en_venta + comprometidas, set(trus), len(trus_vivos))
     usados = {aid for aid, x in (est.get("anuncios") or {}).items() if tick - x["tick"] < _dura(est)}
     usados |= {aid for x in trus_vivos.values() for aid in x.get("ids", [])}
-    usados |= set(est.get("ocupadas_juego") or [])
+    usados |= set(est.get("ocupadas_juego") or []) | _en_venta(est)
     nota_cambio = "" if vivo and cambiar else " · no se publica: " + ("en seco" if cambiar else "cambista.cambiar = 0")
     for c in cambios:
         print(f"CAMBIO       damos {' + '.join(c['doy'])} (nos valen {c['pierdo']}) por {c['quiero']} (nos vale {c['nos_vale']}) "
@@ -745,6 +813,10 @@ def leer(b, est, tick, con_tablon=True):
                                              "crudo": crudo})
             continue
         h["mudo"] = 0
+        if h.get("lado") == "venta" and h.get("aid") and h["aid"] not in _cartas(me):
+            lectura["mudos"].append(hid)                         # la carta ya no es nuestra: se suelta la conversación
+            _linea("errores.jsonl", {"tick": tick, "hilo": hid, "error": f"ya no tenemos la carta {h['aid']}; se suelta"})
+            continue
         oid, precio, final = vigente
         if not h["suyas"] or h["suyas"][-1] != precio:
             h["suyas"].append(precio)
@@ -759,12 +831,12 @@ def leer(b, est, tick, con_tablon=True):
         try:
             res = b.board("rastro")
             ofertas = res.get("offers", []) if isinstance(res, dict) else res
-            ofertas = [o for o in ofertas or [] if isinstance(o, dict)]
+            ofertas = [dict(o, venue=o.get("venue") or "rastro") for o in ofertas or [] if isinstance(o, dict)]
             for otro in otros_mercados():                        # los tablones sin comisión: un fallo en uno no quita El Rastro
                 try:
                     r2 = b.board(otro)
                     vistas = {o.get("id") for o in ofertas}
-                    ofertas += [o for o in (r2.get("offers", []) if isinstance(r2, dict) else r2) or []
+                    ofertas += [dict(o, venue=o.get("venue") or otro) for o in (r2.get("offers", []) if isinstance(r2, dict) else r2) or []
                                 if isinstance(o, dict) and o.get("id") not in vistas]
                 except Exception as e:
                     _linea("errores.jsonl", {"tick": tick, "tablon": otro, "error": str(e)})
@@ -912,11 +984,13 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
     Devuelve True si el tick se completó."""
     try:
         est.setdefault("hilos", {})
+        _preguntas["quedan"] = VALORES_POR_TICK
         menus = _json(os.path.join(AQUI, "menus.json"), None)
         dia = time.strftime("%Y-%m-%d")
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
             vendedores_nuevos(b, est, menus)
             leer_calendario(b, est)
+        menus = menus_de_ahora(est, menus)                       # lo que da el juego manda sobre menus.json
         if primero:
             limpiar_hilos(b, est, vivo)
         toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
@@ -942,6 +1016,8 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
             revisar_publicadas(b, me, est, plan["p"], tick, vivo)
         if not stop and not abrir_sobres(b, me, vivo):           # tras abrir un sobre las cartas cambian: al tick siguiente
             tratos = comerciante.tratos_de_hoy(mem, dia)
+            if toca:                                             # con el tablón recién leído: dónde vender cada carta
+                elegir_canales(me, est, plan, mem, lectura, menus, tratos)
             if toca:                                             # El Rastro primero: un cambio puntúa a nuestro valor;
                 anunciar(b, me, est, plan, tick, vivo, menus, tratos, primero, mem=mem, lectura=lectura)
                 pedir(b, me, est, plan, tick, vivo, mem, menus, primero)

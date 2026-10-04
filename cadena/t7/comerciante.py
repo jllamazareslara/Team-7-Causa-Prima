@@ -241,6 +241,79 @@ def propuestas_ojos(props, tu):
                      "neto": x["neto"], "propuesta": x["propuesta"], "oferta_juego": x.get("oferta_juego")})
 
 
+# ---------------------------------------------------------------- dónde vender cada carta, ANTES de abrir nada
+
+ORDEN_CANAL = {"oferta": 0, "vendedor": 1, "anuncio": 2}     # a igual neto, lo seguro primero
+RASTRO = (0.05, 1)                                           # la comisión de las reglas, si el juego no da otra
+
+
+def comision(venue, precio, comisiones=None):
+    """Lo que cuesta vender a ese precio en ese mercado, con la comisión REAL que da /api/venues (ojos.comisiones).
+    Un mercado que el juego no ha dicho cuenta como El Rastro según las reglas: de más, nunca de menos."""
+    pct, por_carta = (comisiones or {}).get(venue) or (comisiones or {}).get("rastro") or RASTRO
+    return V.comision_rastro(precio, 1, pct, por_carta) if precio else 0
+
+
+def precio_real(hist, tablon, ref, ahora):
+    """Lo que el mercado paga HOY por esa carta, solo con datos del juego: el último trato del feed en la última hora,
+    o, si no hay, lo más barato que piden ahora otros equipos por ella (el tablón). None si no hay ningún dato real."""
+    hechos = [x for x in hist.get(ref, []) if x[2] == "trato" and isinstance(x[0], (int, float)) and ahora - x[0] <= VENTANA]
+    if hechos:
+        return max(hechos, key=lambda x: x[0])[1]
+    piden = [o["want"]["cash"] for o in tablon or [] if isinstance((o.get("want") or {}).get("cash"), (int, float))
+             and [a.get("ref") if isinstance(a, dict) else a for a in (o.get("give") or {}).get("assets") or []] == [ref]]
+    return min(piden) if piden else None
+
+
+def canales_de_venta(cuenta, menus, tablon, mem, lectura, excluidas=(), descansan=(), cupo_lleno=(), comisiones=None,
+                     venue_anuncio=None):
+    """Para cada carta que se puede vender, dónde sacamos más, mirado ANTES de abrir una conversación o publicar.
+    Solo con valores reales y del momento (la API), nada supuesto:
+
+        oferta    alguien ya pide esa carta con dinero en el tablón (El Rastro o el mercado de otro equipo):
+                  su precio menos la comisión real de ese mercado
+        vendedor  un vendedor libre que la compra: lo que ofrece de entrada en su menú (dealers() del juego)
+        anuncio   publicarla nosotros: lo que el mercado paga hoy (precio_real: último trato del feed o lo que piden
+                  otros equipos) menos la comisión real del mercado donde se publicaría (venue_anuncio)
+
+    Lo que nos quita darla es el your_value del juego (cambista.vendibles → contable.nos_quita).
+    Gana el neto más alto; a igual neto, lo seguro (oferta, luego vendedor). Si ninguno da más de lo que nos vale,
+    no se vende. Sin ningún precio real, se anuncia (precio de anuncio de siempre, con su suelo) y se dice.
+    Devuelve {ref: {"canal", "donde", "neto", "perdida", "opciones": [(canal, donde, neto)]}}."""
+    t = lectura.get("tick") if isinstance(lectura.get("tick"), (int, float)) else 0
+    venue_anuncio = venue_anuncio or (lambda precio: "rastro")
+    out = {}
+    for ref, perdida in cambista.vendibles(cuenta):
+        if ref in excluidas or not V.conocida(ref):
+            continue
+        opciones = []
+        for o in tablon or []:
+            give, want = o.get("give") or {}, o.get("want") or {}
+            precio = give.get("cash")
+            if cambista.pedidas(want) == [ref] and not give.get("assets") and isinstance(precio, (int, float)) and precio > 0:
+                opciones.append(("oferta", o.get("id"), round(precio - comision(o.get("venue") or "rastro", precio, comisiones), 2)))
+        for vendedor, menu in (menus or {}).items():
+            ofrece = ((menu or {}).get("compra") or {}).get(ref) if isinstance(menu, dict) else None
+            if isinstance(ofrece, (int, float)) and vendedor not in descansan and vendedor not in cupo_lleno:
+                opciones.append(("vendedor", vendedor, float(ofrece)))
+        real = precio_real(mem.historial, tablon, ref, t)
+        anunciable = V.rareza(ref) in ("common", "uncommon")      # una rara o mejor la decide el equipo
+        if anunciable and real is not None:
+            venue = venue_anuncio(real)
+            opciones.append(("anuncio", venue, round(real - comision(venue, real, comisiones), 2)))
+        if opciones:
+            canal, donde, neto = max(opciones, key=lambda x: (x[2], -ORDEN_CANAL[x[0]]))
+            if neto <= perdida:
+                canal, donde = "ninguno", None
+        elif anunciable:                                          # ningún precio real: se anuncia, como siempre
+            canal, donde, neto = "anuncio", "sin precio real", None
+        else:
+            continue
+        out[ref] = {"canal": canal, "donde": donde, "neto": neto, "perdida": perdida,
+                    "opciones": sorted(opciones, key=lambda x: -x[2])}
+    return out
+
+
 # ---------------------------------------------------------------- abrir y publicar (los llama quien lanza la cadena)
 
 def lista_compra(cuenta, efectivo, p, mercado=None, listas=None, pagado=None, final=False):
