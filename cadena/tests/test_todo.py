@@ -1212,10 +1212,10 @@ class Estructura(unittest.TestCase):
     def test_el_regateador_abre_cerca_y_puede_limitar_el_paso(self):
         pf = params.perfil(P, "chato")
         st = {"lado": "compra", "limite": 100, "caja": 100, "suyas": [80], "nuestras": [], "final": False}
-        self.assertEqual(tienda.decidir(st, pf, P)[1], 32)                       # 40 % de 80
+        self.assertEqual(tienda.decidir(st, pf, P)[1], 12)                       # 15 % de 80
         q = dict(P, **{"tienda.compra.paso_maximo": 0.05})
-        st = dict(st, suyas=[80, 75], nuestras=[32])
-        self.assertLessEqual(tienda.decidir(st, pf, q)[1] - 32, 4)               # paso ≤ 5 % de 80
+        st = dict(st, suyas=[80, 75], nuestras=[12])
+        self.assertLessEqual(tienda.decidir(st, pf, q)[1] - 12, 4)               # paso ≤ 5 % de 80
 
     def test_el_guardia_no_firma_si_el_juego_dice_que_no_renta(self):
         c, _ = coleccion()
@@ -1363,8 +1363,8 @@ class Jugar(unittest.TestCase):
         self.r.un_tick(b, est, cadena.Memoria(), 4, 30, vivo=True, stop=False)
         self.assertEqual(len(b.dichos), 1)
         tid, precio, texto = b.dichos[0]
-        self.assertEqual((tid, precio), (7, 8))                              # abre al 40 % de su precio
-        self.assertEqual(est["hilos"]["7"]["nuestras"], [8])
+        self.assertEqual((tid, precio), (7, 3))                              # abre al 15 % de su precio
+        self.assertEqual(est["hilos"]["7"]["nuestras"], [3])
         self.assertTrue(defensa.revisar_salida(texto, precio)[0])           # el Portavoz: solo el número
 
     def test_la_oferta_final_la_firma_el_guardia(self):

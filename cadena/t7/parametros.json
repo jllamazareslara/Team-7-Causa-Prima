@@ -301,6 +301,13 @@
   "estado": "simulado",
   "por_que": "Vendiendo, cada paso baja este porcentaje de la diferencia inicial. Ganó al paso planificado en los mundos difíciles."
  },
+ "tienda.compra.apertura_minima": {
+  "valor": 0.15,
+  "min": 0.05,
+  "max": 0.6,
+  "estado": "simulado",
+  "por_que": "Comprando, se abre como poco a esta fracción de su precio. Simulador 3/10 (800 por mundo): 0,15 captura 0,535 / 0,550 / 0,554 (Abuela / Chato / nuevo) y 0,40 solo 0,436 / 0,431 / 0,429; los enfados de Chato bajan del 7,6 % al 5,2 % con 0,40, pero en los diarios en vivo no hay ninguno."
+ },
  "tienda.tratos_por_vendedor_y_dia": {
   "valor": 3,
   "min": 3,
