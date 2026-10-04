@@ -49,8 +49,8 @@ de página): se vende o se cambia a quien le falta.
 1. Mira si ya la tenemos (`assets`). Si sí, la siguiente copia vale mucho menos:
    `estado.py --valor <CARTA>` da el `your_value` de **una copia más**. No te fíes de estimaciones de "primera copia".
    (03/10: compramos un 2.º RET-09 a 64 P y una copia más nos valía 22,8.)
-2. Compara con precios: menús de vendedores en `cadena/menus.json` (`vende` = nos venden a ese precio, `compra` =
-   nos compran), y el tablón de El Rastro en `cadena/runs/memoria.json` → `mercado` / `historial`.
+2. Compara con precios: menús de vendedores en `team7/menus.json` (`vende` = nos venden a ese precio, `compra` =
+   nos compran), y el tablón de El Rastro en `team7/runs/memoria.json` → `mercado` / `historial`.
 3. Prioriza lo que **completa página** (bono): mira qué falta en `album.pages`.
 4. Comprueba la oferta **estructurada**, nunca el texto: `give` debe traer exactamente la carta pedida (`assets[].ref`
    o `types: ["card:XXX-NN"]`) y `want` solo efectivo ≤ tope. Los Pícaros dicen una carta y ofrecen otra (03/10:
@@ -61,15 +61,15 @@ de página): se vende o se cambia a quien le falta.
 
 - **Reglas por miembro**: cada uno en `rules/<nombre>` (dealer, broker, duel), medidas offline con `bench/`
   (skill `aportar-reglas`). `main` no se toca para reglas.
-- **La cadena** (`cadena/`, ver `cadena/LEEME.md` y `ESTRUCTURA.md`): `jugar.py` juega vendedores y El Rastro
+- **La cadena** (`team7/`, ver `team7/LEEME.md` y `ESTRUCTURA.md`): `jugar.py` juega vendedores y El Rastro
   (Ojos → Contable → Comerciante → Guardia, con el Guion al lado). En seco por defecto; `--live` solo desde
   el ordenador con la clave. `duelos.py` juega los duelos por separado. `vigia.py` y `grabador.py` solo leen.
 - **Una aceptación por tick para todo el equipo.** Quien acepte en vivo toma el candado
-  (`t7/candado.py`, archivo `%TEMP%\team7-acepta.lock`); los duelos usan su propio candado
-  (`cadena/duelos-acepta.lock`). Un candado de un pid que ya no existe está libre. Antes de aceptar algo a mano,
+  (`agentes/candado.py`, archivo `%TEMP%\team7-acepta.lock`); los duelos usan su propio candado
+  (`team7/duelos-acepta.lock`). Un candado de un pid que ya no existe está libre. Antes de aceptar algo a mano,
   mira quién lo tiene.
-- **Parar todo**: crear `cadena/runs/STOP`.
-- Registros: `cadena/runs/diario.jsonl` (tick a tick), `tratos.jsonl`, `errores.jsonl`, `memoria.json`
+- **Parar todo**: crear `team7/runs/STOP`.
+- Registros: `team7/runs/diario.jsonl` (tick a tick), `tratos.jsonl`, `errores.jsonl`, `memoria.json`
   (precios vistos, escasez, calendario).
 - Límites del juego por tick: 1 aceptación, 1 mensaje por conversación, 12 anuncios nuevos; máx. 6 conversaciones y
   30 ofertas abiertas. Lo aceptado se liquida en el tick siguiente. `GET /api/clock` → `limits` tiene los vigentes.

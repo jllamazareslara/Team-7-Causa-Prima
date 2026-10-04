@@ -5,7 +5,7 @@
     python .claude/skills/the-wizard/mago.py --json        todo en JSON (sin claves)
 
 Junta, en una sola mirada:
-    1. los Ojos           la última vista de cadena/runs/ojos.json (si está en marcha), con su edad
+    1. los Ojos           la última vista de team7/runs/ojos.json (si está en marcha), con su edad
     2. el Bazaar          todos los mercados abiertos (/api/venues y su tablón): El Rastro y los de otros equipos, cada
                           uno con SU comisión; y el feed (/api/feed): a qué precio se están cerrando tratos
     3. nuestro mercado    nuestro puesto (me.venue) y nuestras ofertas abiertas (/api/me/offers): las que ya no rentan
@@ -32,7 +32,7 @@ from collections import Counter
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(AQUI, "..", "..", ".."))
-CADENA = os.path.join(REPO, "cadena")
+CADENA = os.path.join(REPO, "team7")
 sys.path.insert(0, REPO)
 sys.path.insert(0, CADENA)
 
@@ -172,10 +172,10 @@ def precios_feed(feed):
 
 class Valores:
     """El your_value del juego: el de nuestra copia que menos vale (me.assets) y el de una copia más (/api/me/value),
-    pedido una sola vez por carta. La calculadora (cadena/t7/valor.py) solo decide a qué cartas preguntar."""
+    pedido una sola vez por carta. La calculadora (team7/agentes/valor.py) solo decide a qué cartas preguntar."""
 
     def __init__(self, b, me):
-        from t7 import valor as V
+        from agentes import valor as V
         self.V, self.b, self.pedidas = V, b, 0
         cartas = [a for a in me.get("assets") or [] if isinstance(a, dict) and a.get("kind") == "card" and a.get("ref")]
         V.configurar(me.get("affinity"), None, cartas)
@@ -293,7 +293,7 @@ def oportunidades(datos, val, nosotros):
 
     # 2. vendedores: precio de lista del menú (sin comisión; se regatea a la baja comprando y al alza vendiendo)
     try:
-        from t7 import menus as M
+        from agentes import menus as M
         menus, _ = M.del_juego(datos.get("dealers") or {}, dict(val.cuenta))
     except Exception:                                 # noqa: BLE001
         menus = {}

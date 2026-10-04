@@ -27,11 +27,11 @@ Lo que junta:
 
 | Fuente | De dónde | Para qué |
 |---|---|---|
-| **Los Ojos** (skill `ojos`) | `cadena/runs/ojos.json` (o el del worktree `wt-ojos`), sin llamar al juego | sus propuestas y descartes, y la edad de la vista. Si tiene más de 2 min, sugiere refrescarla con la skill `ojos` |
+| **Los Ojos** (skill `ojos`) | `team7/runs/ojos.json` (o el del worktree `wt-ojos`), sin llamar al juego | sus propuestas y descartes, y la edad de la vista. Si tiene más de 2 min, sugiere refrescarla con la skill `ojos` |
 | **Las últimas ofertas** | `/api/venues` y el tablón de cada mercado abierto (`/api/venues/{id}/offers`) | lo que se puede **aceptar ya**, con la comisión de **ese** mercado (El Rastro 5 % + 1 P; si no se sabe, el tope de las reglas: 10 % + 5 P) |
 | **Precios de verdad** | `/api/feed` | a cuánto se cierran los tratos de cada carta: base para **publicar** una petición o un anuncio |
 | **Nuestro mercado** | `me.venue` y `/api/me/offers` | nuestras ofertas abiertas que **ya no rentan** (en el nuestro no se puede aceptar: `self_venue`) |
-| **Los vendedores** | `/api/dealers` (menús, vía `cadena/t7/menus.py`) | lo que venden y compran a precio de lista (se regatea: es el peor precio, no el final) |
+| **Los vendedores** | `/api/dealers` (menús, vía `team7/agentes/menus.py`) | lo que venden y compran a precio de lista (se regatea: es el peor precio, no el final) |
 | **Valores** | `your_value` de `/api/me` (lo que perdemos al dar) y `GET /api/me/value` (una copia más) | todo se valora con el juego. La calculadora solo decide a qué cartas preguntar, para no gastar llamadas |
 
 ## 2. La fórmula: ¿ganamos puntos? (siempre)

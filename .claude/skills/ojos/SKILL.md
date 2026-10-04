@@ -9,18 +9,18 @@ Los Ojos **ven** todo (/api/me, /api/feed, /api/me/offers, tablón), **validan**
 (su ficha: valor que entra y sale, comisión de El Rastro, reserva de caja, protegidas, margen del equipo, y el
 your_value del juego cuando lo hay) y **proponen** las que pasan. Solo proponen: nunca abren, ofrecen ni aceptan
 nada, y no pasan por el Escudo ni por el Guardia. El código es
-`cadena/t7/ojos.py` (`leer()` y `mirar()`); el programa que mira cada tick es `cadena/ojos.py`.
+`team7/agentes/ojos.py` (`leer()` y `mirar()`); el programa que mira cada tick es `team7/programas/ojos.py`.
 
 ## 1. Mirar
 
-1. **Si los Ojos están en marcha**, no hace falta llamar al juego: lee `cadena/runs/ojos.json` (la última vista, con
+1. **Si los Ojos están en marcha**, no hace falta llamar al juego: lee `team7/runs/ojos.json` (la última vista, con
    su `tick` y su `hora`). Se reescribe cada 12 s: si la hora tiene menos de 1 minuto, úsala.
 2. **Si no están en marcha o la vista es vieja**, una mirada (es una llamada al servidor, solo GET; invocar esta skill
    cuenta como pedirla, por la regla 1 de `CLAUDE.md`):
    ```bash
-   cd cadena && python ojos.py --ticks 1
+   cd team7 && python programas/ojos.py --ticks 1
    ```
-   Escribe la vista en `cadena/runs/ojos.json`.
+   Escribe la vista en `team7/runs/ojos.json`.
 
 Nunca muestres claves: `/api/me` ya llega tapado (`starter_broker_key` → `<OCULTA>`). No llames al SDK a mano para
 imprimir `/api/me`.
@@ -46,10 +46,10 @@ Las propuestas son propuestas, no órdenes: **nada de comprar, vender ni aceptar
 
 ## 3. Lanzar y parar (como duelos.py)
 
-- Lanzar sin parar (solo si el usuario lo pide): `cd cadena && python ojos.py` en segundo plano, con `BAZAAR_KEY` en
+- Lanzar sin parar (solo si el usuario lo pide): `cd team7 && python programas/ojos.py` en segundo plano, con `BAZAAR_KEY` en
   el entorno. Hace unas 5 lecturas cada 12 s, muy por debajo del límite (5 por segundo). No lleva candado: puede ir a la
   vez que `duelos.py` y `jugar.py`.
-- En su propia ventana: `cadena\lanzar-ojos.ps1` (mira cada 12 s, y cada mirada escribe su propuesta y las oportunidades; `-Segundos N` para cambiarlo, `-Ticks N` para
+- En su propia ventana: `team7\lanzadores\ojos.ps1` (mira cada 12 s, y cada mirada escribe su propuesta y las oportunidades; `-Segundos N` para cambiarlo, `-Ticks N` para
   parar tras N miradas).
-- Parar: Ctrl + C, o crear `cadena/runs/STOP` (ojo: STOP es de todo el equipo: con él duelos.py y jugar.py también dejan de firmar).
-- Registros: `cadena/runs/ojos.json` (última vista) y `cadena/runs/ojos.jsonl` (una línea por mirada).
+- Parar: Ctrl + C, o crear `team7/runs/STOP` (ojo: STOP es de todo el equipo: con él duelos.py y jugar.py también dejan de firmar).
+- Registros: `team7/runs/ojos.json` (última vista) y `team7/runs/ojos.jsonl` (una línea por mirada).
