@@ -47,8 +47,8 @@ for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) n
         _salida.reconfigure(errors="replace")
 
 RUNS = os.path.join(AQUI, "runs")
-RASTRO_CADA = 3          # El Rastro se lee un tick de cada tres: no gastar peticiones al juego
-CALENDARIO_CADA = 20     # vendedores, calendario y catálogo cada 20 ticks
+RASTRO_CADA = 1          # El Rastro, los otros mercados, nuestras ofertas y el feed: en cada tick, siempre datos nuevos
+CALENDARIO_CADA = 20     # calendario y catálogo cada 20 ticks (no dan precios); vendedores y comisiones, en cada tick
 MAX_HILOS = 6            # conversaciones con vendedores abiertas a la vez (una por vendedor)
 VALORES_POR_TICK = 10    # preguntas nuevas a /api/me/value por tick (el tick dura 15 s): lo demás, al tick siguiente
 MUDO_MAX = 4             # ticks seguidos sin entender la oferta de una conversación abierta antes de soltarla
@@ -176,6 +176,7 @@ def vendedores_nuevos(b, est, menus):
     try:
         res = b.dealers()
     except Exception as e:
+        est.pop("menus_juego", None)                             # sin dato nuevo no se usa el de antes
         _linea("errores.jsonl", {"vendedores": str(e)})
         return []
     lista = (res.get("dealers") or res.get("in_play") or res.get("personas") or []) if isinstance(res, dict) else res
@@ -207,13 +208,17 @@ def menus_de_ahora(est, menus):
     return out
 
 
-def leer_calendario(b, est):
-    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y los Ojos (t7/cadena.py, ojear).
-    Y las comisiones reales de cada mercado (/api/venues), para elegir dónde vender."""
+def leer_comisiones(b, est):
+    """Las comisiones reales de cada mercado (/api/venues), en cada tick, para elegir dónde vender."""
     try:
         est["comisiones"] = ojos.comisiones(b.venues())
     except Exception as e:
+        est.pop("comisiones", None)                              # sin dato nuevo: se cuenta la de El Rastro, de más
         _linea("errores.jsonl", {"venues": str(e)})
+
+
+def leer_calendario(b, est):
+    """Calendario y catálogo del juego (solo GET), tal cual, para la cadena: El Guion y los Ojos (t7/cadena.py, ojear)."""
     try:
         cal = b.schedule()
         if isinstance(cal, dict) and isinstance(cal.get("now_hours"), (int, float)):
@@ -866,7 +871,7 @@ def leer(b, est, tick, con_tablon=True):
             _linea("rastro-crudo.jsonl", {"tick": tick, "tablon": lectura["tablon"][:20]})
         except Exception as e:
             _linea("errores.jsonl", {"tick": tick, "rastro": str(e)})
-        if isinstance(tick, int) and tick % (2 * RASTRO_CADA) == 0:   # el feed público: tratos hechos, para los Ojos
+        if isinstance(tick, int) and tick % RASTRO_CADA == 0:   # el feed público: tratos hechos, para los Ojos
             try:
                 lectura["feed"] = b.feed(limit=100)
             except Exception as e:
@@ -987,8 +992,9 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         _preguntas["quedan"] = VALORES_POR_TICK
         menus = _json(os.path.join(AQUI, "menus.json"), None)
         dia = time.strftime("%Y-%m-%d")
+        vendedores_nuevos(b, est, menus)                         # menús y niveles de ahora: en cada tick
+        leer_comisiones(b, est)
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
-            vendedores_nuevos(b, est, menus)
             leer_calendario(b, est)
         menus = menus_de_ahora(est, menus)                       # lo que da el juego manda sobre menus.json
         if primero:
