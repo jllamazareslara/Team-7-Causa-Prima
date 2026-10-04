@@ -7,11 +7,45 @@
     para_duelo(d)           → los números de la Duelista antes de decidir: nuestro límite y lo que daría aceptar ya
     ganancia_duelo(...)     → lo que nos da un duelo a ese precio, calculado aquí y no por la Duelista
 El Regateador negocia con sus números; el Guardia decide con su ficha.
+
+Valores reales: jugando de verdad (jugar.py llama a `conectar`), la Contable usa SOLO el your_value del juego:
+    nos_quita(carta)   lo que el juego nos quita al dar una copia (/api/me, se relee cada tick)
+    nos_suma(carta)    lo que el juego nos suma con una copia más (/api/me/value, se pregunta una vez mientras no
+                       cambien nuestras cartas)
+Si el juego no da el valor de una carta, no hay número y no se opera con ella: nunca se cae a la calculadora.
+Sin conectar (simulador, pruebas) no hay juego al que preguntar y se usa la calculadora (`valor.py`).
 """
 import math
 
 from . import duelo
 from . import valor as V
+
+_JUEGO = {"pedir": None}       # carta → your_value de una copia más (None si el juego no responde). Lo pone jugar.py
+
+
+def conectar(pedir):
+    """Desde aquí, solo valores del juego. pedir(carta) → your_value de /api/me/value o None. None desconecta."""
+    _JUEGO["pedir"] = pedir
+
+
+def conectada():
+    return _JUEGO["pedir"] is not None
+
+
+def nos_suma(carta, cuenta, mult=None):
+    """Lo que nos suma recibir una copia más. Conectada: el your_value del juego, o None si no lo da."""
+    if not conectada():
+        return V.valor_recibir(cuenta, [carta], mult or V.NUESTROS_MULT)
+    if carta not in V.VALOR_RECIBIR:
+        _JUEGO["pedir"](carta)
+    return V.VALOR_RECIBIR.get(carta)
+
+
+def nos_quita(carta, cuenta, mult=None):
+    """Lo que nos quita dar una copia (None si no la tenemos). Conectada: el your_value del juego, o None si no lo da."""
+    if not conectada():
+        return V.valor_entregar(cuenta, [carta], mult or V.NUESTROS_MULT)
+    return V.VALOR_DAR.get(carta) if cuenta.get(carta, 0) > 0 else None
 
 
 def para_completar(carta, ordenes):
@@ -29,40 +63,84 @@ def caja_para_comprar(carta, cuenta, efectivo, p, ordenes):
     return min(libre, tope)
 
 
+def nos_quitan(cartas, cuenta):
+    """Lo que nos quita dar estas cartas. Conectada: la suma de sus your_value; None si falta alguno, si no las
+    tenemos o si va dos veces la misma (el juego solo da el valor de la copia que menos vale)."""
+    if not conectada():
+        return V.valor_entregar(cuenta, cartas)
+    if len(set(cartas)) < len(cartas):
+        return None
+    vals = [nos_quita(r, cuenta) for r in cartas]
+    return None if None in vals else sum(vals)
+
+
 def limite_vendedor(lado, carta, cuenta):
     """Nuestro tope (comprando) o suelo (vendiendo) para esa carta, con el bono de página incluido.
-    Si el juego ya nos ha dicho su your_value (/api/me, /api/me/value), gana el más prudente de los dos:
-    nunca pagar más de lo que el juego nos suma ni vender por menos de lo que nos quita."""
+    Conectada: solo el your_value del juego (None si no lo da). Sin conectar: la calculadora y, si ya tenemos el
+    your_value, gana el más prudente: nunca pagar más de lo que nos suma ni vender por menos de lo que nos quita."""
     if lado == "compra":
-        tope = math.floor(V.valor_recibir(cuenta, [carta]))
-        juego = V.VALOR_RECIBIR.get(carta)
-        return tope if juego is None else min(tope, math.floor(juego))
-    perdida = V.valor_entregar(cuenta, [carta])
-    juego = V.VALOR_DAR.get(carta)
-    if juego is not None:
-        perdida = juego if perdida is None else max(perdida, juego)
-    return None if perdida is None else math.ceil(perdida + 1)
+        vals = [nos_suma(carta, cuenta)] if conectada() else [V.valor_recibir(cuenta, [carta]), V.VALOR_RECIBIR.get(carta)]
+        vals = [v for v in vals if v is not None]
+        return math.floor(min(vals)) if vals else None
+    vals = [nos_quita(carta, cuenta)] if conectada() else [V.valor_entregar(cuenta, [carta]), V.VALOR_DAR.get(carta)]
+    vals = [v for v in vals if v is not None]
+    return math.ceil(max(vals) + 1) if vals else None
 
 
 def para_vendedor(c, cuenta, efectivo, p, ordenes):
-    """{"conocida", "nos_vale", "limite", "protegida", "caja"}. Sin carta conocida no se calcula nada más."""
+    """{"conocida", "nos_vale", "limite", "protegida", "caja", "motivo"}. Sin carta conocida no se calcula nada más.
+    Conectada y sin your_value del juego para la carta, cuenta como no conocida: no se negocia a ciegas."""
     carta, lado = c.get("carta"), c.get("lado")
+    nada = {"conocida": False, "nos_vale": None, "limite": None, "protegida": False, "caja": None}
     if not isinstance(carta, str) or not V.conocida(carta):
-        return {"conocida": False, "nos_vale": None, "limite": None, "protegida": False, "caja": None}
+        return dict(nada, motivo="no sabemos cuánto nos vale (barrio o código nuevo)")
     if lado == "compra":
-        nos_vale = V.VALOR_RECIBIR.get(carta, V.valor_recibir(cuenta, [carta]))
+        nos_vale = nos_suma(carta, cuenta) if conectada() else V.VALOR_RECIBIR.get(carta, V.valor_recibir(cuenta, [carta]))
     else:
-        nos_vale = V.VALOR_DAR.get(carta, V.valor_entregar(cuenta, [carta]))
-    return {"conocida": True, "nos_vale": nos_vale, "limite": limite_vendedor(lado, carta, cuenta),
+        nos_vale = nos_quita(carta, cuenta) if conectada() else V.VALOR_DAR.get(carta, V.valor_entregar(cuenta, [carta]))
+    if conectada() and nos_vale is None and (lado == "compra" or cuenta.get(carta, 0) > 0):
+        return dict(nada, motivo="el juego no nos ha dado su valor (your_value)")
+    return {"conocida": True, "motivo": None, "nos_vale": nos_vale, "limite": limite_vendedor(lado, carta, cuenta),
             "protegida": lado == "venta" and V.protegida(cuenta, carta),
             "caja": caja_para_comprar(carta, cuenta, efectivo, p, ordenes) if lado == "compra" else None}
 
 
 def ficha(propuesta, cuenta, efectivo, p=None, mult=None, reserva=None):
-    """La ficha de la calculadora para el Guardia y para el Cambista. La reserva sale de `p` si no se da."""
+    """La ficha para el Guardia y para el Cambista. La reserva sale de `p` si no se da.
+    Conectada: lo que entra y lo que sale se valora con el your_value del juego, carta a carta; si falta el de una,
+    la ficha lleva un bloqueo y no renta. La calculadora solo pone las comprobaciones (reserva, efectivo, protegidas,
+    páginas) y queda apuntada en "calculado" para comparar."""
     if reserva is None:
         reserva = p["guardia.reserva_efectivo"] if p else 0
-    return V.evaluar(propuesta, cuenta, efectivo, mult or V.NUESTROS_MULT, reserva)
+    ev = V.evaluar(propuesta, cuenta, efectivo, mult or V.NUESTROS_MULT, reserva)
+    return _con_el_juego(ev, propuesta, cuenta) if conectada() else ev
+
+
+def _con_el_juego(ev, propuesta, cuenta):
+    rec, ent = propuesta.get("recibo", {}), propuesta.get("entrego", {})
+    rc, ec = rec.get("cartas") or [], ent.get("cartas") or []
+    bloqueos = list(ev["bloqueos"])
+    for lado, refs in (("recibimos", rc), ("damos", ec)):
+        if len(set(refs)) < len(refs):
+            bloqueos.append(f"{lado} dos copias de la misma carta: el juego solo da el valor de una")
+    v_rc, v_ec, sin = 0.0, 0.0, []
+    for r in rc:
+        v = nos_suma(r, cuenta)
+        sin += [] if v is not None else [r]
+        v_rc += v or 0.0
+    for r in ec:
+        v = nos_quita(r, cuenta)
+        sin += [] if v is not None else [r]
+        v_ec += v or 0.0
+    if sin:
+        bloqueos.append("sin valor del juego (your_value) para " + ", ".join(sin))
+    v_rec = v_rc + (rec.get("primas") or 0)
+    v_ent = v_ec + (ent.get("primas") or 0)
+    neto = v_rec - v_ent - ev["comision"]
+    return dict(ev, recibo=round(v_rec, 2), entrego=round(v_ent, 2), neto=round(neto, 2),
+                renta=neto > 0 and not bloqueos, bloqueos=bloqueos, cartas_recibo=round(v_rc, 2),
+                cartas_entrego=round(v_ec, 2), fuente="juego",
+                calculado={"recibo": ev["recibo"], "entrego": ev["entrego"], "neto": ev["neto"]})
 
 
 def para_duelo(d):

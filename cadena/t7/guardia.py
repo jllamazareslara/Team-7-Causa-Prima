@@ -8,7 +8,9 @@ Seis comprobaciones; si falla una, no se firma. Nadie tiene que aprobar: si pasa
                                  una de duelo por tick — tienen cupos independientes (confirmado por Causa Prima:
                                  "duel messages and accepts have their own limits: they never block your trading")
     3. estructura entendida      un campo desconocido en la oferta = no
-    4. la oferta no ha cambiado  el precio del juego es el que el agente miró
+    4. la oferta no ha cambiado  la oferta del juego es la que el agente miró: las mismas cartas en cada lado (por su
+                                 código, también "card:X") y el mismo dinero del mismo lado. Vale para El Rastro y para
+                                 los vendedores (un vendedor que habla de RET-09 y ofrece RET-08 no se firma)
     5. buen negocio              mirando el valor de las cartas, sin romper nada: reserva de efectivo intacta,
                                  categoría no apagada, y dentro del tope por trato cuando la caja está justa
     6. según el juego            el buen negocio repetido con el your_value del juego (/api/me, /api/me/value)
@@ -35,6 +37,43 @@ def estructura_valida(oferta):
         if "cash" in d and (not isinstance(d["cash"], (int, float)) or d["cash"] < 0):
             return False
     return True
+
+
+def _refs(lado):
+    """Las cartas de un lado de la oferta del juego, por su código y ordenadas. None si trae algo que no es una carta
+    que sepamos leer (assets sin ref, types que no son "card:X")."""
+    refs = []
+    for a in lado.get("assets") or []:
+        if not (isinstance(a, dict) and isinstance(a.get("ref"), str)):
+            return None
+        refs.append(a["ref"])
+    for t in lado.get("types") or []:
+        if not (isinstance(t, str) and t.startswith("card:")):
+            return None
+        refs.append(t.split(":", 1)[1])
+    for r in lado.get("cards") or []:
+        if not isinstance(r, str):
+            return None
+        refs.append(r)
+    return sorted(refs)
+
+
+def coincide(propuesta, oferta_juego):
+    """4. ¿La oferta del juego es lo que el agente cree que firma? None = sí; si no, el motivo.
+    give = lo que nos dan (recibo), want = lo que nos piden (entrego): cartas y dinero, cada uno en su lado."""
+    give, want = oferta_juego.get("give") or {}, oferta_juego.get("want") or {}
+    rec, ent = propuesta.get("recibo") or {}, propuesta.get("entrego") or {}
+    for que, juego, cree in (("nos da", give, rec), ("nos pide", want, ent)):
+        cartas = _refs(juego)
+        if cartas is None:
+            return f"la oferta del juego {que} algo que no sabemos leer"
+        if cartas != sorted(cree.get("cartas") or []):
+            return (f"la oferta cambió: el juego {que} {', '.join(cartas) or 'ninguna carta'}, "
+                    f"el agente creía {', '.join(cree.get('cartas') or []) or 'ninguna carta'}")
+        dinero, creia = juego.get("cash") or 0, cree.get("primas") or 0
+        if abs(dinero - creia) > 0.5:
+            return f"la oferta cambió: el juego {que} {dinero} P, el agente creía {creia} P"
+    return None
 
 
 def exigido_por_valor(ev, p):
@@ -99,10 +138,9 @@ def revisar(propuesta, oferta_juego, cuenta, efectivo, p, ya_firmado_este_tick=F
     if oferta_juego is not None:
         if not estructura_valida(oferta_juego):
             return False, "la oferta del juego trae algo que no entendemos", ev, "bloqueo"
-        precio_juego = oferta_juego.get("want", {}).get("cash") or oferta_juego.get("give", {}).get("cash") or 0
-        precio_prop = (propuesta.get("entrego", {}).get("primas") or propuesta.get("recibo", {}).get("primas") or 0)
-        if abs(precio_juego - precio_prop) > 0.5:
-            return False, f"la oferta cambió: el juego dice {precio_juego}, el agente creía {precio_prop}", ev, "bloqueo"
+        distinta = coincide(propuesta, oferta_juego)
+        if distinta:
+            return False, distinta, ev, "bloqueo"
     cat = propuesta.get("categoria", propuesta.get("tipo", ""))
     if (forzar or {}).get(cat) == "apagado":
         return False, f"categoría {cat} apagada", ev, "bloqueo"

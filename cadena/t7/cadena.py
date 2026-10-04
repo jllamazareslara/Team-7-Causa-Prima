@@ -271,7 +271,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             return
         if not cuentas["conocida"]:                          # conocer el valor antes de comprar: sin dato, no se opera
             cerrar.append({"destino": "vendedor", "id": c["id"], "motivo": "carta sin valor conocido"})
-            apunta("TIENDA", f"{quien} · {c['carta']}: no sabemos cuánto nos vale (barrio o código nuevo), se cierra")
+            apunta("TIENDA", f"{quien} · {c['carta']}: {cuentas.get('motivo') or 'no sabemos cuánto nos vale'}, se cierra")
             return
         suya = c["suyas"][-1]
         pista = sondas.pista_suelo(texto, suya, c["lado"]) if es_nuevo else None
@@ -326,7 +326,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         elif accion == "aceptar":
             cola.append({"tipo": "final_vendedor" if st["final"] else "vendedor", "urgente": st["final"],
                          "destino": "vendedor", "id": c["id"], "oferta_id": c.get("oferta_id"), "precio": suya,
-                         "propuesta": _propuesta_vendedor(c, suya), "vendedor": quien, "apertura": c["suyas"][0]})
+                         "propuesta": _propuesta_vendedor(c, suya), "vendedor": quien, "apertura": c["suyas"][0],
+                         "oferta_juego": c.get("oferta_juego")})   # la oferta tal como la da el juego: el Guardia mira la carta
         else:
             firme = mem.escudo.firme(quien)
             usadas = mem.sondas.setdefault(hilo, [])
@@ -448,7 +449,7 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             if compra:                                   # el Ojeador decide CUÁNDO: ya, o esperar a que baje
                 ref = prop["recibo"]["cartas"][0]
                 ya, porque = ojeador.comprar_ahora(
-                    ref, prop["entrego"]["primas"], V.valor_recibir(cuenta, [ref]),
+                    ref, prop["entrego"]["primas"], o["ficha"]["cartas_recibo"],     # lo que nos suma, de la Contable
                     ojeador.tendencia(pasado, ref, t if isinstance(t, (int, float)) else 0), mom,
                     esc.get(ref), completa=V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref])
                 if not ya:
@@ -474,12 +475,14 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
         (duelo, o tienda/equipo), el Guardia dice que no; una firma de la otra categoría no cuenta."""
         categoria = "duelo" if o["tipo"] == "duelo" else "tienda"
         ya_firmado = firmado[categoria] is not None
+        revisar = None
         if o["tipo"] == "duelo":
             gan = contable.ganancia_duelo(o["rol"], o["limite"], o["precio"])
             apunta("CONTABLE", f"duelo {o['id']} · {o['rol']} · límite {o['limite']} · precio {o['precio']} · gana {gan:+.0f}")
             ok, motivo = guardia.revisar_duelo(gan, ya_firmado, stop, forzar)
             ev = None
         else:
+            revisar = {}
             recibo = (o["propuesta"].get("recibo") or {}).get("cartas") or []
             completar = bool(recibo) and not (o["propuesta"].get("entrego") or {}).get("cartas") and \
                 o["tipo"] in ("vendedor", "final_vendedor") and all(contable.para_completar(r, ordenes) for r in recibo)
@@ -488,8 +491,9 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
             apunta("CONTABLE", f"{o['destino']} {o['id']} · recibo {ev['recibo']:.1f} · entrego {ev['entrego']:.1f} · "
                                f"comisión {ev['comision']} · neto {ev['neto']:+.1f}")
             ok, motivo, ev, _ = guardia.revisar(o["propuesta"], o.get("oferta_juego"), cuenta, efectivo, p,
-                                                ya_firmado_este_tick=firma is not None, stop=stop, forzar=forzar,
+                                                ya_firmado_este_tick=ya_firmado, stop=stop, forzar=forzar,
                                                 tope_por_trato=tope, ev=ev, para_completar=completar)
+            revisar = {"tope_por_trato": tope, "para_completar": completar, "forzar": forzar}
         apunta("GUARDIA", f"{o['destino']} {o['id']} · {'FIRMA' if ok else 'no firma'} · {motivo}")
         if not ok:
             return
@@ -498,6 +502,8 @@ def tick(lectura, mem, p=None, forzar=None, ordenes=None, stop=False):
                                                                "dia": lectura.get("dia")})
         firmado[categoria] = {"destino": o["destino"], "id": o["id"], "oferta_id": o.get("oferta_id"),
                               "precio": o.get("precio"), "motivo": motivo, "ficha": ev}
+        if o["destino"] == "vendedor":                  # jugar.py lo vuelve a pasar por el Guardia justo antes de aceptar
+            firmado[categoria].update(propuesta=o["propuesta"], revisar=revisar)
 
     for o in sorted(cola, key=prioridad.clave):        # el orden dentro de cada categoría vive en prioridad.py
         aislado(paso_firma, o, "firma")                 # un error al revisar una propuesta nunca firma nada
@@ -617,7 +623,9 @@ def cola_de_operaciones(cuenta, efectivo, menus, ordenes=None, abiertas=(), trat
                     continue                              # se espera a que las ventas llenen la caja
             if not tienda.caja_llega(efectivo - ordenes.get("reserva", 0), lista):
                 continue                                  # la caja no llega a su precio: no se abre (ni se le cansa)
-            vale = V.valor_recibir(cuenta, [ref])
+            vale = contable.nos_suma(ref, cuenta)        # jugando: el your_value del juego
+            if vale is None:
+                continue                                  # sin valor del juego no se abre
             completa = V.estado_pagina(cuenta, V.barrio(ref))[1] == [ref]
             if objetivo and completa and ordenes.get("cerrar_en_rastro"):
                 continue                                  # la que cierra la página, de otro equipo: el salto de valor puntúa

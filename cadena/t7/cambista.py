@@ -38,7 +38,7 @@ def vendibles(cuenta, mult=V.NUESTROS_MULT):
     for ref, n in cuenta.items():
         if n <= 0 or V.protegida(cuenta, ref, mult):
             continue
-        perdida = V.valor_entregar(cuenta, [ref], mult)
+        perdida = contable.nos_quita(ref, cuenta, mult)
         if perdida is not None:
             out.append((ref, round(perdida, 2)))
     return sorted(out, key=lambda x: x[1])
@@ -98,7 +98,9 @@ def oportunidades(tablon, cuenta, efectivo, mult=V.NUESTROS_MULT, reserva=0, p=N
 def peticion(ref, cuenta, mult=V.NUESTROS_MULT, fraccion=0.35):
     """Cuánto ofrecer de entrada por una carta que nos falta: una fracción (ancla) de lo que nos vale DE VERDAD,
     bono de página incluido. Se sube poco a poco hasta como mucho el 70 %."""
-    v = V.valor_recibir(cuenta, [ref], mult)
+    v = contable.nos_suma(ref, cuenta, mult)
+    if v is None:
+        return None
     return {"carta": ref, "nos_vale": round(v, 1), "apertura": math.floor(v * fraccion), "tope": math.floor(v * 0.70)}
 
 
@@ -214,7 +216,9 @@ def lista_compra(cuenta, efectivo, p, mult=None, mercado=None, listas=None, paga
         reparte = 0 < len(faltan) <= p["cambista.bono_si_faltan"]
         suma_faltan = sum(propio.get(r, 0) for r in faltan) or 1
         for ref in candidatas:
-            nos_vale = V.valor_recibir(cuenta, [ref], mult)
+            nos_vale = contable.nos_suma(ref, cuenta, mult)     # jugando: el your_value del juego
+            if nos_vale is None:
+                continue
             completa = faltan == [ref]
             estrategico = nos_vale if completa or not reparte else nos_vale + bono * propio.get(ref, 0) / suma_faltan
             precio = precio_referencia(ref, mercado, listas)

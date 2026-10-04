@@ -39,7 +39,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "bazaar-kit"))
 
-from t7 import cadena, cambista, candado, contable, ojeador, situacion  # noqa: E402
+from t7 import cadena, cambista, candado, contable, guardia, ojeador, params, situacion  # noqa: E402
 from t7 import valor as V  # noqa: E402
 
 for _salida in (sys.stdout, sys.stderr):     # una consola de Windows (cp1252) no sabe escribir "→": que no pare el programa
@@ -124,6 +124,11 @@ def _oferta_del_otro(hilo, nosotros):
     return None
 
 
+def _oferta_cruda(hilo, oferta_id):
+    """La oferta tal como la da el juego (give / want, con sus cartas), para que el Guardia compare la carta y el dinero."""
+    return next((o for o in hilo.get("standing_offers") or [] if o.get("id") == oferta_id), None)
+
+
 def _ultimo_texto(hilo, nosotros):
     for m in reversed(hilo.get("messages") or []):
         autor = m.get("from", m.get("sender", m.get("author")))
@@ -140,7 +145,9 @@ def _cartas(me):
 
 def preparar(b):
     """Antes del primer tick: nuestros multiplicadores y las rarezas, leídos del juego en vez de supuestos.
-    Si algo falla o no se entiende, se sigue con los supuestos y se dice."""
+    Si algo falla o no se entiende, se sigue con los supuestos y se dice.
+    Y conecta la Contable al juego: desde aquí todas las cuentas usan el your_value del juego, nunca la calculadora."""
+    contable.conectar(lambda carta: valor_de_compra(b, carta))
     try:
         me = b.me()
         catalogo = b.catalog()
@@ -479,7 +486,13 @@ def revisar_publicadas(b, me, est, p, tick, vivo):
         if aid not in cartas or tick - x["tick"] >= _dura(est):
             continue
         ref = x["ref"]
-        perdida = max(V.valor_entregar(cuenta, [ref]) or 0.0, V._your_value(cartas[aid]) or 0.0)
+        perdida = contable.nos_quita(ref, cuenta) if contable.conectada() else             max(V.valor_entregar(cuenta, [ref]) or 0.0, V._your_value(cartas[aid]) or 0.0)
+        if perdida is None:                                      # sin your_value del juego no se sabe si renta: se quita
+            if _cancelar(b, x.get("id") or (_oferta_de_la_carta(b, aid, cache) if vivo else None),
+                         f"anuncio {ref} a {x['precio']} P: el juego no da su valor", vivo):
+                ads.pop(aid)
+            fuera.append(("anuncio", ref))
+            continue
         suelo = V.suelo_venta_rastro(perdida, margen, x.get("pct", RASTRO["pct"]), x.get("por_carta", RASTRO["por_carta"]))
         if V.protegida(cuenta, ref) or x["precio"] < suelo:
             que = f"anuncio {ref} a {x['precio']} P: ahora nos quita {perdida:.1f} (suelo {suelo} P)"
@@ -491,10 +504,11 @@ def revisar_publicadas(b, me, est, p, tick, vivo):
     for ref, x in list(pets.items()):
         if tick - x["tick"] >= dura or cuenta.get(ref, 0) > 0:    # caducada, o ya es nuestra (eso lo hace pedir())
             continue
-        nos_vale = V.valor_recibir(cuenta, [ref])
+        nos_vale = contable.nos_suma(ref, cuenta)
         coste = x["precio"] + V.comision_rastro(x["precio"], 1)
-        if coste >= nos_vale:
-            if _cancelar(b, x.get("id"), f"petición {ref} a {x['precio']} P: ahora nos suma {nos_vale:.1f}", vivo):
+        if nos_vale is None or coste >= nos_vale:                # sin valor del juego tampoco se deja publicada
+            que = "el juego no da su valor" if nos_vale is None else f"ahora nos suma {nos_vale:.1f}"
+            if _cancelar(b, x.get("id"), f"petición {ref} a {x['precio']} P: {que}", vivo):
                 pets.pop(ref)
             fuera.append(("peticion", ref))
 
@@ -502,8 +516,8 @@ def revisar_publicadas(b, me, est, p, tick, vivo):
     for ref, x in list(trus.items()):
         if tick - x["tick"] >= dura or any(str(i) not in cartas for i in x.get("ids", [])):
             continue
-        perdida = V.valor_entregar(cuenta, x["doy"])
-        gana = None if perdida is None else V.valor_recibir(cuenta, [ref]) - perdida - V.comision_rastro(0, len(x["doy"]))
+        perdida, suma = contable.nos_quitan(x["doy"], cuenta), contable.nos_suma(ref, cuenta)
+        gana = None if perdida is None or suma is None else suma - perdida - V.comision_rastro(0, len(x["doy"]))
         if gana is None or gana <= 0 or any(V.protegida(cuenta, r) for r in x["doy"]):
             que = f"cambio {' + '.join(x['doy'])} por {ref}: ya no renta ({'—' if gana is None else f'{gana:+.1f}'})"
             if _cancelar(b, x.get("id"), que, vivo):
@@ -738,7 +752,8 @@ def leer(b, est, tick, con_tablon=True):
             valor_de_compra(b, h["carta"])
         lectura["vendedores"].append({"id": int(hid), "vendedor": h["vendedor"], "lado": h["lado"], "carta": h["carta"],
                                       "suyas": list(h["suyas"]), "nuestras": list(h["nuestras"]), "final": final,
-                                      "oferta_id": oid, "texto": _ultimo_texto(crudo, nosotros), "lista": h.get("lista")})
+                                      "oferta_id": oid, "oferta_juego": _oferta_cruda(crudo, oid),
+                                      "texto": _ultimo_texto(crudo, nosotros), "lista": h.get("lista")})
 
     if con_tablon:                                               # el Cambista: El Rastro
         try:
@@ -811,7 +826,37 @@ def limpiar_hilos(b, est, vivo):
     return sueltas
 
 
-def aplicar(b, acciones, est, lectura, me, vivo):
+def confirmar_vendedor(b, f, lectura, p):
+    """Siempre, justo antes de aceptar a un vendedor: relee la conversación (GET /api/threads/{id}) y pregunta al juego
+    GET /api/me/value, sin caché, por cada carta que da la oferta tal como está ahora. Con eso el Guardia revisa otra vez
+    el trato (mismas cartas, mismo dinero, sigue rentando). None = se puede aceptar; si no, el motivo.
+    Solo lee: también corre en seco."""
+    prop = f.get("propuesta")
+    if not prop:
+        return "la firma no trae la propuesta: no se puede comprobar"
+    try:
+        hilo = b.thread(int(f["id"]))
+    except Exception as e:
+        return f"no se pudo releer la conversación ({e})"
+    if hilo.get("status") not in (None, "open"):
+        return f"la conversación ya está {hilo.get('status')}"
+    oferta = _oferta_cruda(hilo, f["oferta_id"])
+    if oferta is None or oferta.get("status") not in (None, "open", "standing"):
+        return "la oferta ya no está en pie"
+    for carta in guardia._refs(oferta.get("give") or {}) or []:
+        V.VALOR_RECIBIR.pop(carta, None)                         # lo guardado no vale: se pregunta otra vez
+        try:
+            V.valores_del_juego(recibir={carta: b.value(carta)})
+        except Exception as e:
+            _linea("errores.jsonl", {"valor": carta, "error": str(e)})
+        if carta not in V.VALOR_RECIBIR:
+            return f"el juego no da el valor de {carta} (/api/me/value)"
+    ok, motivo, _, _ = guardia.revisar(prop, oferta, lectura.get("cuenta", {}), lectura.get("efectivo", 0),
+                                       p or params.cargar(), **(f.get("revisar") or {}))
+    return None if ok else motivo
+
+
+def aplicar(b, acciones, est, lectura, me, vivo, p=None):
     """Manda los precios del Regateador, cierra lo que toca y aplica la ÚNICA firma del tick (vendedor o El Rastro).
     En seco solo lo escribe. Los duelos no los juega este programa."""
     hilos = est.setdefault("hilos", {})
@@ -844,6 +889,11 @@ def aplicar(b, acciones, est, lectura, me, vivo):
     if f["destino"] == "rastro":
         return aceptar(b, f, lectura.get("tablon"), me, est, vivo)
     if f["destino"] == "vendedor" and f.get("oferta_id") is not None:
+        pega = confirmar_vendedor(b, f, lectura, p)
+        if pega:
+            print(f"NO FIRMA     vendedor · conversación {f['id']} · al releerla: {pega}")
+            _linea("errores.jsonl", {"no_firma": f["id"], "oferta_id": f["oferta_id"], "motivo": pega})
+            return None
         print(f"FIRMA        vendedor · conversación {f['id']} · {f.get('motivo', '')}" + ("" if vivo else " · en seco: no se acepta"))
         if vivo:
             try:
@@ -880,7 +930,7 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         for linea in acciones["diario"]:
             print(linea)
             _linea("diario.jsonl", {"linea": linea, "vivo": vivo})
-        aplicar(b, acciones, est, lectura, me, vivo)
+        aplicar(b, acciones, est, lectura, me, vivo, plan["p"])
         soltar_mudos(b, est, lectura, vivo)
         if stop and not est.get("todo_cancelado"):               # STOP: no dejar nada vivo en El Rastro
             cancelar_todo(b, est, vivo, "STOP")

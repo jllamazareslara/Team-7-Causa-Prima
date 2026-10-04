@@ -63,12 +63,14 @@ class Candado(unittest.TestCase):
 
 
 class Hoy(unittest.TestCase):
-    def test_hoy_solo_vender(self):
-        """Decisión del equipo (3/10, tarde): sin compras a vendedores, pero en El Rastro se piden las cartas de RET,
-        y la que cierra la página se busca en otro equipo."""
+    def test_hoy_compra_y_vende_agresivo(self):
+        """Decisión del equipo (4/10): el Guardia compra y vende (sin solo_vender), con perfil agresivo:
+        reserva 30, márgenes del 5 % y protegidas a 1,2 ×."""
         pl = situacion.plan({"efectivo": 300, "cuenta": {}})
-        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, 1, "ninguna"))
-        self.assertTrue(pl["ordenes"]["pedir_completar"] and pl["ordenes"]["cerrar_en_rastro"])
+        self.assertEqual((pl["p"]["rastro.publicar"], pl["p"]["cambista.pedir"], pl["ordenes"]["compras"]), (1, 1, "todas"))
+        self.assertEqual((pl["p"]["guardia.reserva_efectivo"], pl["p"]["guardia.margen_compra"], pl["p"]["guardia.margen_venta"],
+                          pl["p"]["guardia.protegida_factor"]), (30, 0.05, 0.05, 1.2))
+        self.assertTrue(pl["ordenes"]["cerrar_en_rastro"])
 
     def test_solo_vender_sin_completar_no_pide(self):
         pl = situacion.plan({"efectivo": 300, "cuenta": {}}, hoy={"solo_vender": True, "ajustes": {"cambista.pedir": 1}})
