@@ -44,8 +44,17 @@ def limite_rival_estimado(rol, rivales):
 
 def decidir(st, p):
     """st = {"rol": "seller"|"buyer", "limite": n, "rival": [sus precios], "nuestras": [...], "ronda": t, "rondas": T,
-             "limite_rival": n o None (memoria de escenario)}
-    Devuelve (acción, precio, motivo): "ofrecer" | "aceptar" | "esperar"."""
+             "limite_rival": n o None (memoria de escenario), "x": estado por ticks (solo en vivo, ver decidir_vivo)}
+    Devuelve (acción, precio, motivo): "ofrecer" | "aceptar" | "esperar".
+    Con st["x"] (lo pone duelos.py en vivo) decide la Duelista por ticks; sin él, la de rondas de siempre."""
+    if isinstance(st.get("x"), dict):
+        accion, precio, _, motivo = decidir_vivo(st, p)
+        return (accion, precio, motivo)
+    return _decidir_rondas(st, p)
+
+
+def _decidir_rondas(st, p):
+    """La Duelista de rondas (turnos alternos): la usan los simuladores antiguos y los duelos sin estado por ticks."""
     rol, lim = st["rol"], float(st["limite"])
     s = 1 if rol == "seller" else -1                   # signo de "más para nosotros"
     T = st.get("rondas") or p["duelo.rondas"]
@@ -113,15 +122,15 @@ def decidir(st, p):
 
 def k_dias(rol, peso, sentido):
     """El k del precio efectivo (precio + k × días), o None si el peso o su sentido no se entienden."""
-    if not isinstance(peso, (int, float)) or isinstance(peso, bool) or not isinstance(sentido, str):
+    if not isinstance(peso, (int, float)) or isinstance(peso, bool) or rol not in ("seller", "buyer"):
         return None
-    s = sentido.lower()
+    s = sentido.lower() if isinstance(sentido, str) else ""
     if "add" in s or "suma" in s or "añade" in s:
         signo = 1                                          # cada día nos da peso
     elif "cost" in s or "cuesta" in s:
         signo = -1                                         # cada día nos quita peso
     else:
-        return None
+        signo = 1 if rol == "seller" else -1               # texto nuevo: lo visto en los 21 duelos reales del 3/10
     return signo * peso * (1 if rol == "seller" else -1)
 
 
@@ -198,3 +207,240 @@ def dia_preferido_rival(sus_ofertas):
         return None
     dias = [d for _, d in sus_ofertas]
     return "tarde" if sum(dias) / len(dias) > 5 else "pronto" if sum(dias) / len(dias) < 5 else None
+
+
+# ---------- la Duelista por ticks (Duels III y la final): callar no cuesta ----------
+#
+# Medido en los 83 duelos terminados del 3/10 (datos/duelos-reales-03-10.json), sin una sola excepción:
+#     resultado = ganancia × (1 − decay)^rondas            rondas = min(mensajes nuestros, mensajes del rival)
+#     ganancia  = precio − coste + peso × días (vendiendo) · valor − precio − peso × días (comprando)
+# Lo que sale de ahí:
+#   1. Callar no encoge el trato. Si el rival manda diez ofertas y nosotros una, cuenta UNA ronda. Aceptar su oferta
+#      sin haber escrito nada no descuenta nada (duelos 5810 y 6088: 45,4 y 60,2 enteros).
+#   2. Repetir la misma oferta cada tick era lo que quemaba los puntos: "122?" quince veces mientras el rival subía
+#      solo (duelo 2440: 16 rondas, 10 P convertidos en 3,7). Nuestra oferta sigue en pie sin repetirla.
+#   3. Muchos rivales caminan solos hacia nosotros tick a tick y luego se plantan. Mientras caminan, se les deja venir.
+#   4. El juego deja UNA aceptación por equipo y tick: con cuatro duelos que acaban a la vez no se puede esperar todos
+#      al último tick (el 3/10 se escaparon así cinco tratos que estaban dentro del límite). Cada duelo tiene su turno.
+#
+# Qué hace, en orden:
+#   a. Oferta del rival dentro de nuestro límite: aceptar si el tiempo se acaba, si ya nos da lo que pedíamos o si
+#      el rival se ha plantado. Si sigue mejorando, callar y esperar (no cuesta). Plantado y con margen de tiempo,
+#      UNA contraoferta si compensa: cambiar el día cuando a nosotros nos importa claramente más, o pedir algo más
+#      cuando lo que ofrece es poco.
+#   b. Rival mudo: escuchar un tick y después bajar poco a poco cada tick (gratis: sin mensajes suyos no hay rondas),
+#      alternando el día cuando no está claro a quién le importa más.
+#   c. Rival que habla pero fuera de nuestro límite: si viene solo y llega a tiempo, callar. Si no, hablar pocas
+#      veces y en pasos grandes; al final, bajar cada tick hasta el margen mínimo.
+# Nunca ofrece ni acepta fuera del límite (todo va en precio efectivo: precio + k × días).
+
+def _aj(p, nombre, defecto):
+    """Un ajuste de parametros.json; si falta (archivo antiguo), el valor por defecto."""
+    v = p.get(nombre)
+    return defecto if v is None else v
+
+
+def _margenes(rol, lim, p):
+    """(margen inicial, margen mínimo): lo que pedimos de más sobre nuestro límite al abrir y al final."""
+    ancla = lim * p["duelo.apertura_vendedor"] if rol == "seller" else lim * p["duelo.apertura_comprador"]
+    m0 = max(abs(ancla - lim), 2.0)
+    mmin = max(float(_aj(p, "duelo.margen_minimo", 1.0)), p["duelo.cuota_minima"] * m0)
+    return m0, min(mmin, m0)
+
+
+def peso_rival(rol, x, p):
+    """Cuánto le importa cada día al rival. Si ha cambiado de día entre dos ofertas, lo que movió el precio por día;
+    si no, lo habitual en los duelos reales (vendedores ≈ 2,6 por día; compradores ≈ 3,6)."""
+    estimados = []
+    riv = x.get("riv") or []
+    for a, b in zip(riv, riv[1:]):
+        if all(isinstance(m[3], (int, float)) for m in (a, b)) and a[3] != b[3]:
+            estimados.append(abs((b[2] - a[2]) / (b[3] - a[3])))
+    if estimados:
+        estimados.sort()
+        return min(12.0, max(0.3, estimados[len(estimados) // 2]))
+    return float(_aj(p, "duelo.peso_rival_comprador", 3.6) if rol == "seller" else _aj(p, "duelo.peso_rival_vendedor", 2.6))
+
+
+def _dia(rol, lim, x, p, margen, n_riv):
+    """El día que acompaña a una oferta nuestra de `margen`. El día se le da a quien probablemente le importa más
+    (el precio compensa: nuestra ganancia es la misma). Vendiendo, nunca un día que obligue a escribir un precio
+    por debajo del coste."""
+    k = x.get("k")
+    if not x.get("dos") or not k:
+        return None
+    w, wr = abs(k), peso_rival(rol, x, p)
+    mio, suyo = (10, 0) if rol == "seller" else (0, 10)
+    if w >= 1.25 * wr:
+        dia = mio
+    elif w <= 0.8 * wr:
+        dia = suyo
+    elif n_riv == 0:                                        # rival mudo: los mensajes son gratis, se enseñan los dos
+        dia = mio if int(x.get("edad") or 0) % 2 else suyo
+    elif int(_aj(p, "duelo.dia_en_duda", 0)):               # en duda: pedimos nuestro día
+        dia = mio
+    else:                                                   # en duda: el día que propone él
+        vig = x.get("vigente")
+        dia = vig[2] if vig and isinstance(vig[2], (int, float)) else suyo
+    return _dia_posible(rol, lim, w, margen, dia)
+
+
+def _dia_posible(rol, lim, w, margen, dia):
+    """El día más cercano a `dia` que deja escribir un precio válido: vendiendo, precio escrito ≥ coste
+    (margen − w × día ≥ 0); comprando, precio escrito ≥ 1."""
+    if rol == "seller":
+        dia = min(dia, int(max(0.0, margen) // w))
+    else:
+        dia = min(dia, int(max(0.0, lim - margen - 1) // w))
+    return int(max(0, min(10, dia)))
+
+
+def decidir_vivo(st, p):
+    """La decisión de un tick. st["x"] lo arma duelos.py con el duelo tal como lo manda el juego:
+        tick, quedan (ticks hasta el plazo), edad (ticks desde que lo vimos), turno (orden de cierre entre los duelos
+        que acaban a la vez), n_nos / n_riv (mensajes de cada lado), nos / riv = [[tick, efectivo, precio, días], ...],
+        vigente = [efectivo, precio, días] de la oferta del rival que se aceptaría ahora, dos (¿hay día?), k.
+    Devuelve (acción, precio efectivo, día o None, motivo)."""
+    rol, lim, x = st["rol"], float(st["limite"]), st["x"]
+    s = 1 if rol == "seller" else -1
+    tick = x.get("tick") if isinstance(x.get("tick"), (int, float)) else 0
+    edad = max(0, int(x.get("edad") or 0))
+    quedan = x.get("quedan")
+    if not isinstance(quedan, (int, float)) or isinstance(quedan, bool):
+        quedan = max(1, int(p["duelo.rondas"]) - edad)
+    cierre = int(_aj(p, "duelo.cierre_ticks", 2)) + int(x.get("turno") or 0)
+    pac = int(_aj(p, "duelo.paciencia", 2))
+    escuchar = int(_aj(p, "duelo.escuchar_ticks", 1))
+    m0, mmin = _margenes(rol, lim, p)
+    riv, nos = x.get("riv") or [], x.get("nos") or []
+    n_o = int(x["n_nos"]) if isinstance(x.get("n_nos"), (int, float)) else len(nos)
+    n_r = int(x["n_riv"]) if isinstance(x.get("n_riv"), (int, float)) else len(riv)
+    vig = x.get("vigente")
+    g_su = ganancia(rol, lim, vig[0]) if vig and isinstance(vig[0], (int, float)) else None
+    g_mio = ganancia(rol, lim, nos[-1][1]) if nos else None
+    t_mia = nos[-1][0] if nos else None
+    con_dia = bool(x.get("dos") and x.get("k"))
+
+    # cómo se mueve el rival, medido en lo que nos da a nosotros
+    mejor, t_mej = None, None
+    for m in riv:
+        g = ganancia(rol, lim, m[1])
+        if mejor is None or g > mejor + 0.5:
+            mejor, t_mej = g, m[0]
+    sin_mejora = tick - t_mej if t_mej is not None else None
+    retrocede = g_su is not None and mejor is not None and g_su < mejor - 0.5
+    parado = sin_mejora is None or sin_mejora > pac or retrocede
+    paso = 0.0
+    if len(riv) >= 2 and riv[-1][0] > riv[0][0]:
+        g1 = ganancia(rol, lim, riv[-1][1])
+        paso = (g1 - ganancia(rol, lim, riv[0][1])) / (riv[-1][0] - riv[0][0])
+        if paso > 0 and riv[-1][0] > riv[-2][0]:            # si frena, cuenta el último paso
+            paso = min(paso, (g1 - ganancia(rol, lim, riv[-2][1])) / (riv[-1][0] - riv[-2][0]))
+
+    # ¿se mueve solo? Mejoró alguna vez sin que hubiéramos escrito nada entre dos ofertas suyas
+    autonomo = any(ganancia(rol, lim, b_[1]) > ganancia(rol, lim, a_[1]) + 0.5
+                   and not any(a_[0] <= m[0] <= b_[0] for m in nos) for a_, b_ in zip(riv, riv[1:]))
+
+    # lo que pediríamos ahora: baja con el tiempo, del ancla al margen mínimo, y llega abajo cuando toca cerrar
+    largo = max(1, edad + quedan - cierre - escuchar)
+    frac = min(1.0, max(0.0, (edad - escuchar) / largo))
+    f = frac ** (1 / max(0.1, p["duelo.dureza_beta"]))
+    margen = m0 * (1 - f) + mmin * f
+
+    def oferta(m, motivo, dia=None):
+        m = max(m, mmin)
+        e = lim + s * m
+        e = math.ceil(e) if s > 0 else math.floor(e)
+        if con_dia:
+            dia = _dia(rol, lim, x, p, m, n_r) if dia is None else _dia_posible(rol, lim, abs(x["k"]), m, dia)
+        else:
+            dia = None
+        if nos and abs(nos[-1][1] - e) < 0.5 and (dia is None or nos[-1][3] == dia):
+            return ("esperar", None, None, "nuestra oferta sigue en pie: repetirla no aporta y puede costar una ronda")
+        return ("ofrecer", e, dia, motivo)
+
+    # ---------- a. hay una oferta suya dentro de nuestro límite ----------
+    if g_su is not None and g_su > 0:
+        if quedan <= cierre:
+            if (int(_aj(p, "duelo.apurar", 1)) and not int(x.get("turno") or 0) and quedan == cierre and quedan >= 2
+                    and sin_mejora is not None and sin_mejora <= 1 and not retrocede):
+                return ("esperar", None, None, f"su oferta (+{g_su:.0f}) ha mejorado en el último tick y es el último "
+                                               f"duelo en cerrar: un tick más, y se acepta")
+            return ("aceptar", vig[0], None, f"se acaba el tiempo (quedan {quedan} ticks): +{g_su:.0f} es mejor que cero")
+        if g_mio is not None and g_su >= g_mio:
+            return ("aceptar", vig[0], None, f"nos da +{g_su:.0f}, al menos lo que pedíamos (+{g_mio:.0f})")
+        if g_su >= float(_aj(p, "duelo.aceptar_ya_desde", 1.0)) * m0:
+            return ("aceptar", vig[0], None, f"nos da +{g_su:.0f}, más de lo que pediríamos al abrir (+{m0:.0f}): se coge ya")
+        reactivo = (not autonomo and len(riv) >= 2 and t_mia is not None and t_mej is not None and t_mej >= t_mia
+                    and not retrocede)
+        # el día: si a nosotros nos importa claramente más, UNA vez pedimos nuestro día compensándole en precio.
+        # Solo cuando ya no está mejorando por su cuenta (plantado, o de los que solo se mueven si nos movemos).
+        if (con_dia and isinstance(vig[2], (int, float)) and int(_aj(p, "duelo.cambiar_dia", 1)) and (parado or reactivo)
+                and quedan > cierre + 2):
+            w, wr = abs(x["k"]), peso_rival(rol, x, p)
+            mio = 10 if rol == "seller" else 0
+            gana = (w - wr) * abs(mio - vig[2])
+            # una contraoferta puede costar una ronda (−10 % de todo): solo si el día vale al menos la mitad de lo
+            # que ya tenemos en la mesa (con una probabilidad de que acepte de 1 entre 4 ya sale a cuenta)
+            if w > 1.1 * wr and gana >= max(8.0, 0.5 * g_su) and not any(m[3] == mio for m in nos):
+                return oferta(g_su + gana, f"el día nos importa más ({w:.1f} por día frente a ~{wr:.1f}): "
+                                            f"le compensamos en precio y pedimos nuestro día", dia=mio)
+        # un rival que solo se mueve cuando nos movemos: esperar no trae nada; o seguimos el ojo por ojo, o cerramos
+        if reactivo and tick > t_mia:
+            antes = [ganancia(rol, lim, m[1]) for m in riv if m[0] < t_mia]
+            cedio = mejor - max(antes) if antes else 0.0
+            if (cedio > 0.2 * g_su + 1 and min(n_o, n_r) < int(_aj(p, "duelo.rondas_max", 4)) and quedan > cierre + 1
+                    and g_mio is not None and g_mio > g_su + 2):
+                m = max(g_su + 1, g_mio - max(1.0, float(_aj(p, "duelo.ojo_por_ojo", 0.3)) * cedio))
+                return oferta(m, f"responde a cada oferta nuestra (acaba de ceder {cedio:.0f}): otro paso pequeño, "
+                                 f"pedimos margen {m:.0f}")
+            return ("aceptar", vig[0], None, f"ya no cede lo bastante para pagar otra ronda: cerrar en +{g_su:.0f}")
+        if not parado:
+            return ("esperar", None, None, f"su oferta ya vale +{g_su:.0f} y sigue mejorando: callar no cuesta rondas")
+        contras = sum(1 for m in nos if riv and m[0] >= riv[0][0])
+        if contras < int(_aj(p, "duelo.contras_max", 1)) and quedan > cierre + pac + 1:
+            if g_su < float(_aj(p, "duelo.contra_si_menos_de", 0.15)) * m0 and margen > 1.2 * g_su + 1:
+                return oferta(g_su + 0.5 * (margen - g_su), f"se ha plantado en +{g_su:.0f}, que es poco: una contraoferta",
+                              dia=vig[2] if con_dia and isinstance(vig[2], (int, float)) else None)
+        if int(_aj(p, "duelo.cerrar_al_plantarse", 0)):
+            return ("aceptar", vig[0], None, f"el rival se ha plantado en +{g_su:.0f}: cerrar ya, sin gastar más rondas")
+        # Plantado no es terminado: el 3/10 varios rivales lentos pararon unos ticks y siguieron bajando (duelos 277,
+        # 2309, 2334). Su oferta sigue en pie y esperar callados no descuenta nada: se acepta cuando llega el turno.
+        return ("esperar", None, None, f"su oferta (+{g_su:.0f}) sigue en pie y callar no cuesta: se acepta a "
+                                       f"{cierre} ticks del final, o antes si mejora lo que pedimos")
+
+    # ---------- b. el rival no ha escrito nada ----------
+    if n_r == 0:
+        if edad < escuchar and not nos:
+            return ("esperar", None, None, "primer tick: escuchamos (aceptar su oferta sin haber hablado no encoge el trato)")
+        return oferta(margen, f"rival mudo: bajamos poco a poco, gratis (margen {margen:.0f})")
+
+    # ---------- c. el rival habla, pero su oferta no nos sirve ----------
+    if len(riv) <= 1 and sin_mejora is not None and sin_mejora <= pac and not nos:
+        return ("esperar", None, None, "acaba de abrir: miramos si camina solo antes de hablar")
+    if g_su is not None and autonomo and not parado and paso > 0 and (1 - g_su) / paso <= quedan - cierre - 1:
+        return ("esperar", None, None, f"viene solo hacia nosotros ({paso:+.1f} por tick) y llega a tiempo: callar no cuesta")
+    remate = quedan <= cierre + int(_aj(p, "duelo.ticks_remate", 3))
+    if autonomo and nos and not remate:
+        return ("esperar", None, None, "se mueve solo y nuestra oferta ya está en pie: no gastamos rondas en contestarle")
+    respondio = (len(riv) >= 2 and t_mia is not None and t_mej is not None and t_mej >= t_mia and not retrocede
+                 and not autonomo)
+    toca = t_mia is None or remate or (tick - t_mia) > pac or (respondio and tick > t_mia)
+    if min(n_o, n_r) >= int(_aj(p, "duelo.rondas_max", 4)) and not remate:
+        return ("esperar", None, None, "ya hemos gastado las rondas previstas: esperamos al remate")
+    if not toca:
+        return ("esperar", None, None, "esperamos su respuesta a nuestra oferta (no repetimos)")
+    if respondio and not remate and g_mio is not None:
+        # ojo por ojo con descuento: se mueve cuando nos movemos, así que cedemos solo una parte de lo que él cedió
+        antes = [ganancia(rol, lim, m[1]) for m in riv if m[0] < t_mia]
+        cedio = mejor - max(antes) if antes else 0.0
+        m = max(margen, g_mio - max(1.0, float(_aj(p, "duelo.ojo_por_ojo", 0.3)) * max(0.0, cedio)))
+        return oferta(m, f"responde a nuestras ofertas (cedió {cedio:.0f}): cedemos una parte y pedimos margen {m:.0f}")
+    return oferta(margen, ("remate: " if remate else "") + f"pedimos margen {margen:.0f} sobre nuestro límite")
+
+
+def dia_oferta(st, p):
+    """El día que acompaña a la oferta que decidir() acaba de devolver (None sin estado por ticks o sin día)."""
+    if not isinstance(st.get("x"), dict):
+        return None
+    return decidir_vivo(st, p)[2]
