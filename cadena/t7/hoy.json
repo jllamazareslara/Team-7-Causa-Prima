@@ -7,7 +7,7 @@
  "mesa_permite_inyeccion_equipos": false,
  "solo_vender": false,
  "cerrar_en_rastro": true,
- "completar": ["RET"],
+ "completar": ["CHA"],
  "_duelo_de_donde_sale": "GET /api/schedule leído el 3/10 a las ~17:00 (tick 808): Duels II at_hours 11,65 -> duel_ticks 16, decay 0,08, max_concurrent 6, issues [price, days]. Duels III (domingo, at_hours 18,65): duel_ticks 12, decay 0,10, max_concurrent 4 -> poner rondas 12 y descuento_ronda 0,90 antes de esa.",
  "duelo": {"rondas": 16, "descuento_ronda": 0.92},
  "enfados": {},
