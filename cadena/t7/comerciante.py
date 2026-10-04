@@ -20,7 +20,7 @@ import math
 from . import cambista, contable, defensa, guion, ojos, params, sondas, tienda
 from . import valor as V
 
-NO_INSISTIR = {"pilar"}      # memoria y astucia altas: una carta que no quiso a nuestro precio no se le ofrece otra vez ese día
+NO_INSISTIR = {"pilar", "banco"}   # memoria y astucia altas (Pilar, Don Ernesto): una carta que no quiso a nuestro precio no se le ofrece otra vez ese día
 VENTANA = 120                # ticks de El Rastro que cuentan (una hora de juego a 30 s el tick)
 
 
@@ -107,7 +107,7 @@ def vendedor(c, tu):
     hilo, quien, texto = str(c["id"]), c["vendedor"], c.get("texto") or ""
     cuentas = contable.para_vendedor(c, cuenta, efectivo, p, ordenes)
     es_nuevo = hilo in textos["textos_nuevos"]
-    def sin_acuerdo(motivo):                         # con Pilar no se insiste: esa carta, ese día, ya no
+    def sin_acuerdo(motivo):                         # con Pilar y Don Ernesto no se insiste: esa carta, ese día, ya no
         if quien in NO_INSISTIR:
             mem.sin_acuerdo[f"{quien}|{c['carta']}|{lectura.get('dia')}"] = motivo
     if c.get("cerrado"):

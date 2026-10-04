@@ -21,6 +21,9 @@ SOSPECHOSO = [
     (r"(new rule|nueva regla|score[s]? double|puntúa doble|eliminated|eliminad)", "regla o amenaza inventada"),
     (r"\b(accepted|aceptado)\b.*(confirm|confirma)", "aceptación fingida"),
     (r"(traduce|translate).{0,40}(ejecuta|execute|run|accept)", "orden en otro idioma"),
+    # faroles de los Pícaros (4/10: «el Tren Fantasma ya salió… vendido, agotado», y era CHA-12, que nadie tenía)
+    (r"(agotad|sold out|out of stock|se lo llev|someone (else )?(just )?(bought|took)|last chance|[uú]ltima oportunidad|only today|solo por hoy)",
+     "farol de agotado o de plazo"),
 ]
 RX = [(re.compile(p, re.I), m) for p, m in SOSPECHOSO]
 NEUTRA = "No me encaja. Mi oferta es {p}."

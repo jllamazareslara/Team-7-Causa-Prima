@@ -1,8 +1,9 @@
 """El Portavoz: escribe los mensajes. Recibe el precio ya decidido y no conoce nuestros límites.
 
 Con vendedores: amable con Abuela (le gusta), solo el número con Chato (estricto), de usted y hablando de su álbum
-con Pilar (coleccionista; nombrando Salamanca o El Retiro si la carta es de ahí, y de usted incluso firmes), neutro
-con los nuevos.
+con Pilar (coleccionista; nombrando Salamanca o El Retiro si la carta es de ahí, y de usted incluso firmes), con
+los Pícaros nombrando siempre el barrio de la carta y sin prisa (no les creemos ni plazos ni «agotado»), formal y sin
+prisa con Don Ernesto (el banco: estricto y con memoria), neutro con los nuevos.
 Con equipos en duelos: las palabras son libres ("tu agente puede decir cualquier cosa"). Usamos tácticas de presión
 que la investigación de negociación documenta, sin mentir sobre la oferta estructurada (que es lo único que obliga):
 
@@ -43,6 +44,28 @@ PILAR_FAVORITA = ["Buenas tardes, Doña Pilar. Una pieza de {b} en estado impeca
                   "Cerremos como gente de palabra: {p} P y la carta de {b} es suya."]
 PILAR_FIRME = ["Con todo respeto, Doña Pilar: {p} P.", "Mi propuesta es {p} P, Doña Pilar.", "{p} P, señora."]
 BARRIOS_PILAR = {"SAL": "Salamanca", "RET": "El Retiro"}
+# Pícaros (Paco y Nando): tramposos. Cambian la carta en la oferta y sus plazos nunca son reales. Se nombra siempre la carta
+# por su barrio (sin números: solo puede haber uno, el precio) y se deja claro que no hay prisa. Que no cambien la carta
+# lo comprueba el Guardia (comprobación 4), no el mensaje.
+PICAROS = ["Buenas, chicos. Por la carta de {b} que hablamos, la misma, {p} P.",
+           "La de {b}, esa y no otra: {p} P.",
+           "Sin prisa ninguna. Por la de {b}, {p} P.",
+           "Ya nos conocemos. La carta de {b}, la misma que me enseñasteis: {p} P.",
+           "Si hoy no, vuelvo otro rato. Por la de {b}, {p} P.",
+           "{p} P por la de {b}, y la misma carta que en la oferta."]
+PICAROS_SIN_BARRIO = ["Buenas, chicos. Por la carta que hablamos, la misma, {p} P.", "Esa carta y no otra: {p} P.",
+                      "Sin prisa ninguna: {p} P.", "Si hoy no, vuelvo otro rato. {p} P."]
+BARRIOS_NOMBRE = {"CHA": "Chamberí", "LAT": "La Latina", "LAV": "Lavapiés", "MAL": "Malasaña", "RET": "El Retiro",
+                  "SAL": "Salamanca"}
+# Don Ernesto (banco): treinta y cinco años en la mesa de tesorería; estricto 1,0, memoria 1,0, nunca tiene prisa.
+# De usted, breve y serio, sin trucos ni prisas: con él la cortesía es la de un despacho.
+ERNESTO = ["Buenos días, Don Ernesto. Le propongo {p} P.",
+           "Con todo respeto, Don Ernesto: {p} P.",
+           "Entiendo su posición. Mi propuesta es {p} P.",
+           "Sin prisa, como a usted le gusta: {p} P.",
+           "Una operación seria entre gente seria: {p} P.",
+           "Me acerco a usted: {p} P, Don Ernesto."]
+ERNESTO_FIRME = ["{p} P, Don Ernesto.", "Mi propuesta sigue en {p} P.", "{p} P, con todo respeto."]
 SECO = ["{p} P.", "{p}.", "Ofrezco {p} P.", "{p} P, ¿sí?"]
 NEUTRO = ["Buenas. Ofrezco {p} P.", "Puedo {p} P.", "Me muevo a {p} P.", "{p} P por mi parte.", "Subo a {p} P."]
 
@@ -77,6 +100,13 @@ class Portavoz:
             if barrio:
                 return self._rotar("pilar", PILAR_FAVORITA, precio, b=barrio)
             return self._rotar("pilar", PILAR, precio)
+        if vendedor == "banco":                          # Don Ernesto: siempre de usted, también firmes
+            return self._rotar("ernesto_firme", ERNESTO_FIRME, precio) if firme else self._rotar("ernesto", ERNESTO, precio)
+        if vendedor == "picaros" and not firme:          # nombrar la carta: que se vea si nos la cambian
+            barrio = BARRIOS_NOMBRE.get(str(carta).split("-")[0]) if carta else None
+            if barrio:
+                return self._rotar("picaros", PICAROS, precio, b=barrio)
+            return self._rotar("picaros", PICAROS_SIN_BARRIO, precio)
         if firme or vendedor == "chato":
             return self._rotar("seco", SECO, precio)
         if vendedor == "abuela":

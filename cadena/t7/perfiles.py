@@ -15,6 +15,12 @@ MATRIZ = [
      "Estricto y rencoroso: el riesgo no está en el ancla sino en repetir o en trucos. Simulado: 0,55 frente a 0,20."),
     ("Pilar (coleccionista)", "MEDIA al venderle", "2 × su oferta (no 3)", "pasos fijos del 11 %, de usted y hablando de su álbum",
      "no", "Paga bien lo que le gusta (SAL y RET primero) y se acuerda (memoria 0,7): un ancla extrema la puede echar."),
+    ("Pícaros (tramposos)", "MEDIA, sin creer nada", "50 % de lo que piden", "nombrando siempre la carta, sin prisa",
+     "no", "Cambian la carta en la oferta (lo para el Guardia) y su «final», «agotado» y plazos son faroles: no se acepta"
+     " una final sin más y, si pasa del tope, nos vamos y se vuelve luego. Visto 4/10: rara 73 → ~62-64."),
+    ("Don Ernesto (banco)", "BAJA en palabras, paciente en precio", "40 % de lo que pide", "de usted, breve y serio, 12 rondas",
+     "no", "Estricto 1,0, memoria 1,0, astucia 0,95 y nunca tiene prisa: un ancla extrema o un truco cierran la puerta."
+     " No se le insiste con una carta que no quiso. Vende legendarias a 585 y compra épicas y legendarias."),
     ("Vendedor nuevo", "PRUDENTE, luego según perfil", "15 %", "primera conversación = sondeo", "no hasta conocerlo",
      "No sabemos si se ofende. El sondeo mide cómo cede y en qué ronda da la final."),
     ("Vender a un vendedor", "MEDIA", "max(2 × lista, 3 × su oferta)", "pasos fijos del 11 %", "como al comprar",

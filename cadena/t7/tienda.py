@@ -28,6 +28,9 @@ Tres frenos (3/10, tras las ventas a 2 P y 11 P y las compras de RET-10 a Chato 
                 limitar a tienda.compra.paso_maximo × su primer precio (1,0 = libres). Simulador 3/10 por la noche: abrir al
                 40 % captura ~0,43 frente a ~0,54 al 15 % (Abuela, Chato y nuevo) y solo baja los enfados de Chato
                 del 7,6 % al 5,2 %; abrir al 60 % no lo enfada nunca, pero captura 0,23
+
+Farol de «final» (4/10, Pícaros): con tienda.<vendedor>.final_es_farol = 1 su oferta final no se acepta sin más; se
+sigue regateando y se acepta solo si su precio ya alcanza nuestra siguiente oferta. Fuera del tope, nos vamos.
 """
 import math
 
@@ -91,9 +94,11 @@ def _decidir(st, pf, p=None):
         return ("retirarse", None, "vendiendo sin conocer su precio: no se pide nada")
     dentro = s * (lim - suyo) >= 0                     # su precio no cruza nuestro límite
 
-    if st.get("final"):
+    if st.get("final") and not pf.get("final_es_farol"):
         return ("aceptar", suyo, "oferta final dentro de nuestro límite") if dentro else \
                ("retirarse", None, "oferta final fuera de nuestro límite: irse no cuesta nada")
+    if st.get("final") and not dentro:               # su «final» es un farol (Pícaros): nos vamos y se vuelve más tarde
+        return ("retirarse", None, "«final» fuera de nuestro límite y es un farol: nos vamos, se puede volver más tarde")
 
     if not nuestras:
         a = apertura(st["lado"], suyas[0], pf, st.get("lista"), p)

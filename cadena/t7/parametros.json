@@ -280,6 +280,118 @@
   "estado": "simulado",
   "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
  },
+ "tienda.picaros.apertura_compra": {
+  "valor": 0.5,
+  "min": 0.15,
+  "max": 0.8,
+  "estado": "supuesto",
+  "por_que": "Pícaros (Paco y Nando, nivel 4, trickster): visto 4/10 que una rara de 73 baja a ~62-64 y CHA-09 no bajó de 60 con nosotros subiendo 42 → 52. Abrir a la mitad de lo que piden: un ancla extrema no aporta si su suelo está en ~0,82 de su precio."
+ },
+ "tienda.picaros.paciencia_estimada": {
+  "valor": 6,
+  "min": 3,
+  "max": 12,
+  "estado": "supuesto",
+  "por_que": "Visto 4/10: dieron su «final» (60) a la cuarta oferta (73 → 67 → 63 → 60)."
+ },
+ "tienda.picaros.margen_rondas": {
+  "valor": 1,
+  "min": 0,
+  "max": 4,
+  "estado": "supuesto",
+  "por_que": "Ídem."
+ },
+ "tienda.picaros.imitacion_inicial": {
+  "valor": 0.5,
+  "min": 0.2,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Ceden a saltos (6 y 4 P) y luego se paran en su suelo."
+ },
+ "tienda.picaros.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 2,
+  "estado": "decisión",
+  "por_que": "Con ellos no se pregunta nada: sus palabras no valen (bio del juego: «their deadlines never are»)."
+ },
+ "tienda.picaros.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Como un vendedor desconocido: si cede poco, cedemos lo que él cedió."
+ },
+ "tienda.picaros.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.picaros.final_es_farol": {
+  "valor": 1,
+  "min": 0,
+  "max": 1,
+  "estado": "decisión",
+  "por_que": "1 = su «oferta final» no se cree (4/10: «final» a 60 y luego seguían vendiendo; farol de «agotado» con CHA-12, que nadie tenía). Una final dentro del tope no se acepta sin más: se sigue regateando y se acepta solo si su precio ya alcanza nuestra siguiente oferta. Fuera del tope, nos vamos y se puede volver a abrir más tarde. El cambio de carta lo para el Guardia (comprobación 4)."
+ },
+ "tienda.banco.apertura_compra": {
+  "valor": 0.4,
+  "min": 0.15,
+  "max": 0.8,
+  "estado": "supuesto",
+  "por_que": "Don Ernesto (banco, nivel 5, banker): rasgos del juego estricto 1,0, memoria 1,0, astucia 0,95, generosidad 0,1. Un ancla extrema con alguien estricto y que no olvida puede cerrar la puerta: abrir al 40 %."
+ },
+ "tienda.banco.paciencia_estimada": {
+  "valor": 12,
+  "min": 4,
+  "max": 16,
+  "estado": "supuesto",
+  "por_que": "Paciencia del juego 0,95 («never once been in a hurry»): muchas rondas, pasos pequeños."
+ },
+ "tienda.banco.margen_rondas": {
+  "valor": 2,
+  "min": 0,
+  "max": 6,
+  "estado": "supuesto",
+  "por_que": "Ídem."
+ },
+ "tienda.banco.imitacion_inicial": {
+  "valor": 0.3,
+  "min": 0.1,
+  "max": 2.0,
+  "estado": "supuesto",
+  "por_que": "Generosidad 0,1 y astucia 0,95: cede poco por cada prima nuestra."
+ },
+ "tienda.banco.sondas_max": {
+  "valor": 0,
+  "min": 0,
+  "max": 2,
+  "estado": "decisión",
+  "por_que": "Estricto 1,0 y memoria 1,0: nada de preguntas ni trucos."
+ },
+ "tienda.banco.k_reciproco": {
+  "valor": 0.5,
+  "min": 0.0,
+  "max": 1.5,
+  "estado": "supuesto",
+  "por_que": "Reciprocidad: si cede poco, cedemos lo que él cedió."
+ },
+ "tienda.banco.aceptar_si_se_para": {
+  "valor": 0,
+  "min": 0,
+  "max": 1,
+  "estado": "simulado",
+  "por_que": "Aceptar en cuanto deja de ceder: el simulador dice que NO (pierde entre 0,04 y 0,17 en todos los perfiles)."
+ },
+ "tienda.banco.venta_multiplo_oferta": {
+  "valor": 2.0,
+  "min": 1.5,
+  "max": 5.0,
+  "estado": "supuesto",
+  "por_que": "Vendiéndole (compra épicas y legendarias), primera petición = 2 × su oferta, como con Pilar: con memoria 1,0 un ancla de 3× lo puede echar."
+ },
  "tienda.venta.multiplo_oferta": {
   "valor": 3.0,
   "min": 1.5,
