@@ -323,11 +323,11 @@
   "por_que": "Comprando, primera cifra = valor × esto. Misma corrección que arriba y por los mismos duelos en vivo."
  },
  "duelo.descuento_ronda": {
-  "valor": 0.9,
+  "valor": 0.94,
   "min": 0.85,
   "max": 1.0,
-  "estado": "medido",
-  "por_que": "Lo que queda del trato tras cada ronda. Medido en los duelos reales: resultado = ganancia × (1 − decay)^rondas, con decay 0,06 (práctica y Duels I), 0,08 (Duels II) y 0,10 (Duels III y la final, según /api/schedule). Valor de hoy: 0,90."
+  "estado": "supuesto",
+  "por_que": "Lo que queda del trato tras cada ronda (6 % según la página del equipo)."
  },
  "duelo.dureza_beta": {
   "valor": 0.6,
@@ -337,130 +337,18 @@
   "por_que": "Forma de la curva: < 1 duro hasta el final (Boulware). 0,6 fue el mejor con 5, 8 y 12 rondas."
  },
  "duelo.rondas": {
-  "valor": 12,
+  "valor": 8,
   "min": 3,
   "max": 20,
-  "estado": "medido",
-  "por_que": "Ticks que dura un duelo si el juego no da plazo. Duels III y la final: 12 ticks (/api/schedule). En vivo manda deadline_tick."
+  "estado": "supuesto",
+  "por_que": "Rondas que suponemos que dura un duelo si el juego no lo dice."
  },
  "duelo.cuota_minima": {
-  "valor": 0.15,
+  "valor": 0.05,
   "min": 0.0,
   "max": 0.5,
   "estado": "simulado",
-  "por_que": "Lo mínimo que pedimos hasta el final, como parte de nuestro margen de apertura. 0,15 con apertura 1,6 = 9 % sobre el coste vendiendo, 6 % bajo el valor comprando. Un trato casi en el límite vale casi cero; en el juego falso 0,15 da más puntos que 0,05 con algo menos de tratos. Aceptar una oferta SUYA dentro del límite al final se hace siempre, pida lo que pida esto."
- },
- "duelo.cierre_ticks": {
-  "valor": 2,
-  "min": 1,
-  "max": 6,
-  "estado": "decisión",
-  "por_que": "Duelista por ticks: cuántos ticks antes del plazo se acepta lo que haya dentro del límite. 2 deja un tick de reserva por si la aceptación no entra (el juego deja UNA aceptación por equipo y tick; cada duelo que acaba a la vez suma un tick más: su turno)."
- },
- "duelo.paciencia": {
-  "valor": 2,
-  "min": 1,
-  "max": 5,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: ticks sin que el rival mejore su oferta para darlo por plantado. También lo que esperamos su respuesta antes de volver a hablar."
- },
- "duelo.escuchar_ticks": {
-  "valor": 2,
-  "min": 0,
-  "max": 3,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: ticks que escuchamos al empezar sin escribir. Aceptar la primera oferta del rival sin haber hablado no encoge el trato (rondas = el que menos mensajes lleva). 2 = mejor que 1 en el juego falso: da tiempo a ver si el rival camina solo."
- },
- "duelo.contras_max": {
-  "valor": 1,
-  "min": 0,
-  "max": 3,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: contraofertas como mucho cuando el rival se planta con una oferta dentro de nuestro límite. Cada una puede costar una ronda (−10 %)."
- },
- "duelo.contra_si_menos_de": {
-  "valor": 0.0,
-  "min": 0.0,
-  "max": 1.0,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: solo se contraoferta en precio si lo que ofrece el rival plantado es menos de esta parte de nuestro margen de apertura."
- },
- "duelo.ticks_remate": {
-  "valor": 3,
-  "min": 0,
-  "max": 8,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: en los últimos ticks antes de cerrar, si su oferta sigue fuera de nuestro límite, bajamos cada tick hasta el margen mínimo."
- },
- "duelo.rondas_max": {
-  "valor": 4,
-  "min": 1,
-  "max": 12,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: rondas (mensajes de los dos lados) que aceptamos gastar hablando antes del remate. Cada ronda quita un 10 % en Duels III."
- },
- "duelo.margen_minimo": {
-  "valor": 1,
-  "min": 0,
-  "max": 20,
-  "estado": "decisión",
-  "por_que": "Lo mínimo que pedimos sobre nuestro límite, en primas: un trato en el límite exacto vale cero."
- },
- "duelo.peso_rival_vendedor": {
-  "valor": 2.6,
-  "min": 0.1,
-  "max": 12,
-  "estado": "medido",
-  "por_que": "Lo que suele valer cada día de entrega para un rival que vende (mediana de los 11 pesos de vendedor vistos el 3/10: 2,4; media 2,9). Si nuestro peso es claramente mayor, pedimos nuestro día; si es menor, le damos el suyo y cobramos en precio."
- },
- "duelo.peso_rival_comprador": {
-  "valor": 3.6,
-  "min": 0.1,
-  "max": 12,
-  "estado": "medido",
-  "por_que": "Lo que suele costar cada día de entrega a un rival que compra (mediana de los 10 pesos de comprador vistos el 3/10: 3,4; media 4,0)."
- },
- "duelo.apurar": {
-  "valor": 1,
-  "min": 0,
-  "max": 1,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: 1 = cuando el duelo es el ÚNICO en juego y el rival ha mejorado su oferta en el tick anterior, espera un tick más (hasta el último) antes de aceptar. Con varios duelos a la vez no se usa: el último tick solo tiene una aceptación para todo el equipo. 0 = aceptar siempre con un tick de reserva."
- },
- "duelo.ojo_por_ojo": {
-  "valor": 0.2,
-  "min": 0.0,
-  "max": 1.0,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: con un rival que solo se mueve cuando nos movemos, parte de lo que él cedió que cedemos nosotros en la respuesta."
- },
- "duelo.aceptar_ya_desde": {
-  "valor": 1.0,
-  "min": 0.2,
-  "max": 99,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: si la oferta del rival nos da al menos esta parte de lo que pediríamos al abrir, se acepta en el acto (sin haber hablado, el trato entra entero). 99 = no usar esta regla."
- },
- "duelo.cambiar_dia": {
-  "valor": 1,
-  "min": 0,
-  "max": 1,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: 1 = cuando el rival se planta con una oferta buena pero en su día, y a nosotros el día nos importa claramente más, una vez pedimos nuestro día compensándole en precio. 0 = nunca."
- },
- "duelo.dia_en_duda": {
-  "valor": 1,
-  "min": 0,
-  "max": 1,
-  "estado": "simulado",
-  "por_que": "Duelista por ticks: qué día va en nuestras ofertas cuando no está claro a quién le importa más. 0 = el que propone el rival (cobramos en precio). 1 = el nuestro."
- },
- "duelo.cerrar_al_plantarse": {
-  "valor": 0,
-  "min": 0,
-  "max": 1,
-  "estado": "medido",
-  "por_que": "Duelista por ticks: 0 = con una oferta del rival dentro del límite que ya no mejora, esperar callados hasta el turno de cierre (no cuesta rondas; el 3/10 cuatro rivales lentos pararon y luego siguieron mejorando: duelos 277, 2309, 2334, 2486). 1 = aceptar en cuanto se planta."
+  "por_que": "Parte mínima de la tarta estimada que pedimos hasta la última ronda."
  },
  "broker.holgura_inicial": {
   "valor": 0.25,

@@ -8,8 +8,8 @@
  "solo_vender": true,
  "cerrar_en_rastro": true,
  "completar": ["RET"],
- "_duelo_de_donde_sale": "GET /api/schedule leído el 4/10 a las 08:05: Duels III (domingo ~11:00, at_hours 18,65) y la final (~14:00, at_hours 21,65): duel_ticks 12, decay 0,10, max_concurrent 4, issues [price, days]. duelos.py aplica este bloque y los ajustes duelo.* de abajo en cada tick (cambiar aquí cambia el duelo sin relanzar).",
- "duelo": {"rondas": 12, "descuento_ronda": 0.90},
+ "_duelo_de_donde_sale": "GET /api/schedule leído el 3/10 a las ~17:00 (tick 808): Duels II at_hours 11,65 -> duel_ticks 16, decay 0,08, max_concurrent 6, issues [price, days]. Duels III (domingo, at_hours 18,65): duel_ticks 12, decay 0,10, max_concurrent 4 -> poner rondas 12 y descuento_ronda 0,90 antes de esa.",
+ "duelo": {"rondas": 16, "descuento_ronda": 0.92},
  "enfados": {},
  "apagar": [],
  "_mercado_barato": "Dónde publica el Cambista lo barato. venue = el mercado de otro equipo (0 % el 3/10: v02 El Duende, v07 Team 10, v01 Team 6); hasta = precio máximo que va allí, lo demás a El Rastro. venue vacío = todo a El Rastro.",
@@ -24,9 +24,8 @@
   "guardia.protegida_factor": 2.0,
   "cambista.caza_veces": 1,
   "cambista.apertura_peticion": 0.55,
-  "duelo.apertura_vendedor": 1.8,
-  "duelo.apertura_comprador": 0.55,
-  "duelo.dureza_beta": 0.6,
-  "duelo.aceptar_ya_desde": 0.75
+  "duelo.apertura_vendedor": 1.35,
+  "duelo.apertura_comprador": 0.70,
+  "duelo.dureza_beta": 1.0
  }
 }

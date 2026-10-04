@@ -95,33 +95,17 @@ class DiasReales(unittest.TestCase):
         k = duelo.k_dias("seller", 1.12, self.VENTA["days_meaning"])
         self.assertAlmostEqual(duelo.precio_efectivo(123, 10, k) - 74, 60.2, places=2)       # el +60,2 del duelo 6088
         self.assertEqual((duelo.dia_bueno("buyer", 4.02), duelo.dia_bueno("seller", 1.12)), (0, 10))
-        # sin days_meaning (o con un texto nuevo) vale lo visto en los 21 duelos reales: comprando, cada día cuesta;
-        # vendiendo, suma. Antes devolvía None y el duelo se jugaba solo por precio: así salió el −4,2.
-        self.assertEqual(duelo.k_dias("buyer", 4.02, None), duelo.k_dias("buyer", 4.02, self.COMPRA["days_meaning"]))
-        self.assertEqual(duelo.k_dias("seller", 1.12, "texto nuevo"), duelo.k_dias("seller", 1.12, self.VENTA["days_meaning"]))
-        self.assertIsNone(duelo.k_dias("buyer", None, self.COMPRA["days_meaning"]))          # sin peso no hay cuenta
+        self.assertIsNone(duelo.k_dias("buyer", 4.02, None))                                 # sin sentido, como antes
 
     def test_no_acepta_un_buen_precio_con_un_mal_dia(self):
         leido, ac = self.jugar(self.COMPRA)
         self.assertEqual(leido["rival"], [90.2])                                             # 50 + 10 × 4,02
         self.assertFalse(ac.get("firma_duelo"))
-        # La Duelista por ticks no contesta en el acto: mira si el rival camina solo (callar no cuesta rondas).
-        self.assertEqual([x for x in ac["mensajes"] if x.get("destino") == "duelo"], [])
-        # Pasados los ticks de paciencia sin que mejore, habla: y lo que pide queda dentro de nuestro límite.
-        import duelos
-        from t7 import cadena, duelo
-
-        class Juego:
-            def duels(self_, done=False):
-                return {"duels": [self.COMPRA]}
-        lectura = duelos.leer(Juego(), {}, 14)
-        ac = cadena.tick(lectura, cadena.Memoria(), duelos.ajustes({}))
-        self.assertFalse(ac.get("firma_duelo"))
         m = [x for x in ac["mensajes"] if x.get("destino") == "duelo"]
         self.assertEqual(len(m), 1)
+        from t7 import duelo
         k = leido["k_dias"]
-        self.assertLess(duelo.precio_efectivo(m[0]["precio"], m[0]["dias"], k), 86)          # lo que pedimos, dentro del límite
-        self.assertLessEqual(m[0]["precio"], 86)                                             # y el precio escrito también
+        self.assertLessEqual(duelo.precio_efectivo(m[0]["precio"], m[0]["dias"], k), 86)     # lo que pedimos, dentro del límite
 
     def test_el_precio_escrito_no_cruza_el_limite(self):
         from t7 import duelo
