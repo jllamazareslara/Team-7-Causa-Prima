@@ -271,7 +271,8 @@ def precios_de_venta(menus):
     return precios
 
 
-_preguntas = {"quedan": VALORES_POR_TICK}                     # se rellena al empezar cada tick (un_tick)
+_preguntas = {"quedan": VALORES_POR_TICK}
+SOLO_VENDEDORES = None   # --vendedores picaros,banco: solo se abren conversaciones con estos (None = con todos)                     # se rellena al empezar cada tick (un_tick)
 
 
 def valor_de_compra(b, carta):
@@ -280,6 +281,8 @@ def valor_de_compra(b, carta):
     del juego (o sin preguntas este tick) devuelve None y esa carta no se opera hasta tener su valor real."""
     if carta in V.VALOR_RECIBIR:
         return V.VALOR_RECIBIR[carta]
+    if not M.CARTA.match(str(carta)):                            # un sobre (sobre_plata) no es una carta: no se pregunta
+        return None
     if _preguntas["quedan"] <= 0:
         return None
     _preguntas["quedan"] -= 1
@@ -997,6 +1000,8 @@ def un_tick(b, est, mem, tick, tick_segundos, vivo, stop, primero=False, t_horas
         if primero or (isinstance(tick, int) and tick % CALENDARIO_CADA == 0):
             leer_calendario(b, est)
         menus = menus_de_ahora(est, menus)                       # lo que da el juego manda sobre menus.json
+        if SOLO_VENDEDORES:
+            menus = {v: m for v, m in menus.items() if v in SOLO_VENDEDORES}
         if primero:
             limpiar_hilos(b, est, vivo)
         toca = primero or (isinstance(tick, int) and tick % RASTRO_CADA == 0)
@@ -1039,7 +1044,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--live", action="store_true", help="jugar de verdad (sin esto, solo mira)")
     ap.add_argument("--ticks", type=int, default=0, help="parar tras N ticks (0 = sin fin)")
+    ap.add_argument("--vendedores", default="", help="solo estos vendedores, separados por comas (picaros,banco)")
     a = ap.parse_args()
+    global SOLO_VENDEDORES
+    SOLO_VENDEDORES = {v.strip() for v in a.vendedores.split(",") if v.strip()} or None
     from bazaar_sdk import Bazaar
     if not os.environ.get("BAZAAR_KEY"):
         sys.exit("Falta la variable de entorno BAZAAR_KEY (la clave del equipo). No se escribe en ningún archivo.")
